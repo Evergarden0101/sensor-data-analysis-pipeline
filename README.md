@@ -12,7 +12,7 @@ Depending on what you are making, it can be a good idea to include screenshots o
 
 ## Installation
 - npm install -g @vue/cli
-- 
+- npm install vue-router@4
 ### Requirements
 
 - Node.js and npm: https://nodejs.org/en
