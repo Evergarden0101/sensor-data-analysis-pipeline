@@ -11,17 +11,24 @@ On some READMEs, you may see small images that convey metadata, such as whether 
 Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
 
 ## Installation
-- npm install -g @vue/cli
-- npm install vue-router@4
+### Frontend
+- ``npm install -g @vue/cli``
+- ``npm install vue-router@4``
+
+### Backend
+- ``npm install express``
+- ``npm install --save-dev @babel/core @babel/node @babel/preset-env @babel/cli @babel/plugin-transform-runtime @babel/runtime`` (makes sure to have access to the most up to date syntax of JavaScript)
+- ``npm install --save-dev nodemon`` (help to automatically refresh server when there are changes)
+
+
 ### Requirements
 
 - Node.js and npm: https://nodejs.org/en
 - Vue 3
-- 
 
 ## Usage
 - Vue: ``npm run serve``
-- 
+- Express: ``npm run dev``
 Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
 
 ## Support
