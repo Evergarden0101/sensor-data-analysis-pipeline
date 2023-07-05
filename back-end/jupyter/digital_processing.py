@@ -22,6 +22,7 @@ def notch_filter(x, samplerate, plot=False):
         plt.autoscale(tight=True)
         plt.xlabel('Time')
         plt.ylabel('Amplitude (mV)')
+        plt.title('Notch Filter')
         plt.show()
 
     return x_filt
@@ -44,6 +45,7 @@ def bp_filter(x, low_f, high_f, samplerate, plot=False):
         plt.autoscale(tight=True)
         plt.xlabel('Time')
         plt.ylabel('Amplitude (mV)')
+        plt.title('Bandpass Filter')
         plt.show()
 
     return x_filt
