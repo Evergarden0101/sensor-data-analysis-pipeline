@@ -4,10 +4,13 @@
             <button>Home</button>
         </router-link>
         <router-link to="/eeg-meg">
-            <button>EEG/MEG</button>
+            <button>EEG/MEG DATA</button>
         </router-link>
         <router-link to="/ecg">
-            <button>ECG</button>
+            <button>ECG DATA</button>
+        </router-link>
+        <router-link to="/emg">
+            <button>EMG DATA</button>  
         </router-link>
     </div>
 </template>
