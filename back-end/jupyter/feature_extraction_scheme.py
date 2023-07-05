@@ -4,8 +4,8 @@ from feature_extraction import features_estimation
 
 # Load data
 signal_path = '../data/1022102cFnorm.csv'
-emg_signal = pd.read_csv(signal_path).iloc[:60000,0].values
-channel_name = 'Right Masseter'
+emg_signal = pd.read_csv(signal_path).iloc[:60000,:3].values
+channel_name = 'EMG Signals'
 sampling_frequency = 2e3
 frame = 500
 step = 250
