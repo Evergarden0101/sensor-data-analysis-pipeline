@@ -3,7 +3,7 @@ from digital_processing import bp_filter, notch_filter, plot_signal
 from feature_extraction import features_estimation
 
 # Load data
-signal_path = '../data/1022102cFnorm.csv'
+signal_path = './back-end/data/1022102cFnorm.csv'
 emg_signal = pd.read_csv(signal_path).iloc[:60000,:3].values
 channel_name = 'EMG Signals'
 sampling_frequency = 2e3
@@ -23,4 +23,7 @@ filtered_signal = bp_filter(filtered_signal, 10, 500,
 
 # EMG Feature Extraction
 emg_features, features_names = features_estimation(filtered_signal, channel_name,
-                                                   sampling_frequency, frame, step, True)
+                                                   sampling_frequency, frame, step, False)
+print(emg_features)
+print(features_names)
+emg_features.T.to_csv("./back-end/output/emg_feature.csv")
