@@ -8,7 +8,7 @@ import * as VueRouter from 'vue-router'
 import HomePage from './pages/HomePage.vue';
 import EcgPage from './pages/EcgPage.vue';
 import EegMegPage from './pages/EegMegPage.vue';
-import EmgPage from './pages/EmgPage.vue';
+import BruxismPage from './pages/BruxismPage.vue';
 
 const app = createApp(App)
 app.use(VueRouter.createRouter({
@@ -17,14 +17,14 @@ app.use(VueRouter.createRouter({
         path: '/',
         component: HomePage,
     }, {
-        path: '/ecg',
+        path: '/sleep',
         component: EcgPage,
     }, {
-        path: '/eeg-meg',
+        path: '/treatment',
         component: EegMegPage,
     },{
-        path: '/emg',
-        component: EmgPage,
+        path: '/bruxism',
+        component: BruxismPage,
     },] 
 }))
 app.use(ElementPlus, {
