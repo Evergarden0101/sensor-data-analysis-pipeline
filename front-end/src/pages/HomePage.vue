@@ -1,25 +1,35 @@
 <template>
-    <h1>This is the Home Page</h1>
-    <div class="hp-icons-container">
-        <router-link :to="'/eeg-meg/'">
-            <button>EEG/MEG DATA</button>  
-        </router-link>
-        
-        <router-link :to="'/ecg/'">
-            <button>ECG DATA</button> 
-        </router-link>
+    <h2>This is the Home Page</h2>
 
-        <router-link :to="'/emg/'">
-            <button>EMG DATA</button>  
-        </router-link>
+    <!-- <div class="hp-icons-container"> -->
+        <el-row style="margin-top: 50px;">
+            <DataSetSlider/>
+        </el-row>
+
+        <el-row style="margin-top: 50px;">
+            <router-link :to="'/sleep/'" style="margin-right: 20px;">
+                <button>Sleep Stage Classification</button>  
+            </router-link>
+
+            <router-link :to="'/bruxism/'" style="margin-right: 20px;">
+                <button>Bruxism Detection</button>  
+            </router-link>
+            
+            <router-link :to="'/treatment/'" style="margin-right: 20px;">
+                <button>Treatment Analysis</button> 
+            </router-link>
+
+        </el-row>
         
-    </div>
+    <!-- </div> -->
 </template>
 
 <script>
+import DataSetSlider from '../components/DataSetSlider.vue'
 export default {
     name: 'HomePage',
     components: {
+        DataSetSlider,
     },
 };
 </script>

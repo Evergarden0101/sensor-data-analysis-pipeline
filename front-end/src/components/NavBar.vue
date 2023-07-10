@@ -1,16 +1,18 @@
 <template>
     <div class="nav-bar">
-        <router-link to="/" >
+        <router-link to="/" style="margin-right: 20px;">
             <button>Home</button>
         </router-link>
-        <router-link to="/eeg-meg">
-            <button>EEG/MEG DATA</button>
+        <router-link to='/sleep/' style="margin-right: 20px;">
+            <button>Sleep Stage Classification</button>  
         </router-link>
-        <router-link to="/ecg">
-            <button>ECG DATA</button>
+
+        <router-link to='/bruxism/' style="margin-right: 20px;">
+            <button>Bruxism Detection</button>  
         </router-link>
-        <router-link to="/emg">
-            <button>EMG DATA</button>  
+        
+        <router-link to='/treatment/' style="margin-right: 20px;">
+            <button>Treatment Analysis</button> 
         </router-link>
     </div>
 </template>

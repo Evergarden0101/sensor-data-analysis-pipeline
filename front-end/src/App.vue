@@ -1,5 +1,5 @@
 <template>
-  <h1>Welcome to the sensor data analysis pipeline App! </h1>
+  <h1 align="center">HC sensor data analysis pipeline</h1>
   <div class="page-wrap">
     <router-view></router-view>
   </div>

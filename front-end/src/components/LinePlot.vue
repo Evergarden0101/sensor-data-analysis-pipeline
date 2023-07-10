@@ -1,7 +1,12 @@
 <template>
     <!-- Initialize a select button -->
-    <select id="selectButton"></select>
-    <div id="lineplot"></div>
+    <el-col :span="2">
+        <select id="selectButton"></select>
+        <p style="margin-top: 50px;">Pick the labels from the plot.</p>
+    </el-col>
+    <el-col :span="22">
+        <div id="lineplot"></div>
+    </el-col>
 </template>
 
 <script>
@@ -18,8 +23,6 @@ export default {
     }
   },
   mounted() {
-    console.log(dataset)
-    
     this.drawLineplot();
   },
   methods: {
@@ -59,9 +62,9 @@ export default {
         // this.data = csvs;
         
         // set the dimensions and margins of the graph
-        var margin = {top: 10, right: 30, bottom: 30, left: 60},
-            width = 960 - margin.left - margin.right,
-            height = 600 - margin.top - margin.bottom;
+        var margin = {top: 10, right: 100, bottom: 30, left: 60},
+            width = 1200 - margin.left - margin.right,
+            height = 400 - margin.top - margin.bottom;
 
         // append the svg object to the body of the page
         var svg = d3.select("#lineplot")
