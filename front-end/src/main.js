@@ -9,6 +9,7 @@ import HomePage from './pages/HomePage.vue';
 import EcgPage from './pages/EcgPage.vue';
 import EegMegPage from './pages/EegMegPage.vue';
 import BruxismPage from './pages/BruxismPage.vue';
+import DataUploadPage from './pages/DataUploadPage.vue';
 
 const app = createApp(App)
 app.use(VueRouter.createRouter({
@@ -25,6 +26,9 @@ app.use(VueRouter.createRouter({
     },{
         path: '/bruxism',
         component: BruxismPage,
+    },{
+        path: '/upload',
+        component: DataUploadPage,
     },] 
 }))
 app.use(ElementPlus, {
