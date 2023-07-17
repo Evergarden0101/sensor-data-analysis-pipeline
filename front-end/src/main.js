@@ -3,6 +3,7 @@ import ElementPlus from 'element-plus'
 import 'element-plus/dist/index.css'
 import en from 'element-plus/dist/locale/en.mjs'
 import App from './App.vue'
+import "/node_modules/bootstrap/dist/css/bootstrap.min.css"
 import './main.css';
 import * as VueRouter from 'vue-router'
 import HomePage from './pages/HomePage.vue';
@@ -35,3 +36,5 @@ app.use(ElementPlus, {
     locale: en,
 })
 app.mount('#app')
+
+import "bootstrap/dist/js/bootstrap";
