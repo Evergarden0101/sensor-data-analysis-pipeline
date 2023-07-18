@@ -1,5 +1,5 @@
 <template>
-    <NavBar/>
+    <Stepper step="3"/>
     <h1 style="margin: 50px 0px;"> This is the Bruxism Detection Page!</h1>
     <!-- <DataSpace/> -->
     <el-row>
@@ -23,11 +23,15 @@
             <TreatHeatMap/>
         </el-col>
     </el-row>
+
+    <router-link :to="'/treatment/'" style="margin-right: 20px;">
+        <el-button>Treatment Analysis</el-button> 
+    </router-link>
 </template>
 
 
 <script>
-import NavBar from '@/components/NavBar.vue';
+import Stepper from '@/components/Stepper.vue';
 // import DataSpace from '../components/DataSpace.vue'
 import LinePlot from '../components/LinePlot.vue'
 import TreatHeatMap from '../components/TreatHeatMap.vue'
@@ -35,7 +39,7 @@ import { Orange } from '@element-plus/icons-vue'
 export default {
 name: 'BruxismPage',
 components: {
-    NavBar,
+    Stepper,
     // DataSpace,
     LinePlot,
     TreatHeatMap,
