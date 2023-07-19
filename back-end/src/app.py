@@ -3,10 +3,12 @@ import werkzeug
 import os, json
 import sqlite3 as sql
 from database import db
+from flask_cors import CORS
 
 """Example of possible structure for posting the label data"""
 def create_app(test_config=None):
     app = Flask(__name__, instance_relative_config=True)
+    cors = CORS(app)
     app.config.from_mapping(
         SECRET_KEY='dev',
         DATABASE=os.path.join(app.instance_path, 'labels.sqlite'),
@@ -29,11 +31,11 @@ def create_app(test_config=None):
     
     # Helper functions and variables
     def insert_label(label):
-        DATABASE = ''
+        DATABASE = 'instance/labels.sqlite'
 
         with sql.connect(DATABASE) as con:
             cur = con.cursor()
-            cur.execute("INSERT INTO BRUX_EVENTS VALUES (?)", (label))
+            cur.execute(f"INSERT INTO labels (location_begin, location_end, duration) VALUES {label}")
 
 
     @app.route("/label-brux", methods=["POST"])
@@ -42,15 +44,17 @@ def create_app(test_config=None):
         try:
             try:
                 label = request.json
+                print(label)
             except werkzeug.exceptions.BadRequest:
                 return "Please sent a Json package!", 400
-            if label.start > label.end:
+            if label["location_begin"] > label["location_end"]:
                 return "Start time cannot be greater than end time!", 400
            
-            insert_label(label)
+            print(tuple(label.values()))
+            insert_label(tuple(label.values()))
             return "Successfuly inserted into Database", 200
-        except Exception:
-            return "There is something wrong with your Json or label you have sent! Check format!", 400
+        except Exception as e:
+            return f"{e}", 400
 
     return app
 
