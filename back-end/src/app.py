@@ -2,7 +2,7 @@ from flask import Flask, request
 import werkzeug
 import json
 import sqlite3 as sql
-import db
+from database import db
 
 """Example of possible structure for posting the label data"""
 def create_app():
@@ -34,6 +34,8 @@ def create_app():
             return "Successfuly inserted into Database", 200
         except Exception:
             return "There is something wrong with your Json or label you have sent! Check format!", 400
+
+    return app
 
     
 if __name__ == "__main__":
