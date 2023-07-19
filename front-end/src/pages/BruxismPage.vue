@@ -1,6 +1,6 @@
 <template>
-    <Stepper step="3"/>
     <h1 style="margin: 50px 0px;"> This is the Bruxism Detection Page!</h1>
+    <Stepper step="3"/>
     <!-- <DataSpace/> -->
     <el-row>
         <el-col :span="11">
