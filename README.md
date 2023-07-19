@@ -20,6 +20,7 @@ Depending on what you are making, it can be a good idea to include screenshots o
 - macOS: ``.venv/bin/activate``
 - Windows: ``.venv\Scripts\activate``
 - ``pip install Flask``
+- Initialize database: ``flask --app app init-db``
 
 
 ### Requirements
@@ -28,7 +29,7 @@ Depending on what you are making, it can be a good idea to include screenshots o
 
 ## Usage
 - Vue: ``npm run serve``
-- Express: ``python src/app.py``
+- Express: ``flas --app app run``
 Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
 
 ## Support
