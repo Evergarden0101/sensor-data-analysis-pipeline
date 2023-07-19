@@ -1,5 +1,5 @@
 <template>
-    <h3 align="center">Bruxism Detected for Patient</h3>
+    <h3 align="center">Weekly Bruxism Detected for Patient</h3>
     <div id="chart-container" style="position: relative; height: 80vh; overflow: hidden;"></div>
 </template>
 
@@ -38,6 +38,9 @@ export default {
             return [item[1], item[0], item[2] || '-'];
         });
         option = {
+            title:{
+                text: "Week 1"
+            },
             tooltip: {
                 position: 'top'
             },
