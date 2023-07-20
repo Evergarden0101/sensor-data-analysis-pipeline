@@ -12,6 +12,7 @@
                     <p align="center">Labeling</p>
                     <p>label 1: xxxxx</p>
                     <p>label 2: xxxxx</p>
+                    <LabelButton/>
                 </el-card>
             </el-row>
             <el-row>
@@ -36,6 +37,7 @@ import Stepper from '@/components/Stepper.vue';
 import LinePlot from '../components/LinePlot.vue'
 import TreatHeatMap from '../components/TreatHeatMap.vue'
 import { Orange } from '@element-plus/icons-vue'
+import LabelButton from '@/components/LabelButton.vue'
 export default {
 name: 'BruxismPage',
 components: {
@@ -43,6 +45,7 @@ components: {
     // DataSpace,
     LinePlot,
     TreatHeatMap,
+    LabelButton
 },
 };
 </script>
