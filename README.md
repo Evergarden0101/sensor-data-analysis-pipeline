@@ -20,7 +20,7 @@ Depending on what you are making, it can be a good idea to include screenshots o
 - macOS: ``.venv/bin/activate``
 - Windows: ``.venv\Scripts\activate``
 - ``pip install Flask``
-- Initialize database: ``flask --app app init-db``
+- Initialize database: ``flask --app src/app init-db``
 
 
 ### Requirements
