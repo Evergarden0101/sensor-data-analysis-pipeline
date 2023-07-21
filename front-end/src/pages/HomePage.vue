@@ -6,7 +6,7 @@
   </el-row>
   <el-row>
     <el-col align-center :span="12" :offset="6">
-      <Stepper step="0" />
+      <Stepper step=0 />
     </el-col>
   </el-row>
   <el-row  style="margin-top: 10%;">

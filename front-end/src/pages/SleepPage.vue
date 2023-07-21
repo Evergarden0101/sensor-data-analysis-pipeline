@@ -2,7 +2,7 @@
     <h1> This is the Sleep Stage Classification Page!</h1>
     <el-row style="margin-bottom: 5%;">
         <el-column :span="24"  align-center>
-            <Stepper step="2"/>
+            <Stepper step=2 />
         </el-column>
     </el-row>
 

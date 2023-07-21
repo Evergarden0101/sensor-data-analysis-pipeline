@@ -1,6 +1,6 @@
 <template>
     <h1>This is the Treatment Analysis Page!</h1>
-    <Stepper step="4"/>
+    <Stepper step=4 />
 </template>
 
 

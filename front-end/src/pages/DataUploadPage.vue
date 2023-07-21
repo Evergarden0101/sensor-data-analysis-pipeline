@@ -2,7 +2,7 @@
     <h2>This is the Data Upload Page</h2>
 
     <el-row>
-        <Stepper step="1" />
+        <Stepper step=1 />
     </el-row>
 
     <!-- <div class="hp-icons-container"> -->
