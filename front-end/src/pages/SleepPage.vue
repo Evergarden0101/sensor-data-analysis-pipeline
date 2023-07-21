@@ -1,15 +1,21 @@
 <template>
-    <h1> This is the Sleep Stage Classification Page!</h1>
     <el-row style="margin-bottom: 5%;">
-        <el-column :span="24"  align-center>
+        <el-col>
+            <h1 style="text-align: center;">This is the Sleep Stage Classification page!</h1>
+        </el-col>
+    </el-row>
+    <el-row>
+        <el-col align-center :span="12" :offset="6">
             <Stepper step=2 />
-        </el-column>
+        </el-col>
     </el-row>
 
     <el-row>
-        <router-link :to="'/bruxism/'" style="margin-right: 20px;">
-            <el-button>Bruxism Detection</el-button>  
-        </router-link>
+        <el-col :offset="11" style="margin-top: 5%;">
+            <router-link :to="'/bruxism/'" style="margin-right: 20px;">
+                <el-button>Bruxism Detection</el-button>  
+            </router-link>
+        </el-col>
     </el-row>
 </template>
 

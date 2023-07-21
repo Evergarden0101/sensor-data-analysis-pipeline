@@ -1,5 +1,5 @@
 <template>
-  <el-row style="margin-bottom: 20%; margin-top: 5%;">
+  <el-row style="margin-bottom: 10%; margin-top: 5%;">
     <el-col>
       <h1 style="text-align: center;">Welcome to the sensor data pipeline for the labelling and monitoring of bruxism events!</h1>
     </el-col>
