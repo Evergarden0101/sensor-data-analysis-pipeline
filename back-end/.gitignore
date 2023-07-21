@@ -13,6 +13,8 @@ dist/
 build/
 *.egg-info/
 
+*.log
+*.sqlite
 
 # data folder
 data/

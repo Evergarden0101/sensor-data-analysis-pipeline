@@ -10,6 +10,7 @@ export default{
         postLabel(){
             const path = 'http://localhost:5000/label-brux';
             const payload = {
+                "patient": 123,
                 "location_begin": 6474,
                 "location_end": 7890,
                 "duration": 678.8

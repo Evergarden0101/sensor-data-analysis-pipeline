@@ -9,15 +9,22 @@
             <Stepper step=4 />
         </el-col>
     </el-row>
+    <el-row style="margin-top: 5%;">
+        <el-col :offset="12">
+            <TestButton />
+        </el-col>
+    </el-row>
 </template>
 
 
 <script>
 import Stepper from '@/components/Stepper.vue';
+import TestButton from '@/components/TestButton.vue';
 export default {
     name: 'TreatmentPage',
     components: {
         Stepper,
+        TestButton
     },
 };
 </script>

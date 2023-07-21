@@ -31,16 +31,24 @@ def create_app(test_config=None):
     
     # Helper functions and variables
     def insert_label(label):
-        DATABASE = 'instance/labels.sqlite'
+        DATABASE = app.config['DATABASE']
 
         with sql.connect(DATABASE) as con:
             cur = con.cursor()
-            cur.execute(f"INSERT INTO labels (location_begin, location_end, duration) VALUES {label}")
+            cur.execute(f"INSERT INTO labels (patient, location_begin, location_end, duration) VALUES {label}")
 
+    def get_patient_data(patient_id):
+        DATABASE = app.config['DATABASE']
+
+        with sql.connect(DATABASE) as con:
+            cur = con.cursor()
+            patient_data = cur.execute(f"SELECT * FROM labels WHERE patient = {patient_id}").fetchall()
+
+        return patient_data
 
     @app.route("/label-brux", methods=["POST"])
     @app.errorhandler(werkzeug.exceptions.BadRequest)
-    def label_brux():
+    def post_label_brux():
         try:
             try:
                 label = request.json
@@ -55,6 +63,11 @@ def create_app(test_config=None):
             return "Successfuly inserted into Database", 200
         except Exception as e:
             return f"{e}", 400
+
+    @app.route("/label-brux/<int:patient_id>", methods=["GET"])
+    @app.errorhandler(werkzeug.exceptions.BadRequest)
+    def get_label_brux(patient_id):
+        return get_patient_data(patient_id)
 
     return app
 
