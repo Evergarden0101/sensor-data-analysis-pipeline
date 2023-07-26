@@ -24,62 +24,70 @@ export default {
             renderer: "sgv",
             useDirtyRect: false
         });
-        // var app = {};
 
         var option;
 
-        // prettier-ignore
-        const hours = Array.from({length: 120}, (_, i) => i + 5);
-        // prettier-ignore
-        const night = Array.from({length: 1});
-        // prettier-ignore
-        const data = [[0, 0, 5]]
-            .map(function (item) {
-            return [item[0], item[1], item[2] || '-'];
+        var minutes = [5, 10 , 15, 20, 25, 30, 35, 40, 45, 50, 55, 60];
+        var hours = ['1h', '2h', '3h',
+                '4h', '5h', '6h', '7h', '8h', '9h'];
+
+        var data = [[0,0,4.53, 'R'],[0,1, 7, 'NR'], [0,2, 0, 'R']];
+
+        data = data.map(function (item) {
+            return [item[1], item[0], item[2]];
         });
+
         option = {
-            title:{
-                text: "Night 1"
-            },
             tooltip: {
                 position: 'top'
             },
+            animation: false,
             grid: {
-                height: '10%',
-                top: '5%'
+                height: '50%',
+                top: '10%'
             },
             xAxis: {
                 type: 'category',
-                name: 'Sleep Time',
-                data: hours,
+                data: minutes,
                 splitArea: {
                     show: true
                 }
             },
             yAxis: {
                 type: 'category',
-                name: 'Night',
-                data: night,
+                data: hours,
                 splitArea: {
                     show: true
-                },
-                inverse: true,
+                }
             },
             visualMap: {
                 min: 0,
                 max: 10,
+                inRange : {   
+                    color: ['#D3D3D3', '#009000' ] //From smaller to bigger value ->
+                },
                 calculable: true,
                 orient: 'horizontal',
                 left: 'center',
-                bottom: '30%'
+                bottom: '15%'
             },
-            series: [
-            {
+            series: [{
                 name: 'Punch Card',
                 type: 'heatmap',
                 data: data,
                 label: {
-                    show: true
+                    normal: {
+                        show: true,
+                        formatter: () => {
+                            if (data[3] ===  'R') {
+                                return 'REM';
+                            }
+                            if (data[3] ===  'NR') {
+                                return 'NREM';
+                            }
+                        
+                        }
+                    }
                 },
                 emphasis: {
                     itemStyle: {
@@ -87,17 +95,14 @@ export default {
                         shadowColor: 'rgba(0, 0, 0, 0.5)'
                     }
                 }
-            }
-            ]
+            }]
         };
-
         if (option && typeof option === "object") {
             myChart.setOption(option);
         }
 
         window.addEventListener("resize", myChart.resize);
-
     }
-  }
+}
 }
 </script>
