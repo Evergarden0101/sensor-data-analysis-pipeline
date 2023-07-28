@@ -13,7 +13,7 @@
 
     <!-- <div class="hp-icons-container"> -->
         <el-row style="margin-top: 50px;">
-            <el-col :span="4" :offset="10">
+            <el-col :span="8" :offset="8">
                 <DataSetSlider/>
             </el-col>
         </el-row>

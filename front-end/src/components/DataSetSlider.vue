@@ -12,7 +12,7 @@
       </el-select>
       <!-- <p style="font-size: 16px;">Dataset</p> -->
     </el-row>
-    <el-row style="margin: 50px 30px 30px 30px;">
+    <el-row>
       <!-- <input id="dataset" type="file" style="font-size: 22px;"> -->
       <!-- TODO: action for upload address -->
       <!-- :before-upload="beforeFileUpload"-->
@@ -24,7 +24,8 @@
         :limit="2"
         :file-list="fileList"
         :on-exceed="handleExceed"
-        :before-remove="beforeRemove">
+        :before-remove="beforeRemove"
+        style="margin-left: auto;margin-right: auto;margin-top: 40px;margin-bottom: 30px;">
         <i class="el-icon-upload"></i>
         <div class="el-upload__text" style="font-size: 22px;">Drag files here, or <em>click to upload</em></div>
         <div class="el-upload__tip" slot="tip" style="font-size: 18px;">Please upload a CSV file</div>
