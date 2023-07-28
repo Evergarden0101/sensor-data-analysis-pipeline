@@ -12,7 +12,7 @@
         </el-switch>
     </el-form-item>
 
-    <el-form-item v-if="form.filtered">
+    <el-form-item v-if="form.filtered" label="Normalized">
         <el-switch
             v-model="form.normalized"
             active-text="Yes"
