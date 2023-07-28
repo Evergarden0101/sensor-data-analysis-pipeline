@@ -1,12 +1,26 @@
 <template>
     <!-- Initialize a select button -->
-    <el-col :span="2">
-        <select id="selectButton"></select>
-        <p style="margin-top: 50px;">Pick the labels from the plot.</p>
-    </el-col>
-    <el-col :span="22">
-        <div id="lineplot"></div>
-    </el-col>
+    <!-- <el-col :span="2"> -->
+        <!-- <select id="selectButton"></select> -->
+    <el-row style="width: 100%;">
+        <h3 style="text-align: center;">Pick the labels from the plot.</h3>
+    </el-row>
+    <!-- </el-col> -->
+    <!-- <el-col :span="22"> -->
+    <el-row>
+        <h4 style="margin: auto;">Sensor Signals for Right Masseter</h4>
+    </el-row>
+    <el-row>
+        <div id="mrlineplot"></div>
+    </el-row>
+    <!-- </el-col> -->
+    <el-row>
+        <h4 style="text-align: center;">Sensor Signals for Left Masseter</h4>
+    </el-row>
+    <el-row>
+        <div id="mllineplot"></div>
+    </el-row>
+
 </template>
 
 <script>
@@ -23,7 +37,8 @@ export default {
     }
   },
   mounted() {
-    this.drawLineplot();
+    this.drawLineplot('MR');
+    this.drawLineplot('ML');
   },
   methods: {
      csvToJson(csv) {
@@ -54,7 +69,7 @@ export default {
         return result;
     },
 
-    drawLineplot(){
+    drawLineplot(channel){
         // const csvFilePath = '@/assets/1022102cFnorm.csv';
         // var csv = await csvToJson().fromFile(csvFilePath);
         var csv = this.csvToJson(dataset)
@@ -63,38 +78,48 @@ export default {
         
         // set the dimensions and margins of the graph
         var margin = {top: 10, right: 100, bottom: 30, left: 60},
-            width = 1200 - margin.left - margin.right,
-            height = 400 - margin.top - margin.bottom;
+            width = 900 - margin.left - margin.right,
+            height = 300 - margin.top - margin.bottom;
 
         // append the svg object to the body of the page
-        var svg = d3.select("#lineplot")
-        .append("svg")
-            .attr("width", width + margin.left + margin.right)
-            .attr("height", height + margin.top + margin.bottom)
-        .append("g")
-            .attr("transform",
-                "translate(" + margin.left + "," + margin.top + ")");
+        if(channel == 'MR'){
+            var svg = d3.select("#mrlineplot")
+            .append("svg")
+                .attr("width", width + margin.left + margin.right)
+                .attr("height", height + margin.top + margin.bottom)
+            .append("g")
+                .attr("transform",
+                    "translate(" + margin.left + "," + margin.top + ")");
+        } else if(channel == 'ML'){
+            var svg = d3.select("#mllineplot")
+            .append("svg")
+                .attr("width", width + margin.left + margin.right)
+                .attr("height", height + margin.top + margin.bottom)
+            .append("g")
+                .attr("transform",
+                    "translate(" + margin.left + "," + margin.top + ")");
+        }
 
         // group the data: I want to draw one line per group
         // var sumstat = d3.group() // nest function allows to group the calculation per level of a factor
         //     .key(function(d) { return d.key;})
         //     .entries(data);
 
-        var allGroup = String(this.data[0]).split(',');
 
         // add the options to the button
-        d3.select("#selectButton")
-        .selectAll('myOptions')
-            .data(allGroup)
-        .enter()
-            .append('option')
-        .text(function (d) { return d; }) // text showed in the menu
-        .attr("value", function (d) { return d; }) // corresponding value returned by the button
+        // var allGroup = String(this.data[0]).split(',');
+        // d3.select("#selectButton")
+        // .selectAll('myOptions')
+        //     .data(allGroup)
+        // .enter()
+        //     .append('option')
+        // .text(function (d) { return d; }) // text showed in the menu
+        // .attr("value", function (d) { return d; }) // corresponding value returned by the button
 
         // A color scale: one color for each group
-        var myColor = d3.scaleOrdinal()
-            .domain(allGroup)
-            .range(d3.schemeSet2);
+        // var myColor = d3.scaleOrdinal()
+        //     .domain(allGroup)
+        //     .range(d3.schemeSet2);
 
         
         // Add X axis --> it is a date format
@@ -156,6 +181,7 @@ export default {
         // Create the line variable: where both the line and the brush take place
         const line = svg.append('g')
             .attr("clip-path", "url(#clip)")
+            .attr("id", channel)
 
         // Set the gradient
         svg.append("linearGradient")
@@ -182,7 +208,7 @@ export default {
             .attr("stroke-width", 1.5)
             .attr("d", d3.line()
                 .x(function(d) { return x(d.cnt)})
-                .y(function(d) { return y(d.MR) })
+                .y(function(d) { return y(d[channel]) })
             )
             // .attr("stroke", function(d){ return myColor("MR") })
         
@@ -212,14 +238,39 @@ export default {
 
             // Update axis and line position
             xAxis.transition().duration(1000).call(d3.axisBottom(x))
+
             line
                 .select('.line')
                 .transition()
                 .duration(1000)
                 .attr("d", d3.line()
                     .x(function(d) { return x(d.cnt)})
-                    .y(function(d) { return y(d.MR) })
+                    .y(function(d) { return y(d[channel]) })
                 )
+            
+
+            if(channel == 'ML'){
+                var otherLine = d3.select("#MR")
+                otherLine.select('.line')
+                .transition()
+                .duration(1000)
+                .attr("d", d3.line()
+                    .x(function(d) { return x(d.cnt)})
+                    .y(function(d) { return y(d.MR)})
+                )
+            }
+            else if(channel == 'MR'){
+                var otherLine = d3.select("#ML")
+                otherLine.select('.line')
+                .transition()
+                .duration(1000)
+                .attr("d", d3.line()
+                    .x(function(d) { return x(d.cnt)})
+                    .y(function(d) { return y(d.ML)})
+                )
+            }
+            
+            
         }
 
         // If user double click, reinitialize the chart
@@ -231,35 +282,52 @@ export default {
                 .transition()
                 .attr("d", d3.line()
                 .x(function(d) { return x(d.cnt)})
-                .y(function(d) { return y(d.MR) })
+                .y(function(d) { return y(d[channel]) })
             )
+
+            if(channel == 'ML'){
+                var otherLine = d3.select("#MR")
+                otherLine.select('.line')
+                .transition()
+                .attr("d", d3.line()
+                .x(function(d) { return x(d.cnt)})
+                .y(function(d) { return y(d.MR)}))
+            }
+            else if(channel == 'MR'){
+                var otherLine = d3.select("#ML")
+                otherLine.select('.line')
+                .transition()
+                .attr("d", d3.line()
+                .x(function(d) { return x(d.cnt)})
+                .y(function(d) { return y(d.ML)}))
+            }
         });
 
         // A function that update the chart
-        function update(selectedGroup) {
-            // Create new data with the selection?
-            var dataFilter = csv.map(function(d){return {cnt: d.cnt, value:d[selectedGroup]} })
-            console.log(selectedGroup)
-            console.log(dataFilter)
-            // Give these new data to update line
-            line
-                .datum(dataFilter)
-                .transition()
-                .duration(1000)
-                .attr("d", d3.line()
-                .x(function(d) { return x(d.cnt) })
-                .y(function(d) { return y(+d.value) })
-                )
-                // .attr("stroke", function(d){ return myColor(selectedGroup) })
-        }
+        // function update(selectedGroup) {
+        //     // Create new data with the selection?
+        //     var dataFilter = csv.map(function(d){return {cnt: d.cnt, value:d[selectedGroup]} })
+        //     console.log(selectedGroup)
+        //     console.log(dataFilter)
+        //     // Give these new data to update line
+        //     line
+        //         .datum(dataFilter)
+        //         .transition()
+        //         .duration(1000)
+        //         .attr("d", d3.line()
+        //         .x(function(d) { return x(d.cnt) })
+        //         .y(function(d) { return y(+d.value) })
+        //         )
+        //         // .attr("stroke", function(d){ return myColor(selectedGroup) })
+        // }
 
         // When the button is changed, run the updateChart function
-        d3.select("#selectButton").on("change", function(d) {
-            // recover the option that has been chosen
-            var selectedOption = d3.select(this).property("value")
-            // run the updateChart function with this selected option
-            update(selectedOption)
-        })
+        // d3.select("#selectButton").on("change", function(d) {
+        //     // recover the option that has been chosen
+        //     var selectedOption = d3.select(this).property("value")
+        //     // run the updateChart function with this selected option
+        //     update(selectedOption)
+        // })
     }
   },
 }

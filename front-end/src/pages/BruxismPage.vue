@@ -15,6 +15,10 @@
             <el-row>
                 <LinePlot/>
             </el-row>
+            <el-row text-align="center">
+                <el-checkbox v-model="checkedMR" label="Use MR for Classification" border />
+                <el-checkbox v-model="checkedML" label="Use ML for Classification" border />
+            </el-row>
             <el-row>
                 <el-col :offset="6">
                     <el-card class="box-card" style="margin-top: 80px; border: solid 1px;border-radius: 10px; width: 400px; margin-left: auto;margin-right: auto;">
@@ -54,14 +58,24 @@ import LinePlot from '../components/LinePlot.vue'
 import TreatHeatMap from '../components/TreatHeatMap.vue'
 import { Orange } from '@element-plus/icons-vue'
 import LabelButton from '@/components/LabelButton.vue'
+import { ref } from 'vue'
+
+// const checkedMR = ref(true)
+// const checkedML = ref(true)
 export default {
-name: 'BruxismPage',
-components: {
-    Stepper,
-    // DataSpace,
-    LinePlot,
-    TreatHeatMap,
-    LabelButton
-},
+    name: 'BruxismPage',
+    components: {
+        Stepper,
+        // DataSpace,
+        LinePlot,
+        TreatHeatMap,
+        LabelButton
+    },
+    data () {
+        return {
+            checkedMR: ref(true),
+            checkedML: ref(true)
+        }
+    },
 };
 </script>
