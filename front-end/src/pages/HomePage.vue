@@ -10,7 +10,7 @@
     </el-col>
   </el-row>
   <el-row  style="margin-top: 10%;">
-    <el-col :offset="12">
+    <el-col :offset="11" :span="2">
       <router-link :to="'/upload/'">
         <el-button type="primary" plain>Start</el-button>
       </router-link>

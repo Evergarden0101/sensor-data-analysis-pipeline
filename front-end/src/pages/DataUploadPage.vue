@@ -19,7 +19,7 @@
         </el-row>
 
         <el-row>
-            <el-col :offset="10">
+            <el-col :offset="10" :span="6">
                 <DataSetInfo style="margin-top: 20px;"/>
             </el-col>
         </el-row>
