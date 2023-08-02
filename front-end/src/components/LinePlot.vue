@@ -7,17 +7,23 @@
     </el-row>
     <!-- </el-col> -->
     <!-- <el-col :span="22"> -->
-    <el-row>
-        <h4 style="margin: auto;">Sensor Signals for Right Masseter</h4>
+    <el-row text-align="center" style="margin-bottom: 20px;width: 100%;">
+        <el-checkbox v-model="checkedMR" label="Use MR for Classification" border />
     </el-row>
-    <el-row>
+    <el-row v-show="checkedMR" style="width: 100%;">
+        <h4 style="margin-left: 50%;margin-bottom: 10px;">Sensor Signals for Right Masseter</h4>
+    </el-row>
+    <el-row style="margin-bottom: 40px;" v-show="checkedMR">
         <div id="mrlineplot"></div>
     </el-row>
     <!-- </el-col> -->
-    <el-row>
-        <h4 style="text-align: center;">Sensor Signals for Left Masseter</h4>
+    <el-row text-align="center" style="margin-bottom: 20px;width: 100%;">
+        <el-checkbox v-model="checkedML" label="Use ML for Classification" border />
     </el-row>
-    <el-row>
+    <el-row v-show="checkedML" style="width: 100%;">
+        <h4 style="margin-left: 50%;margin-bottom: 10px;">Sensor Signals for Left Masseter</h4>
+    </el-row>
+    <el-row v-show="checkedML" style="margin-bottom: 30px;">
         <div id="mllineplot"></div>
     </el-row>
 
@@ -26,19 +32,23 @@
 <script>
 import * as d3 from "d3";
 import dataset from '../assets/1022102cFnorm.csv'
-import * as d3ScaleChromatic from 'd3-scale-chromatic'
+import { ref } from 'vue'
+import { style } from "plotly.js/lib/bar";
 // import csvToJson from 'csvtojson';
 
 export default {
   name: 'LinePlot',
   data () {
     return {
-      data: dataset,
+        data: dataset,
+        checkedMR: ref(true),
+        checkedML: ref(true),
+        freq: 2000,
     }
   },
   mounted() {
-    this.drawLineplot('MR');
-    this.drawLineplot('ML');
+        this.drawLineplot('MR');
+        this.drawLineplot('ML');
   },
   methods: {
      csvToJson(csv) {
@@ -60,7 +70,7 @@ export default {
                 const header = headers[i];
                 obj[header] = row[i];
             }
-            obj['cnt'] = i-1;
+            obj['cnt'] = (i-1)/this.freq;
 
             result.push(obj);
         }
@@ -77,8 +87,8 @@ export default {
         // this.data = csvs;
         
         // set the dimensions and margins of the graph
-        var margin = {top: 10, right: 100, bottom: 30, left: 60},
-            width = 900 - margin.left - margin.right,
+        var margin = {top: 10, right: 100, bottom: 40, left: 40},
+            width = 850 - margin.left - margin.right,
             height = 300 - margin.top - margin.bottom;
 
         // append the svg object to the body of the page
@@ -125,12 +135,13 @@ export default {
         // Add X axis --> it is a date format
         var x = d3.scaleLinear()
             // .domain(d3.extent(data, function(d) { return d.year; }))
-            .domain([0, csv.length + 1])
+            .domain([0, (csv.length + 1)/this.freq])
             .range([ 0, width ]);
         var xAxis = svg.append("g")
             .attr("transform", "translate(0," + height + ")")
             // .call(d3.axisBottom(x).ticks(5));
-            .call(d3.axisBottom(x));
+            .call(d3.axisBottom(x))
+            .classed('axis_x', true);
 
         var max = 10;
         // Add Y axis
@@ -139,7 +150,26 @@ export default {
             .domain([-10, max])
             .range([ height, 0 ]);
         var yAxis = svg.append("g")
-            .call(d3.axisLeft(y));
+            .call(d3.axisLeft(y))
+            .classed('axis_y', true)
+        
+        // Add X axis label:
+        svg.append("text")
+            .attr("text-anchor", "end")
+            .attr("x", width)
+            .attr("y", height + 35)
+            .attr("style","font-size: 13px")
+            .text("Time (s)");
+
+        // Add Y axis label:
+        svg.append("text")
+            .attr("text-anchor", "end")
+            .attr("y", 6)
+            .attr("dy", "-2.5em")
+            .attr("transform", "rotate(-90)")
+            .attr("style","font-size: 13px")
+            .text("Amplitude (mV)")
+            // .attr("text-anchor", "start")
 
         // color palette
         // var res = sumstat.map(function(d){ return d.key }) // list of group names
@@ -207,7 +237,7 @@ export default {
             .attr("stroke", "url(#line-gradient)" )
             .attr("stroke-width", 1.5)
             .attr("d", d3.line()
-                .x(function(d) { return x(d.cnt)})
+                .x(function(d) { return x((d.cnt))})
                 .y(function(d) { return y(d[channel]) })
             )
             // .attr("stroke", function(d){ return myColor("MR") })
@@ -332,3 +362,9 @@ export default {
   },
 }
 </script>
+<style scoped>
+.el-row{
+    display:flex;
+    flex-wrap: wrap; 
+}
+</style>
