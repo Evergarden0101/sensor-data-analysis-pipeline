@@ -15,19 +15,14 @@
             <el-row>
                 <LinePlot/>
             </el-row>
-            <el-row>
-                <el-col :offset="6">
-                    <el-card class="box-card" style="margin-top: 80px; border: solid 1px;border-radius: 10px; width: 400px; margin-left: auto;margin-right: auto;">
-                        <p align="center">Labeling</p>
-                        <p>label 1: xxxxx</p>
-                        <p>label 2: xxxxx</p>
-                        <LabelButton/>
-                    </el-card>
+            <el-row style="margin-top: 30px;">
+                <el-col :span="22" :offset="2">
+                    <BruxismLabel/>
                 </el-col>
             </el-row>
             <el-row style="margin-top: 3%;">
                 <el-col :offset="15">
-                    <el-button color="#626aef" :dark="TRUE" plain size="large" :icon="Orange" loading>
+                    <el-button color="#626aef" plain size="large" loading>
                         Rerun Bruxism Classification
                     </el-button>
                 </el-col>
@@ -38,7 +33,7 @@
         </el-col>
     </el-row>
     <el-row>
-        <el-col :offset="12">
+        <el-col :offset="11" :span="2" style="margin-top: 20px;">
             <router-link :to="'/treatment/'" style="margin-right: 20px;">
                 <el-button>Treatment Analysis</el-button> 
             </router-link>
@@ -52,16 +47,21 @@ import Stepper from '@/components/Stepper.vue';
 // import DataSpace from '../components/DataSpace.vue'
 import LinePlot from '../components/LinePlot.vue'
 import TreatHeatMap from '../components/TreatHeatMap.vue'
-import { Orange } from '@element-plus/icons-vue'
-import LabelButton from '@/components/LabelButton.vue'
+// import { Orange } from '@element-plus/icons-vue'
+import BruxismLabel from '@/components/BruxismLabel.vue';
+
 export default {
-name: 'BruxismPage',
-components: {
-    Stepper,
-    // DataSpace,
-    LinePlot,
-    TreatHeatMap,
-    LabelButton
-},
+    name: 'BruxismPage',
+    components: {
+        Stepper,
+        // DataSpace,
+        LinePlot,
+        TreatHeatMap,
+        BruxismLabel
+    },
+    data () {
+        return {
+        }
+    },
 };
 </script>
