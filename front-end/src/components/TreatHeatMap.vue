@@ -1,6 +1,6 @@
 <template>
     <h3 align="center">Weekly Bruxism Detected for Patient</h3>
-    <div id="chart-container" style="position: relative; height: 80vh; overflow: hidden;"></div>
+    <div id="chart-container" style="position: relative; height: 80vh;"></div>
 </template>
 
 <script>
@@ -75,7 +75,7 @@ export default {
             },
             series: [
             {
-                name: 'Punch Card',
+                name: 'Details',
                 type: 'heatmap',
                 data: data,
                 label: {
