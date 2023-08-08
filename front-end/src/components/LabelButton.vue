@@ -1,5 +1,5 @@
 <template>
-    <el-button type="primary" @click="postLabel">Add Bruxism Event</el-button>
+    <el-button type="primary" @click="postLabel">Submit Labels</el-button>
 </template>
 
 <script>
