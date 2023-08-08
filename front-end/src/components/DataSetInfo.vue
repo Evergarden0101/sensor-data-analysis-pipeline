@@ -3,7 +3,7 @@
     <el-row class="demo-autocomplete">
       <p>Patient Name: </p>
       <el-autocomplete
-        v-model="form.patientName"
+        v-model="this.form.patientName"
         :fetch-suggestions="querySearch"
         clearable
         class="inline-input w-50"
@@ -16,8 +16,18 @@
             <edit />
           </el-icon>
         </template> -->
-        <template #default="{ item }">
+        <!-- <template #default="{ item }">
           <div class="value">{{ item.name }},&nbsp;&nbsp;id: {{ item.id }}</div>
+        </template> -->
+        <template #default="{ item }">
+          <span style="float: left">{{ item.name }}</span>
+          <span
+            style="
+              float: right;
+              color: var(--el-text-color-secondary);
+              font-size: 13px;
+            "
+            >id:&nbsp;&nbsp;{{ item.id }}</span>
         </template>
       </el-autocomplete>
     </el-row>
@@ -62,6 +72,7 @@ export default{
       return {
         form: {
           patientName: '',
+          id:'',
           frequency: 1000,
           filtered: 0,
           normalized: 0,
@@ -81,6 +92,8 @@ export default{
       },
       handleSelect(item) {
         console.log(item);
+        this.form.patientName = item.name;
+        this.form.id = item.id;
       },
       querySearch(queryString, cb) {
         var names = this.names;
