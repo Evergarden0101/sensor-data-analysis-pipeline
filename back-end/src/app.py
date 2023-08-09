@@ -4,6 +4,7 @@ import os, json
 import sqlite3 as sql
 from database import db
 from flask_cors import CORS
+from SSD import *
 
 """Example of possible structure for posting the label data"""
 def create_app(test_config=None):
@@ -46,6 +47,22 @@ def create_app(test_config=None):
 
         return patient_data
 
+    @app.route("/upload", methods=['POST'])
+    def upload():
+        uploaded_file = request.files['file']
+
+        col_names = ['MR', 'ML', 'SU', 'Microphone', 'Eye', 'ECG', 'Pressure Sensor']
+        csvData = pd.read_csv(uploaded_file, names=col_names, header=None)
+
+        for i,row in csvData.iterrows():
+            sql = "INSERT INTO addresses (MR, ML, SU, Microphone, Eye, ECG, Pressure Sensor) VALUES (%s, %s, %s, %s, %s, %s, %s)"
+            value = (row['MR'],row['ML'],row['SU'],row['Microphone'],row['Eye'], row['ECG'], row['Pressure Sensor'])
+            mycursor.execute(sql, value, if_exists='append')
+            mydb.commit()
+            print(i, row['MR'],row['ML'],row['SU'],row['Microphone'],row['Eye'], row['ECG'], row['Pressure Sensor'])
+        
+
+
     @app.route("/label-brux", methods=["POST"])
     @app.errorhandler(werkzeug.exceptions.BadRequest)
     def post_label_brux():
@@ -69,7 +86,15 @@ def create_app(test_config=None):
     def get_label_brux(patient_id):
         return get_patient_data(patient_id)
 
+    @app.route("/hrv-features/<int:patient_id>/<int:week>/<int:night_id>", methods=["GET"])
+    def get_hrv_features(patient_id, week, night_id):
+        try:
+            return get_HRV_features(patient_id, week, night_id, 90)
+        except Exception as e:
+            return f"{e}"
+        
     return app
+
 
     
 if __name__ == "__main__":
