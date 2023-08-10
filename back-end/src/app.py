@@ -89,7 +89,7 @@ def create_app(test_config=None):
     @app.route("/hrv-features/<int:patient_id>/<int:week>/<int:night_id>", methods=["GET"])
     def get_hrv_features(patient_id, week, night_id):
         try:
-            return get_HRV_features(patient_id, week, night_id, 90)
+            return get_HRV_features(patient_id, week, night_id, 15)
         except Exception as e:
             return f"{e}"
         

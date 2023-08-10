@@ -7,6 +7,7 @@ import hrvanalysis as hrvana
 # GLOBAL VARIABLES
 SAMPLING_RATE = 1000
 INTERVAL = 5 # We want to take data at every 5 minutes interval
+SLEEP_CYCLE = 90
 DATA_PATH = "C:/Users/eleon/Desktop/Master/FJS 23/Master Project/sensor-data-analysis-pipeline/back-end/src/data/"
 
 
@@ -106,7 +107,9 @@ def get_HRV_features(patient_id, week, night_id, n,  SAMPLING_RATE=SAMPLING_RATE
     window_size = INTERVAL*60*SAMPLING_RATE
     end = window_size
     values = []
-
+    y=0
+    x=0
+    
     # Open right CSV file and get ECG data
     df = open_brux_csv(patient_id=patient_id, week=week, night_id=night_id)
     ecg = get_ECG_data_from_df(df)
@@ -119,8 +122,10 @@ def get_HRV_features(patient_id, week, night_id, n,  SAMPLING_RATE=SAMPLING_RATE
     ecg_nmin = get_n_minutes(ecg_ds, n, SAMPLING_RATE=SAMPLING_RATE)
     print(f"Signal duration: {get_signal_duration(ecg_nmin)}")
     
+
+
     while end <= len(ecg_nmin)+1:
-        stages = []
+        stage = ''
 
         # 5 minutes of ecg data
         ecg = ecg_nmin[start:end]
@@ -150,24 +155,34 @@ def get_HRV_features(patient_id, week, night_id, n,  SAMPLING_RATE=SAMPLING_RATE
         rem = get_herzig_ranges()['rem']
 
         if  nrem['min'] <= frequency_features['lf_hf_ratio'] <= nrem['max']:
-            stages.append('nrem')
+            stage = 'nrem'
 
-        elif rem['min'] <= frequency_features['lf_hf_ratio'] <= rem['max']:
-            stages.append('rem')
+        if frequency_features['lf_hf_ratio'] < nrem['min']:
+            stage = 'nrem'
 
-        elif frequency_features['lf_hf_ratio'] > rem['max']:
-            stages.append('rem')
+        if rem['min'] <= frequency_features['lf_hf_ratio'] <= rem['max']:
+            stage = 'rem'
 
-        elif frequency_features['lf_hf_ratio'] < nrem['min']:
-            stages.append('nrem')
+        if frequency_features['lf_hf_ratio'] > rem['max']:
+            stage = 'rem'
 
         values.append({
             'start_id': start,
             'end_id': end,
             'LF/HF': frequency_features['lf_hf_ratio'],
             'SD': time_features['sdnn'],
-            'stages': stages
+            'stage': stage,
+            'y': y,
+            'x': x
         })
+
+        # Calculate the coordinates for the SleepHeatMap.vue
+        if x==((SLEEP_CYCLE/INTERVAL)-1):
+            x=0
+            y+=1
+
+        else:
+            x+=1
 
         start = end
         end += window_size
