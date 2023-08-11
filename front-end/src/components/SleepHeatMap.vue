@@ -92,7 +92,7 @@ export default {
                     max: this.getMax(res.data, "SD").SD,
                     dimension: 2,
                     inRange : {   
-                        color: ['#F0FFFF', '#191970'] //From smaller to bigger value ->
+                        color: ['#191970', '#F0FFFF'] //From smaller to bigger value ->
                     },
                     calculable: true,
                     orient: 'horizontal',
