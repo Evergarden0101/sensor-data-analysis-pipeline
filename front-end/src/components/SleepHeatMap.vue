@@ -2,8 +2,13 @@
     <h2 align="center">Sleep stage classification</h2>
     <p align="center">Every row represents a sleep cycle (90 minutes)</p>
 
+    <div id="chart-container" style="position: relative; height: 80vh; overflow: hidden;"></div>
 
-    <div v-if="dataReceived" id="chart-container" style="position: relative; height: 80vh; overflow: hidden;"></div>
+    <!--
+
+    <div v-if="dataReceived">
+        <div id="chart-container" style="position: relative; height: 80vh; overflow: hidden;"></div>
+    </div>
 
     <div v-else>
         <el-row>
@@ -12,6 +17,7 @@
             </el-col>
         </el-row>
     </div>
+-->
 
 </template>
 
@@ -33,27 +39,27 @@ export default {
     }
   },
   mounted() {
-    this.drawTreatHeatMap(); 
+    this.drawTreatHeatMap();
   },
   methods: {
-    async getEcgData(patient_id, week, night_id){
+    getEcgData(patient_id, week, night_id){
         const path = `http://localhost:5000/hrv-features/${patient_id}/${week}/${night_id}`
         const headers = { 
                 'Accept': 'application/json',
                 'Content-Type': 'application/json'
             };
-            await axios.get(path, {headers})
-            .then((res) => {
-                this.ecgData = res.data;
-                this.dataReceived = true;
-    
-            })
-            .catch(err=>{
-                console.log(err)
-            })
+        axios.get(path, {headers})
+        .then((res) => {
+            this.dataReceived = true;
+            this.ecgData = res.data;
+
+        })
+        .catch(err=>{
+            console.log(err)
+        })
 
     },
-    drawTreatHeatMap(){
+    async drawTreatHeatMap(){
         var dom = document.getElementById("chart-container");
         var myChart = echarts.init(dom, null, {
             renderer: "sgv",
@@ -65,13 +71,15 @@ export default {
         var minutes = [5, 10 , 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90];
         var hours = ['1.5h', '3h', '4.5h',
                 '6h', '7.5h', '9h', '10.5h', '12h'];
-        
+        /*
         if(this.dataReceived===true){
            var data = this.ecgData; 
         }
         else{
-            var data = this.getEcgData(1, 1, 1222325);
+            await this.getEcgData(1, 1, 1222325);
+            data = this.ecgData;
         }
+        */
         /*
         var data = [{'LF/HF': 2.0107152456813915,
             'SD': 290.6453341073007,
@@ -101,8 +109,10 @@ export default {
         ];
         */
 
-       
-        data = data.map(function (item) {
+        await this.getEcgData(1, 1, 1222325);
+
+
+        var data = this.ecgData.map(function (item) {
             return [item['x'], item['y'], item['SD'], item['stage']];
         });
 
