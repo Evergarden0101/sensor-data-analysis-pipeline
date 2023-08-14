@@ -1,7 +1,7 @@
 <template>
     <el-card class="box-card" style="border: solid 1px;border-radius: 10px; width: 100%; margin-left: auto;margin-right: auto;">
-        <p align="center">Bruxism Events</p>
-        <el-row v-for="(item,index) in Labels" :key="index" style="margin-bottom: 20px;">
+        <h3 align="center" style="margin-bottom: 30px;">Bruxism Events</h3>
+        <el-row v-for="(item,index) in Labels" :key="index" style="margin-bottom: 10px;">
             <el-col :span="3"><h5>{{ item.id }}</h5></el-col>
             <el-col :span="21">
                 <el-form :inline="true" :model="Labels" class="demo-form-inline">
@@ -27,7 +27,7 @@
             </el-col>
             <el-divider />
         </el-row>
-        <el-button type='primary' text='primary' @click="dialogFormVisible = true">
+        <el-button type='primary' text='primary' @click="dialogFormVisible = true" style="margin-top: -15px;">
             Add Bruxism Event
         </el-button>
         <el-dialog v-model="dialogFormVisible" title="Add Bruxism Event" center width="30%" align-center draggable>
@@ -50,7 +50,7 @@
             </span>
             </template>
         </el-dialog>
-        <LabelButton/>
+        <LabelButton  style="display: block;margin: 15px auto 5px auto;"/>
     </el-card>
 </template>
 

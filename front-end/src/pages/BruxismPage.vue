@@ -9,8 +9,45 @@
             <Stepper step=3 />
         </el-col>
     </el-row>
-    <!-- <DataSpace/> -->
+    <el-row style="margin-top: 2em;margin-bottom: 2em;">
+        <el-button type="primary" size="large" @click="rerender" style="display: block;margin: 0 auto;">
+            Open Weekly Summary
+        </el-button>
+        <el-dialog v-model="weekSummaryVisible" title="Weekly Summary" center>
+            <TreatHeatMap v-if="isShow"/>
+        </el-dialog>
+        <!-- <el-drawer
+            v-model="weekSummaryVisible"
+            title="Weekly Summary"
+            direction="rtl"
+            size="50%"
+        >
+            <TreatHeatMap/>
+        </el-drawer> -->
+    </el-row>
+
     <el-row>
+        <el-col :span="11" style="padding-left: 1.5em;">
+            <el-affix :offset="20">
+                <el-row>
+                        <BruxismLabel/>
+                </el-row>
+                <el-row style="margin-top: 3em;">
+                    <h5 style="display: block;margin: auto;">Change {{ changedLabelNum }}/6 labels to rerun classifier</h5>
+                </el-row>
+                <el-row style="margin-top: 1em;">
+                    <el-button color="#626aef" plain size="large" :disabled="!rerun" style="display: block;margin: 0 auto;">
+                        Rerun Bruxism Classification
+                    </el-button>
+                </el-row>
+            </el-affix>
+        </el-col>
+        <el-col :span="11" :offset="1">
+            <LinePlot/>
+        </el-col>
+    </el-row>
+
+    <!-- <el-row>
         <el-col :span="11">
             <el-row>
                 <LinePlot/>
@@ -31,7 +68,8 @@
         <el-col :span="11" :offset="2">
             <TreatHeatMap/>
         </el-col>
-    </el-row>
+    </el-row> -->
+
     <el-row>
         <el-col :offset="11" :span="2" style="margin-top: 20px;">
             <router-link :to="'/treatment/'" style="margin-right: 20px;">
@@ -61,7 +99,20 @@ export default {
     },
     data () {
         return {
+            weekSummaryVisible: false,
+            rerun: false,
+            changedLabelNum: 2,
+            isShow: true
         }
     },
+    methods:{
+        rerender(){
+            this.weekSummaryVisible = true;
+            this.isShow = false;
+            this.$nextTick(() => {
+                this.isShow = true;
+            });
+        }
+    }
 };
 </script>
