@@ -8,23 +8,23 @@
     <!-- </el-col> -->
     <!-- <el-col :span="22"> -->
     <el-row text-align="center" style="margin-bottom: 20px;width: 100%;">
-        <el-checkbox v-model="checkedMR" label="Use MR for Classification" border />
+        <el-checkbox v-model="checkedMR" label="Use Right Masseter for Classification" border @change="rerender"/>
     </el-row>
     <el-row v-show="checkedMR" style="width: 100%;">
         <h4 style="margin-left: 50%;margin-bottom: 10px;">Sensor Signals for Right Masseter</h4>
     </el-row>
     <el-row style="margin-bottom: 40px;" v-show="checkedMR">
-        <div id="mrlineplot"></div>
+        <div id="mrlineplot" ></div>
     </el-row>
     <!-- </el-col> -->
     <el-row text-align="center" style="margin-bottom: 20px;width: 100%;">
-        <el-checkbox v-model="checkedML" label="Use ML for Classification" border />
+        <el-checkbox v-model="checkedML" label="Use Left Masseter for Classification" border @change="rerender"/>
     </el-row>
     <el-row v-show="checkedML" style="width: 100%;">
         <h4 style="margin-left: 50%;margin-bottom: 10px;">Sensor Signals for Left Masseter</h4>
     </el-row>
     <el-row v-show="checkedML" style="margin-bottom: 30px;">
-        <div id="mllineplot"></div>
+        <div id="mllineplot" ></div>
     </el-row>
 
 </template>
@@ -44,6 +44,7 @@ export default {
         checkedMR: ref(true),
         checkedML: ref(true),
         freq: 2000,
+        key: Date.now(),
     }
   },
   mounted() {
@@ -51,7 +52,10 @@ export default {
         this.drawLineplot('ML');
   },
   methods: {
-     csvToJson(csv) {
+    rerender() {
+        this.key = Date.now();
+    },
+    csvToJson(csv) {
         // \n or \r\n depending on the EOL sequence
         // const lines = csv.split('\n');
         const lines = csv;

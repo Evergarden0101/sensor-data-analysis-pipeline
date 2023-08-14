@@ -1,28 +1,37 @@
 <template>
   <el-form ref="form" :model="form" label-width="120px">
-    <el-row class="demo-autocomplete">
-      <p>Patient Name: </p>
+    <el-form-item label="Patient UID">
       <el-autocomplete
-        v-model="form.patientName"
+        v-model="this.form.patientId"
         :fetch-suggestions="querySearch"
         clearable
         class="inline-input w-50"
-        placeholder="Input Patient Name"
+        placeholder="Input Patient UID"
         @select="handleSelect"
-        style="margin-left: 10px;margin-top: 8px;overflow: visible;"
+        style="overflow: visible;"
       >
         <!-- <template #suffix>
           <el-icon class="el-input__icon" @click="handleIconClick">
             <edit />
           </el-icon>
         </template> -->
-        <template #default="{ item }">
+        <!-- <template #default="{ item }">
           <div class="value">{{ item.name }},&nbsp;&nbsp;id: {{ item.id }}</div>
+        </template> -->
+        <template #default="{ item }">
+          <span
+            style="
+              float: left;
+              font-size: 15px;
+            "
+            >{{ item.id }}</span>
+          <span style="color: var(--el-text-color-secondary);float: right">UID</span>
         </template>
       </el-autocomplete>
-    </el-row>
+    </el-form-item>
     <el-form-item label="Frequency">
         <el-input-number v-model="form.frequency" @change="handleChange" :min="20" :max="2000"></el-input-number>
+        <el-text size="large" style="margin-left: 0.3em;">Hz</el-text>
     </el-form-item>
 
     <el-form-item label="Filtered">
@@ -61,17 +70,18 @@ export default{
     data() {
       return {
         form: {
-          patientName: '',
+          patientId: '',
+          id:'',
           frequency: 1000,
           filtered: 0,
           normalized: 0,
         },
-        names:[],
+        ids:[],
       };
     },
     methods: {
       onSubmit() {
-        console.log(this.form.patientName);
+        console.log(this.form.patientId);
         console.log(this.form.frequency);
         console.log(this.form.filtered);
         console.log(this.form.normalized);
@@ -81,32 +91,33 @@ export default{
       },
       handleSelect(item) {
         console.log(item);
+        this.form.patientId = item.id;
       },
       querySearch(queryString, cb) {
-        var names = this.names;
-        var results = queryString ? names.filter(this.createFilter(queryString)) : names;
+        var ids = this.ids;
+        var results = queryString ? ids.filter(this.createFilter(queryString)) : ids;
         // call callback function to return suggestions
         cb(results);
       },
       createFilter(queryString) {
         return (id) => {
-          return (id.name.toLowerCase().indexOf(queryString.toLowerCase()) === 0);
+          return (id.id.toLowerCase().indexOf(queryString.toLowerCase()) === 0);
         };
       },
       loadAll() {
         return [
-          { "name": "James", "id": "1" },
-          { "name": "Luka", "id": "2" },
-          { "name": "Davis", "id": "3" },
-          { "name": "Jimmy", "id": "4" },
-          { "name": "Stephen", "id": "5" },
-          { "name": "Micheal", "id": "6" },
-          { "name": "Tim", "id": "7" }
+          { "id": "1111111" },
+          { "id": "2222222" },
+          { "id": "3333333" },
+          { "id": "4444444" },
+          { "id": "5555555" },
+          { "id": "6666666" },
+          { "id": "7777777" }
          ];
       },
     },
     beforeMount() {
-      this.names = this.loadAll();
+      this.ids = this.loadAll();
     }
 }
 
