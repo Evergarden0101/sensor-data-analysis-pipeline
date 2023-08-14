@@ -11,7 +11,12 @@
   </el-row>
   <el-row  style="margin-top: 10%;">
     <el-col :offset="11" :span="2">
+      <!--
       <router-link :to="'/upload/'">
+        <el-button type="primary" plain>Start</el-button>
+      </router-link>
+      -->
+      <router-link :to="'/select-patient/'">
         <el-button type="primary" plain>Start</el-button>
       </router-link>
     </el-col>
