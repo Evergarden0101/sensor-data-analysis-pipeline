@@ -1,5 +1,5 @@
 <template>
-    <el-button @click="getLabel" type=primary>Get data of patient 123</el-button>
+    <el-button @click="getLabel" type='primary' style="display: block; margin: auto;">Get data of patient 123</el-button>
     <p v-if="info">{{ info }}</p>
 </template>
 
@@ -22,6 +22,7 @@ export default{
             axios.get(path, {headers})
             .then((res) => {
                 this.info = res.data
+                console.log(this.info)
             })
             .catch(err=>{
                 console.log(err)

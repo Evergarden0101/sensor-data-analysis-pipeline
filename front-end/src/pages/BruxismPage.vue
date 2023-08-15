@@ -16,14 +16,6 @@
         <el-dialog v-model="weekSummaryVisible" title="Weekly Summary" center>
             <TreatHeatMap v-if="isShow"/>
         </el-dialog>
-        <!-- <el-drawer
-            v-model="weekSummaryVisible"
-            title="Weekly Summary"
-            direction="rtl"
-            size="50%"
-        >
-            <TreatHeatMap/>
-        </el-drawer> -->
     </el-row>
 
     <el-row>

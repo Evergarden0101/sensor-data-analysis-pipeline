@@ -11,7 +11,7 @@
         <el-checkbox v-model="checkedMR" label="Use Right Masseter for Classification" border @change="rerender"/>
     </el-row>
     <el-row v-show="checkedMR" style="width: 100%;">
-        <h4 style="margin-left: 50%;margin-bottom: 10px;">Sensor Signals for Right Masseter</h4>
+        <h4 style="margin-left: 40%;margin-bottom: 10px;">Sensor Signals for Right Masseter</h4>
     </el-row>
     <el-row style="margin-bottom: 40px;" v-show="checkedMR">
         <div id="mrlineplot" ></div>
@@ -21,7 +21,7 @@
         <el-checkbox v-model="checkedML" label="Use Left Masseter for Classification" border @change="rerender"/>
     </el-row>
     <el-row v-show="checkedML" style="width: 100%;">
-        <h4 style="margin-left: 50%;margin-bottom: 10px;">Sensor Signals for Left Masseter</h4>
+        <h4 style="margin-left: 40%;margin-bottom: 10px;">Sensor Signals for Left Masseter</h4>
     </el-row>
     <el-row v-show="checkedML" style="margin-bottom: 30px;">
         <div id="mllineplot" ></div>

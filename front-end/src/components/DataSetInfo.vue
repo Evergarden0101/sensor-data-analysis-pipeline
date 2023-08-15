@@ -28,6 +28,7 @@
           <span style="color: var(--el-text-color-secondary);float: right">UID</span>
         </template>
       </el-autocomplete>
+      <el-text>(Leave blank to generate a new UID)</el-text>
     </el-form-item>
     <el-form-item label="Frequency">
         <el-input-number v-model="form.frequency" @change="handleChange" :min="20" :max="2000"></el-input-number>
