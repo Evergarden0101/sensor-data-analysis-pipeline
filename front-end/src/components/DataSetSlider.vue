@@ -16,7 +16,6 @@
     </el-row>
     -->
     <el-row>
-      <!-- <input id="dataset" type="file" style="font-size: 22px;"> -->
       <!-- TODO: action for upload address -->
       <!-- :before-upload="beforeFileUpload"-->
       <el-upload
@@ -35,33 +34,11 @@
       </el-upload>
     </el-row>
   </el-card>
-      <!-- <el-col :span="8" style="font-size: 18.5px;">
-        Data Space (Sorted by Predicted Probability)
-      </el-col> -->
-      <!--
-      <el-col cols="2">
-        <button class="btn-outline-success"
-        id="initializeID"
-        v-on:click="initialize">
-        <font-awesome-icon icon="search" />
-        {{ searchText }}
-        </button>
-        <button class="btn-outline-danger"
-        id="resetID"
-        v-on:click="reset">
-        <font-awesome-icon icon="trash" />
-        {{ resetText }}
-        </button>
-      </el-col>
-    -->
 </template>
 
 <script>
 import Papa from 'papaparse'
-// import { EventBus } from '../main.js'
-// import {$,jQuery} from 'jquery';
 import * as d3 from 'd3'
-// import { sliderBottom } from 'd3-simple-slider'
 import mitt from 'mitt'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
@@ -146,14 +123,14 @@ export default {
         })
     },
 
-    reset () {
-      emitter.emit('reset')
-      emitter.emit('alternateFlagLock')
-    },
+    // reset () {
+    //   emitter.emit('reset')
+    //   emitter.emit('alternateFlagLock')
+    // },
 
-    initialize () {
-      emitter.emit('ConfirmDataSet')
-    },
+    // initialize () {
+    //   emitter.emit('ConfirmDataSet')
+    // },
   },
   mounted () {
   },
