@@ -1,7 +1,8 @@
 <template>
   <el-card class="box-card" style="padding-top: 5px; border: solid 1px;border-radius: 10px">
+    <!--
     <el-row >
-      <!-- <label id="data" for="param-dataset" data-toggle="tooltip" data-placement="right" title="Tip: upload a new file.">{{ dataset }}</label> -->
+       <label id="data" for="param-dataset" data-toggle="tooltip" data-placement="right" title="Tip: upload a new file.">{{ dataset }}</label>
       <el-select v-model="dataset" class="m-2" id="selectFile" placeholder="Choose dataset type" :onchange="selectDataSet()" size="large" style="margin-left: auto;margin-right: auto;">
         <el-option
           v-for="item in dataTypes"
@@ -10,8 +11,10 @@
           :value="item.value"
         />
       </el-select>
-      <!-- <p style="font-size: 16px;">Dataset</p> -->
+      
+       <p style="font-size: 16px;">Dataset</p>
     </el-row>
+    -->
     <el-row>
       <!-- <input id="dataset" type="file" style="font-size: 22px;"> -->
       <!-- TODO: action for upload address -->
