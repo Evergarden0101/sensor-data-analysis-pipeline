@@ -12,7 +12,7 @@ def create_app(test_config=None):
     cors = CORS(app)
     app.config.from_mapping(
         SECRET_KEY='dev',
-        DATABASE=os.path.join(app.instance_path, 'labels.sqlite'),
+        DATABASE=os.path.join(app.instance_path, 'brux-db.sqlite'),
     )
 
     if test_config is None:
@@ -49,18 +49,29 @@ def create_app(test_config=None):
 
     @app.route("/upload", methods=['POST'])
     def upload():
-        uploaded_file = request.files['file']
+        #uploaded_file = request.files['file']
+        patient_id = 1
+        uploaded_file = "./data/p1_w1/1222325cFnorm.csv"
+        time = uploaded_file[-17: -10]
+        DATABASE = app.config['DATABASE']
+        MAX = 1000000
 
-        col_names = ['MR', 'ML', 'SU', 'Microphone', 'Eye', 'ECG', 'Pressure Sensor']
-        csvData = pd.read_csv(uploaded_file, names=col_names, header=None)
-
-        for i,row in csvData.iterrows():
-            sql = "INSERT INTO addresses (MR, ML, SU, Microphone, Eye, ECG, Pressure Sensor) VALUES (%s, %s, %s, %s, %s, %s, %s)"
-            value = (row['MR'],row['ML'],row['SU'],row['Microphone'],row['Eye'], row['ECG'], row['Pressure Sensor'])
-            mycursor.execute(sql, value, if_exists='append')
-            mydb.commit()
-            print(i, row['MR'],row['ML'],row['SU'],row['Microphone'],row['Eye'], row['ECG'], row['Pressure Sensor'])
+        csvData = pd.read_csv(uploaded_file)
         
+        with sql.connect(DATABASE) as con:
+            cur = con.cursor()
+            for i,row in csvData.iterrows():
+        
+                params = (patient_id, int(time[:2]), int(time[2:4]), int(time[4:6]), int(time[6]), uploaded_file[-10], row['MR'],row['ML'],row['SU'],row['Microphone'],row['Eye'], row['ECG'], row['Pressure Sensor'])
+                query = "INSERT INTO patients (patient_id, day, hours, minutes, seconds, recorder, MR, ML, SU, Microphone, Eye, ECG, Pressure) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+            
+                cur.execute(query, params)
+                print(i, patient_id, int(time[:2]), int(time[2:4]), int(time[4:6]), int(time[6]), uploaded_file[-10], row['MR'],row['ML'],row['SU'],row['Microphone'],row['Eye'], row['ECG'], row['Pressure Sensor'])
+
+                if i == MAX:
+                    break
+        return "Successfuly inserted into Database", 200
+            
 
 
     @app.route("/label-brux", methods=["POST"])

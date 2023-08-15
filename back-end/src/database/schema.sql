@@ -1,4 +1,5 @@
 DROP TABLE IF EXISTS labels;
+DROP TABLE IF EXISTS patients;
 
 CREATE TABLE labels (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -6,4 +7,22 @@ CREATE TABLE labels (
   location_begin INTEGER NOT NULL,
   location_end INTEGER NOT NULL,
   duration  REAL NOT NULL
+);
+
+
+CREATE TABLE patients (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  patient_id INTEGER NOT NULL,
+  day INTEGER NOT NULL,
+  hours INTEGER NOT NULL,
+  minutes INTEGER NOT NULL,
+  seconds INTEGER NOT NULL,
+  recorder TEXT,
+  MR REAL NOT NULL,
+  ML REAL NOT NULL,
+  SU REAL NOT NULL,
+  Microphone REAL,
+  Eye REAL NOT NULL,
+  ECG REAL NOT NULL,
+  Pressure REAL
 );

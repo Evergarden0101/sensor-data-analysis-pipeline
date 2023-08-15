@@ -1,9 +1,10 @@
 <template>
     <el-steps :active=step>
-        <el-step title="Data upload" description="Some description" />
-        <el-step title="Sleep Stage Classification" description="Some description" />
-        <el-step title="Brux Classification Dashboard" description="Some description" />
-        <el-step title="Brux Events Monitoring" description="Some description" />
+        <!--<el-step title="Data upload" description="Some description" />-->
+        <el-step title="Select patient" description="Select the desired patient and the desired day" />
+        <el-step title="Sleep Stage Classification" description="Label sleep stages based on HRV analysis" />
+        <el-step title="Brux Classification Dashboard" description="Check for possible brux events and label them" />
+        <el-step title="Brux Events Monitoring" description="Compare patients data in different days and weeks" />
     </el-steps>
 </template>
 
