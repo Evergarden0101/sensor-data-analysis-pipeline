@@ -1,6 +1,6 @@
 <template>
     <el-card class="box-card" style="border: solid 1px;border-radius: 10px; width: 100%; margin-left: auto;margin-right: auto;">
-        <h3 align="center" style="margin-bottom: 30px;">Bruxism Events</h3>
+        <h3 align="center" style="margin-bottom: 30px;">Bruxism Event Predictions</h3>
         <el-row v-for="(item,index) in Labels" :key="index" style="margin-bottom: 10px;">
             <el-col :span="3"><h5>{{ item.id }}</h5></el-col>
             <el-col :span="21">
