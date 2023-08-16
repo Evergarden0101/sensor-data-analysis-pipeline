@@ -1,5 +1,6 @@
 DROP TABLE IF EXISTS labels;
 DROP TABLE IF EXISTS patients;
+DROP TABLE IF EXISTS sleep_stage_detection;
 
 CREATE TABLE labels (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -26,3 +27,20 @@ CREATE TABLE patients (
   ECG REAL NOT NULL,
   Pressure REAL
 );
+
+
+CREATE TABLE sleep_stage_detection (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  patient_id INTEGER NOT NULL,
+  day INTEGER NOT NULL,
+  hours INTEGER NOT NULL,
+  minutes INTEGER NOT NULL,
+  seconds INTEGER NOT NULL,
+  start_id INTEGER NOT NULL,
+  end_id INTEGER NOT NULL,
+  LF_HF REAL NOT NULL,
+  SD REAL NOT NULL,
+  stage TEXT,
+  y INTEGER NOT NULL,
+  x INTEGER NOT NULL
+)
