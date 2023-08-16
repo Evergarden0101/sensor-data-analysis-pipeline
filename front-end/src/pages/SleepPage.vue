@@ -1,5 +1,5 @@
 <template>
-    <el-row style="margin-bottom: 5%;">
+    <el-row style="margin-bottom: 2%;">
         <el-col>
             <h1 style="text-align: center;">This is the Sleep Stage Classification page!</h1>
         </el-col>
@@ -15,13 +15,6 @@
         </el-col>
     </el-row>
 
-    <el-row>
-        <el-col :offset="11">
-            <router-link :to="'/bruxism/'" style="margin-right: 10px;">
-                <el-button>Bruxism Detection</el-button>  
-            </router-link>
-        </el-col>
-    </el-row>
 </template>
 
 
