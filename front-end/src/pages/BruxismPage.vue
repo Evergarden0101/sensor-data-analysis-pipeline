@@ -9,9 +9,14 @@
             <Stepper step=3 />
         </el-col>
     </el-row>
-    <el-row>
-        <el-col style="margin-left: 71%; margin-top: 3%;">
-            <router-link :to="'/treatment/'" style="margin-right: 10px;">
+    <el-row style="margin-top: 3%;">
+        <el-col :span="7" :offset="5">
+            <router-link :to="'/sleep/'">
+                <el-button type="primary" plain><el-icon class="el-icon--left"><ArrowLeft /></el-icon> Sleep Stage Detection</el-button>
+            </router-link>
+        </el-col>
+        <el-col :span="7" :offset="5">
+            <router-link :to="'/treatment/'">
                 <el-button type="primary" plain>
                     Treatment Analysis<el-icon class="el-icon--right"><ArrowRight /></el-icon>
                 </el-button>

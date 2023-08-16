@@ -8,9 +8,14 @@
         </el-tooltip>
     </p>
 
-    <el-row>
-        <el-col style="margin-left: 78%; margin-top: 3%;">
-            <router-link :to="'/bruxism/'" style="margin-right: 10px;">
+    <el-row style="margin-top: 3%;">
+        <el-col :span="7" :offset="5">
+            <router-link :to="'/upload/'">
+                <el-button type="primary" plain><el-icon class="el-icon--left"><ArrowLeft /></el-icon> Data Upload</el-button>
+            </router-link>
+        </el-col>
+        <el-col :span="7" :offset="5">
+            <router-link :to="'/bruxism/'">
                 <el-button type="primary" plain>
                     Bruxism Detection<el-icon class="el-icon--right"><ArrowRight /></el-icon>
                 </el-button>
