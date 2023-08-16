@@ -84,7 +84,7 @@ export default {
 
             var minutes = [5, 10 , 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90];
             var hours = ['1.5h', '3h', '4.5h',
-                    '6h', '7.5h', '9h', '10.5h', '12h'];
+                    '6h', '7.5h', '9h', '10.5h'];
 
             var remDataJson = []
             var nremDataJson = []
@@ -98,16 +98,21 @@ export default {
             }
 
             var remData = remDataJson.map(function (item) {
-                return [item['x'], item['y'], item['SD'], item['stage']];
+                return [item['x'], item['y'], parseInt(item['SD']), item['stage'], item['LF_HF']];
             });
 
             var nremData = nremDataJson.map(function (item) {
-                return [item['x'], item['y'], item['SD'], item['stage']];
+                return [item['x'], item['y'], parseInt(item['SD']), item['stage'], item['LF_HF']];
             });
+
+            var callback = (args) => {
+                return args.seriesName + "<br />" +args.marker  + args.value[4].toFixed(2) + '±' + args.value[2]
+            }
 
             option = {
                 tooltip: {
-                    position: 'top'
+                    position: 'top',
+                    formatter: callback
                 },
                 animation: false,
                 grid: {
@@ -141,7 +146,7 @@ export default {
                     calculable: true,
                     orient: 'horizontal',
                     left: 'center',
-                    bottom: '5%',
+                    bottom: '30%',
                 }, {
                     min: this.getMin(nremDataJson, "SD").SD,
                     max: this.getMax(nremDataJson, "SD").SD,
@@ -153,10 +158,10 @@ export default {
                     calculable: true,
                     orient: 'horizontal',
                     left: 'center',
-                    bottom: '15%',
+                    bottom: '24%',
                 }],
                 series: [{
-                    name: 'Punch Card',
+                    name: '<b>LF/HF ratio ± Standard Deviation (SD)</b>',
                     type: 'heatmap',
                     data: remData,
                     label: {
@@ -178,7 +183,7 @@ export default {
                         }
                     }
                 }, {
-                    name: 'Punch Card',
+                    name: '<b>LF/HF ratio ± Standard Deviation (SD)</b>',
                     type: 'heatmap',
                     data: nremData,
                     emphasis: {
