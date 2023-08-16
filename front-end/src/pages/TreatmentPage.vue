@@ -10,10 +10,7 @@
         </el-col>
     </el-row>
     <el-row style="margin-top: 5%;">
-        <TestButton/>
-    </el-row>
-    <el-row style="margin-top: 5%;">
-        <TreatmentHeatMap/>
+        <TreatHeatMap />
     </el-row>
 </template>
 
@@ -21,13 +18,13 @@
 <script>
 import Stepper from '@/components/Stepper.vue';
 import TestButton from '@/components/TestButton.vue';
-import TreatmentHeatMap from '../components/TreatmentHeatMap.vue'
+import TreatHeatMap from '../components/TreatHeatMap.vue'
 export default {
     name: 'TreatmentPage',
     components: {
         Stepper,
         TestButton,
-        TreatmentHeatMap,
+        TreatHeatMap,
     },
 };
 </script>

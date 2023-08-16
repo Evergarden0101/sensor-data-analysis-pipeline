@@ -9,6 +9,15 @@
             <Stepper step=3 />
         </el-col>
     </el-row>
+    <el-row>
+        <el-col style="margin-left: 71%; margin-top: 3%;">
+            <router-link :to="'/treatment/'" style="margin-right: 10px;">
+                <el-button type="primary" plain>
+                    Treatment Analysis<el-icon class="el-icon--right"><ArrowRight /></el-icon>
+                </el-button>
+            </router-link>
+        </el-col>
+    </el-row>
     <el-row style="margin-top: 2em;margin-bottom: 2em;">
         <el-button type="primary" size="large" @click="rerender" style="display: block;margin: 0 auto;">
             Open Weekly Summary
@@ -61,14 +70,6 @@
             <TreatHeatMap/>
         </el-col>
     </el-row> -->
-
-    <el-row>
-        <el-col :offset="11" :span="2" style="margin-top: 20px;">
-            <router-link :to="'/treatment/'" style="margin-right: 20px;">
-                <el-button>Treatment Analysis</el-button> 
-            </router-link>
-        </el-col>
-    </el-row>
 </template>
 
 
