@@ -1,5 +1,5 @@
 <template>
-  <el-card class="box-card" style="padding-top: 5px; border: solid 1px;border-radius: 10px">
+  <el-card class="box-card" style="padding-top: 5px; border: solid 1px;border-radius: 10px; display: block;margin: auto;">
     <!--
     <el-row >
        <label id="data" for="param-dataset" data-toggle="tooltip" data-placement="right" title="Tip: upload a new file.">{{ dataset }}</label>
@@ -29,8 +29,8 @@
         :before-remove="beforeRemove"
         style="margin-left: auto;margin-right: auto;margin-top: 40px;margin-bottom: 30px;">
         <i class="el-icon-upload"></i>
-        <div class="el-upload__text" style="font-size: 22px;">Drag files here, or <em>click to upload</em></div>
-        <div class="el-upload__tip" slot="tip" style="font-size: 18px;">Please upload a CSV file</div>
+        <div class="el-upload__text" style="font-size: 18px;">Drag files here, or <em>click to upload</em></div>
+        <div class="el-upload__tip" slot="tip" style="font-size: 15px;">Please upload a CSV file</div>
       </el-upload>
     </el-row>
   </el-card>

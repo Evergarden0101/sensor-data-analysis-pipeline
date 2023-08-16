@@ -10,7 +10,7 @@
 
     <el-row style="margin-top: 3%;">
         <el-col :span="7" :offset="5">
-            <router-link :to="'/upload/'">
+            <router-link :to="'/patient/'">
                 <el-button type="primary" plain><el-icon class="el-icon--left"><ArrowLeft /></el-icon> Data Upload</el-button>
             </router-link>
         </el-col>
