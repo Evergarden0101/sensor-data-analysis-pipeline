@@ -10,7 +10,7 @@ import HomePage from './pages/HomePage.vue';
 import SleepPage from './pages/SleepPage.vue';
 import TreatmentPage from './pages/TreatmentPage.vue';
 import BruxismPage from './pages/BruxismPage.vue';
-import DataUploadPage from './pages/DataUploadPage.vue';
+import PatientInfoPage from './pages/PatientInfoPage.vue';
 import SelectPatientPage from './pages/SelectPatientPage.vue'
 
 const app = createApp(App)
@@ -31,8 +31,8 @@ app.use(VueRouter.createRouter({
         path: '/bruxism',
         component: BruxismPage,
     },{
-        path: '/upload',
-        component: DataUploadPage,
+        path: '/patient',
+        component: PatientInfoPage,
     },{
         path: '/select-patient',
         component: SelectPatientPage,
