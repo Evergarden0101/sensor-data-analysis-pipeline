@@ -1,5 +1,5 @@
 <template>
-    <el-steps :active=step>
+    <el-steps :active=step finish-status="process">
         <el-step title="Data upload" description="Upload the patient data" />
         <!--<el-step title="Select patient" description="Select the desired patient and the desired day" />-->
         <el-step title="Sleep Stage Classification" description="Label sleep stages based on HRV analysis" />

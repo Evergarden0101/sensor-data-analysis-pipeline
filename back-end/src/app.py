@@ -5,6 +5,7 @@ import sqlite3 as sql
 from database import db
 from flask_cors import CORS
 from SSD import *
+import sys
 
 """Example of possible structure for posting the label data"""
 def create_app(test_config=None):
@@ -46,6 +47,26 @@ def create_app(test_config=None):
             patient_data = cur.execute(f"SELECT * FROM labels WHERE patient = {patient_id}").fetchall()
 
         return patient_data
+    
+    def get_SSD_format(columns, query_results):
+        values = []
+        for query_result in query_results:
+            values.append({
+                columns[1]: query_result[1],
+                columns[2]: query_result[2],
+                columns[3]: query_result[3],
+                columns[4]: query_result[4],
+                columns[5]: query_result[5],
+                columns[6]: query_result[6],
+                columns[7]: query_result[7],
+                columns[8]:  query_result[8],
+                columns[9]:  query_result[9],
+                columns[10]:  query_result[10],
+                columns[11]:  query_result[11],
+                columns[12]:  query_result[12]
+            })
+        return values
+             
 
     @app.route("/upload", methods=['POST'])
     def upload():
@@ -100,8 +121,49 @@ def create_app(test_config=None):
     @app.route("/hrv-features/<int:patient_id>/<int:week>/<int:night_id>", methods=["GET"])
     def get_hrv_features(patient_id, week, night_id):
         try:
-            return get_HRV_features(patient_id, week, night_id, 90)
+            print('hey', file=sys.stderr)
+            day = str(night_id)[:2]
+            hours = str(night_id)[2:4]
+            minutes = str(night_id)[4:6]
+            seconds =str(night_id)[6]
+
+            DATABASE = app.config['DATABASE']
+            print('database variable', file=sys.stderr)
+            with sql.connect(DATABASE) as con:
+                print('connected to db', file=sys.stderr)
+                cur = con.cursor()
+
+                print('cur variable defined', file=sys.stderr)
+
+                params = (patient_id, day, hours, minutes, seconds)
+                patient_exist = f"SELECT * FROM sleep_stage_detection WHERE (patient_id=? AND day=? AND hours=? AND minutes=? AND seconds=?)"
+                print('patient_exist query', file=sys.stderr)
+
+                if cur.execute(patient_exist, params).fetchall():
+                    print('EXIST', file=sys.stderr)
+                    params = (patient_id, day, hours, minutes, seconds)
+                    query = "SELECT * FROM sleep_stage_detection WHERE (patient_id=? AND day=? AND hours=? AND minutes=? AND seconds=?)"
+                    result = cur.execute(query, params)
+                    columns = [description[0] for description in result.description]
+                    print(f"Columns: {columns}")
+                    values = get_SSD_format(columns, result.fetchall())
+
+
+                    print(f"Values from db: {values}")
+                
+                else:
+                    print('DOES NOT EXIST', file=sys.stderr)
+                    values = get_HRV_features(patient_id, week, night_id, 720)
+
+                    for value in values:
+                        params = (patient_id, day, hours, minutes, seconds, value['start_id'], value['end_id'], value['LF_HF'], value['SD'], value['stage'], value['y'], value['x'])
+                        query = "INSERT INTO sleep_stage_detection (patient_id, day, hours, minutes, seconds, start_id, end_id, LF_HF, SD, stage, y, x) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                        cur.execute(query, params)
+
+                return values
         except Exception as e:
+            print('HEY2', file=sys.stderr)
+            print(e)
             return f"{e}"
         
     return app

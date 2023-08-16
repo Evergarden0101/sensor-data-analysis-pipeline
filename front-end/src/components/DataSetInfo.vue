@@ -54,7 +54,7 @@
 
     <el-form-item>
         <router-link :to="'/sleep/'" style="margin-right: 20px;">
-            <el-button type="primary" @click="onSubmit">Create</el-button>  
+            <el-button type="primary" plain @click="onSubmit">Create</el-button>  
         </router-link>
     </el-form-item>
 

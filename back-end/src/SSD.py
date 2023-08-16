@@ -169,7 +169,7 @@ def get_HRV_features(patient_id, week, night_id, n,  SAMPLING_RATE=SAMPLING_RATE
         values.append({
             'start_id': start,
             'end_id': end,
-            'LF/HF': frequency_features['lf_hf_ratio'],
+            'LF_HF': frequency_features['lf_hf_ratio'],
             'SD': time_features['sdnn'],
             'stage': stage,
             'y': y,

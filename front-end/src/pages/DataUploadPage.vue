@@ -1,5 +1,5 @@
 <template>
-    <el-row style="margin-bottom: 5%;">
+    <el-row style="margin-bottom: 2%;">
         <el-col>
             <h1 style="text-align: center;">This is the data upload page!</h1>
         </el-col>
