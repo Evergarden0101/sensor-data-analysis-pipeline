@@ -23,15 +23,14 @@
             </router-link>
         </el-col>
     </el-row>
-    <el-row style="margin-top: 2em;margin-bottom: 2em;height: 30px;overflow: visible; ">
+    <el-row style="margin-top: -100px;margin-bottom: 2em;height: 130px;overflow: visible; ">
         <el-col :span="3" :offset="20">
             <div class="affix-container">
                 <el-affix target=".affix-container" :offset="20">
-                    <p style="display: block;margin: auto;text-align: center;">Weekly Summary</p>
-                    <el-button @click="rerender" style="margin-top: 0;width: 200px;height: 200px;padding: 0;border: 0;">
-                        <el-image :src="imgsrc" :fit="contain" />
+                    <p style="display: block;margin:0 auto 50px auto;text-align: center;">Weekly Summary</p>
+                    <el-button @click="rerender" style="width: 200px;padding: 0;border: 0;">
+                        <el-image :src="imgsrc" :fit="contain" width="200px" @click="rerender"/>
                     </el-button>
-                    <!-- <input type="image" :src="imgsrc" name="Weekly Summary" width="200" height="auto" alt="Weekly Summary"/> -->
                     <el-dialog v-model="weekSummaryVisible" title="Weekly Summary" center width="60%">
                         <TreatHeatMap v-if="isShow"/>
                     </el-dialog>
@@ -39,15 +38,6 @@
             </div>
         </el-col>
     </el-row>
-    
-    <!-- <el-row style="margin-top: 2em;margin-bottom: 2em;">
-        <el-button @click="rerender" style="right:90%;width: 100px;height: 100px;padding: 0;border: 0;">
-            <el-image :src="imgsrc" :fit="contain" />
-        </el-button>
-        <el-dialog v-model="weekSummaryVisible" title="Weekly Summary" center width="60%">
-            <TreatHeatMap v-if="isShow"/>
-        </el-dialog>
-    </el-row> -->
 
     <el-row>
         <el-col :span="11" style="padding-left: 1.5em;">
@@ -59,29 +49,6 @@
             <LinePlot/>
         </el-col>
     </el-row>
-
-    <!-- <el-row>
-        <el-col :span="11">
-            <el-row>
-                <LinePlot/>
-            </el-row>
-            <el-row style="margin-top: 30px;">
-                <el-col :span="22" :offset="2">
-                    <BruxismLabel/>
-                </el-col>
-            </el-row>
-            <el-row style="margin-top: 3%;">
-                <el-col :offset="15">
-                    <el-button color="#626aef" plain size="large" loading>
-                        Rerun Bruxism Classification
-                    </el-button>
-                </el-col>
-            </el-row>
-        </el-col>
-        <el-col :span="11" :offset="2">
-            <TreatHeatMap/>
-        </el-col>
-    </el-row> -->
 </template>
 
 
@@ -97,7 +64,6 @@ export default {
     name: 'BruxismPage',
     components: {
         Stepper,
-        // DataSpace,
         LinePlot,
         TreatHeatMap,
         BruxismLabel
@@ -125,6 +91,7 @@ export default {
   text-align: right;
   height: 300px;
   border-radius: 4px;
+  z-index: 9999;
   /* background: var(--el-color-primary-light-9); */
 }
 </style>
