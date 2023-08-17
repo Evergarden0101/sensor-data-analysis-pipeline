@@ -39,7 +39,7 @@
                         <BruxismLabel/>
                 </el-row>
                 <el-row style="margin-top: 3em;">
-                    <h5 style="display: block;margin: auto;">Change {{ changedLabelNum }}/6 labels to rerun classifier</h5>
+                    <h5 style="display: block;margin: auto;">Change at least 1 label to rerun classifier</h5>
                 </el-row>
                 <el-row style="margin-top: 1em;">
                     <el-button color="#626aef" plain size="large" :disabled="!rerun" style="display: block;margin: 0 auto;">
