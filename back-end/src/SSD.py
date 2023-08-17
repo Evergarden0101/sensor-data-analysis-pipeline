@@ -1,4 +1,4 @@
-import pandas as pd 
+import pandas as pd
 import matplotlib.pyplot as plt
 import datetime
 import neurokit2 as nk
@@ -8,7 +8,7 @@ import hrvanalysis as hrvana
 SAMPLING_RATE = 1000
 INTERVAL = 5 # We want to take data at every 5 minutes interval
 SLEEP_CYCLE = 90
-DATA_PATH = "C:/Users/eleon/Desktop/Master/FJS 23/Master Project/sensor-data-analysis-pipeline/back-end/src/data/"
+DATA_PATH = "C:/Users/Karim/Desktop/UniZH/Master/Not Done/Master Project/sensor-data-analysis-pipeline/back-end/src/data"
 
 
 # FUNCTIONS
@@ -19,7 +19,7 @@ def open_brux_csv(patient_id, week, night_id):
 """Gets complete patient df and return only the ECG column"""
 def get_ECG_data_from_df(df):
     return df["ECG"]
- 
+
 
 """Gets ECG one column dataframe and return the list of values"""
 def get_ecg_array(ecg):
@@ -47,7 +47,7 @@ def find_rr_intervals(cleaned_ecg):
     pantompkins1985 = nk.ecg_findpeaks(cleaned_ecg, method="pantompkins1985") # find the R peaks
     hrv_df = pd.DataFrame(pantompkins1985)
     hrv_df["RR Intervals"] = hrv_df["ECG_R_Peaks"].diff() # calculate the value difference between two adjacent points
-    hrv_df.loc[0, "RR Intervals"]=hrv_df.loc[0]['ECG_R_Peaks'] # the first datapoint contain Nan 
+    hrv_df.loc[0, "RR Intervals"]=hrv_df.loc[0]['ECG_R_Peaks'] # the first datapoint contain Nan
 
     return hrv_df
 
@@ -96,7 +96,7 @@ def get_ako_ranges():
 """
 - patient_id: id of the patient
 - week: week number
-- night_id: id of the night that specifies which file to open 
+- night_id: id of the night that specifies which file to open
 - n: first n minutes of data are selected
 - SAMPLING_RATE: desired sampling rate (default: 1000)
 """
@@ -109,7 +109,7 @@ def get_HRV_features(patient_id, week, night_id, n,  SAMPLING_RATE=SAMPLING_RATE
     values = []
     y=0
     x=0
-    
+
     # Open right CSV file and get ECG data
     df = open_brux_csv(patient_id=patient_id, week=week, night_id=night_id)
     ecg = get_ECG_data_from_df(df)
@@ -121,7 +121,7 @@ def get_HRV_features(patient_id, week, night_id, n,  SAMPLING_RATE=SAMPLING_RATE
     # Select first n minutes
     ecg_nmin = get_n_minutes(ecg_ds, n, SAMPLING_RATE=SAMPLING_RATE)
     print(f"Signal duration: {get_signal_duration(ecg_nmin)}")
-    
+
 
 
     while end <= len(ecg_nmin)+1:
@@ -136,13 +136,13 @@ def get_HRV_features(patient_id, week, night_id, n,  SAMPLING_RATE=SAMPLING_RATE
         # Clean ECG data
         cleaned = nk.ecg_clean(filter_ecg, sampling_rate=SAMPLING_RATE, method="pantompkins1985")
 
-        #Find RR intervals    
+        #Find RR intervals
         hrv_df = find_rr_intervals(cleaned)
 
         # Clean RR intervals
-    
+
         clean_rri = clean_rr_intervals(hrv_df)
-        hrv_df["RR Intervals"] = clean_rri 
+        hrv_df["RR Intervals"] = clean_rri
 
         # HRV feature extraction
         nn_epoch = hrv_df['RR Intervals'].values
@@ -186,5 +186,5 @@ def get_HRV_features(patient_id, week, night_id, n,  SAMPLING_RATE=SAMPLING_RATE
 
         start = end
         end += window_size
-    
+
     return values

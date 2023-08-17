@@ -22,12 +22,23 @@
             </router-link>
         </el-col>
     </el-row>
+<<<<<<< front-end/src/components/SleepHeatMap.vue
+
+  <div class="buttons-container">
+    <el-button @click="toggleEditMode" v-if="!isEditMode">Enter Edit Mode</el-button>
+    <el-button @click="toggleEditMode" v-if="isEditMode">Exit Edit Mode</el-button>
+    <el-button @click="toggleSelectMode">Select</el-button>
+  </div>
+
+  <el-row>
+=======
     <el-row style="margin-top: 2%">
         <el-col :offset="20">
             <el-button type="primary" plain @click="open"> <el-icon :size="25"><Edit /></el-icon> Edit</el-button>
         </el-col>
     </el-row>
     <el-row>
+>>>>>>> front-end/src/components/SleepHeatMap.vue
         <el-col :span="24" v-loading="loading" element-loading-text="The dataset is loading...it might take a couple of minutes.">
             <div id="chart-container" style="position: relative; height: 80vh; overflow: hidden;"></div>
         </el-col>
@@ -47,6 +58,10 @@ export default {
     return {
       dataReceived: false,
       loading: ref(true),
+      isEditMode: false,
+      isSelectMode: false,
+      selectedTiles: [],
+      selectedIndices: []
 
     }
   },
@@ -73,6 +88,19 @@ export default {
         }
         return min;
     },
+    toggleEditMode() {
+      this.isEditMode = !this.isEditMode;
+    },
+
+    toggleSelectMode() {
+      this.isSelectMode = !this.isSelectMode;
+
+      // Ensure that you can't be in both edit and select mode simultaneously
+      if (!this.isSelectMode) {
+        this.isEditMode = false;
+      }
+    },
+
     drawTreatHeatMap(patient_id, week, night_id){
         var dom = document.getElementById("chart-container");
         var myChart = echarts.init(dom, null, {
@@ -189,7 +217,8 @@ export default {
                     emphasis: {
                         itemStyle: {
                             shadowBlur: 10,
-                            shadowColor: 'rgba(0, 0, 0, 0.5)'
+                            shadowColor: 'rgba(0, 0, 0, 0.5)',
+                            borderColor: 'black'
                         }
                     }
                 }, {
@@ -204,7 +233,66 @@ export default {
                     }
                 }]
             };
-            if (option && typeof option === "object") {
+
+            myChart.on('click', (params) => {
+              console.log('Tile clicked:', params);
+
+              if (this.isEditMode) {
+                if (params.seriesIndex === 0) { // If the clicked series is 'rem'
+                  // Remove from 'rem' dataset
+                  let removedData = option.series[0].data.splice(params.dataIndex, 1)[0];
+
+                  // Modify the stage value
+                  removedData[3] = 'nrem';
+
+                  // Add to 'nrem' dataset
+                  option.series[1].data.push(removedData);
+
+                } else if (params.seriesIndex === 1) { // If the clicked series is 'nrem'
+                  // Remove from 'nrem' dataset
+                  let removedData = option.series[1].data.splice(params.dataIndex, 1)[0];
+
+                  // Modify the stage value
+                  removedData[3] = 'rem';
+
+                  // Add to 'rem' dataset
+                  option.series[0].data.push(removedData);
+                }
+
+                // Update the chart with the modified options
+                myChart.setOption(option);
+              }
+
+              else if (this.isSelectMode) {
+                console.log('Select mode is active');
+                let dataIndex = `${params.seriesIndex}-${params.dataIndex}`;
+                console.log('Selected Indices:', this.selectedIndices);
+
+                if (this.selectedIndices.includes(dataIndex)) {
+                  // If already selected, remove from the selectedIndices array
+                  this.selectedIndices = this.selectedIndices.filter(i => i !== dataIndex);
+
+                  // De-emphasize
+                  myChart.dispatchAction({
+                    type: 'downplay',
+                    seriesIndex: params.seriesIndex,
+                    dataIndex: params.dataIndex
+                  });
+                } else {
+                  // Otherwise, add to the selectedIndices array
+                  this.selectedIndices.push(dataIndex);
+
+                  // Emphasize
+                  myChart.dispatchAction({
+                    type: 'highlight',
+                    seriesIndex: params.seriesIndex,
+                    dataIndex: params.dataIndex
+                  });
+                }
+              }
+            });
+
+              if (option && typeof option === "object") {
                 myChart.setOption(option);
             }
 
@@ -214,6 +302,19 @@ export default {
             console.log(err)
         })
     }
+
+
 }
 }
 </script>
+
+<style scoped>
+.buttons-container {
+  position: absolute;
+  top: 175px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 10px;
+}
+</style>

@@ -118,7 +118,7 @@ export default {
       this.Labels = this.loadAll();
       for (let label in this.Labels){
         // console.log(this.Labels[label])
-        this.Labels[label].Dur = computed(()=>{  return this.Labels[label].End - this.Labels[label].Start  }) 
+        this.Labels[label].Dur = computed(()=>{  return this.Labels[label].End - this.Labels[label].Start  })
       }
     }
 }
