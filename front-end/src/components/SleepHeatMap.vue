@@ -22,6 +22,11 @@
             </router-link>
         </el-col>
     </el-row>
+    <el-row style="margin-top: 2%">
+        <el-col :offset="20">
+            <el-button type="primary" plain @click="open"> <el-icon :size="25"><Edit /></el-icon> Edit</el-button>
+        </el-col>
+    </el-row>
     <el-row>
         <el-col :span="24" v-loading="loading" element-loading-text="The dataset is loading...it might take a couple of minutes.">
             <div id="chart-container" style="position: relative; height: 80vh; overflow: hidden;"></div>
@@ -33,6 +38,8 @@
 import * as echarts from 'echarts';
 import axios from 'axios';
 import { ref } from 'vue';
+import { h } from 'vue';
+import { ElMessage } from 'element-plus';
 
 export default {
   name: 'SleepHeatMap',
@@ -47,6 +54,9 @@ export default {
     this.drawTreatHeatMap(1, 1, 1222325);
   },
   methods: {
+    open() {
+        ElMessage('Please choose the cell for which you want to modify the label.')
+    },
     getMax(arr, prop) {
         var max;
         for (var i=0 ; i<arr.length ; i++) {
