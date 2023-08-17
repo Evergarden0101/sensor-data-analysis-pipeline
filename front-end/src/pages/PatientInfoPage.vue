@@ -10,6 +10,20 @@
             <Stepper step=1 />
         </el-col>
     </el-row>
+    <el-row style="margin-top: 3%;">
+        <el-col :span="7" :offset="5">
+            <router-link :to="'/'">
+                <el-button type="primary" plain><el-icon class="el-icon--left"><ArrowLeft /></el-icon>Home</el-button>
+            </router-link>
+        </el-col>
+        <el-col :span="7" :offset="5">
+            <router-link :to="'/sleep/'">
+                <el-button type="primary" plain>
+                    Sleep Stage Detection<el-icon class="el-icon--right"><ArrowRight /></el-icon>
+                </el-button>
+            </router-link>
+        </el-col>
+    </el-row>
 
     <el-row style="margin-top: 3%;">
         <el-col :span="10" :offset="7">
@@ -79,24 +93,6 @@
     
 
     <!-- <div class="hp-icons-container"> -->
-        
-        <el-row style="margin-top: 3%;">
-            <el-col :span="7" :offset="5">
-                <router-link :to="'/'">
-                    <el-button type="primary" plain><el-icon class="el-icon--left"><ArrowLeft /></el-icon>Home</el-button>
-                </router-link>
-            </el-col>
-            <el-col :span="7" :offset="17">
-                <router-link :to="'/sleep/'">
-                    <el-button type="primary" plain>
-                        Sleep Stage Detection<el-icon class="el-icon--right"><ArrowRight /></el-icon>
-                    </el-button>
-                </router-link>
-            </el-col>
-        </el-row>
-
-        
-
         <!--
         <el-row style="margin-top: 50px;">
             <router-link :to="'/sleep/'" style="margin-right: 20px;">
