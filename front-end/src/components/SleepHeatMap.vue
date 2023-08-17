@@ -1,7 +1,7 @@
 <template>
-    <h2 align="center">Sleep stage classification</h2>
-    <p align="center">Every row represents a sleep cycle (90 minutes)</p>
-    <p align="center">The color bars represents the level of uncertainity.
+    <h2 align="center">Sleep Stage Classification</h2>
+    <p align="center">Every row represents a sleep cycle (90 minutes).</p>
+    <p align="center">The color bars represent the level of uncertainity.
         <el-tooltip placement="top" effect="light">
             <template #content>The level of uncertainity is derived from the Standard deviation of the LF/HF measure of the Heart Rate Variability (HRV) analyis. <br /> The ranges to classify the different sleep stages were taken from the following study: <br /><a href="https://www.frontiersin.org/articles/10.3389/fphys.2017.01100/full">Herzig, David, et al. "Reproducibility of heart rate variability is parameter and sleep stage dependent." Frontiers in physiology 8 (2018): 1100.</a> </template>
             <el-button size="small" circle ><el-icon><InfoFilled /></el-icon></el-button>

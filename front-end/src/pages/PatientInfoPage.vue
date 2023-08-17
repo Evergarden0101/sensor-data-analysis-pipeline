@@ -1,7 +1,7 @@
 <template>
     <el-row style="margin-bottom: 2%;">
         <el-col>
-            <h1 style="text-align: center;">This is the patient info page!</h1>
+            <h1 style="text-align: center;">This is the Patient Info page!</h1>
         </el-col>
     </el-row>
 
