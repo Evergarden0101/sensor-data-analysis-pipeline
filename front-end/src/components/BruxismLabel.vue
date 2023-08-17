@@ -1,57 +1,67 @@
 <template>
-    <el-card class="box-card" style="border: solid 1px;border-radius: 10px; width: 100%; margin-left: auto;margin-right: auto;">
-        <h3 align="center" style="margin-bottom: 30px;">Bruxism Event Predictions</h3>
-        <el-row v-for="(item,index) in Labels" :key="index" style="margin-bottom: 10px;">
-            <el-col :span="3"><h5>{{ item.id }}</h5></el-col>
-            <el-col :span="21">
-                <el-form :inline="true" :model="Labels" class="demo-form-inline">
-                <el-form-item label="Start:" style="margin-left: 1em;">
-                    <el-input-number v-model="item.Start" :placeholder="item.Start" style="width: 65px;"
-                    :controls="false" />
-                    <el-text size="large" style="margin-left: 0.3em;">s</el-text>
+    <el-row>
+        <el-card class="box-card" style="border: solid 1px;border-radius: 10px; width: 100%; margin-left: auto;margin-right: auto;">
+            <h3 align="center" style="margin-bottom: 30px;">Bruxism Event Predictions</h3>
+            <el-row v-for="(item,index) in Labels" :key="index" style="margin-bottom: 10px;">
+                <el-col :span="3"><h5>{{ item.id }}</h5></el-col>
+                <el-col :span="21">
+                    <el-form :inline="true" :model="Labels" class="demo-form-inline">
+                    <el-form-item label="Start:" style="margin-left: 1em;">
+                        <el-input-number v-model="item.Start" :placeholder="item.Start" style="width: 65px;" 
+                        :controls="false" :disabled="!item.Confirm"/>
+                        <el-text size="large" style="margin-left: 0.3em;">s</el-text>
+                    </el-form-item>
+                    <el-form-item label="End:" style="margin-left: 1em;">
+                        <el-input-number v-model="item.End" :placeholder="item.End" style="width: 65px;" 
+                        :controls="false" :disabled="!item.Confirm"/>
+                        <el-text size="large" style="margin-left: 0.3em;">s</el-text>
+                    </el-form-item>
+                    <el-form-item label="Duration:" style="margin-left: 1em;">
+                        <el-input-number v-model="item.Dur" :placeholder="item.Dur" style="width: 65px;" 
+                        :disabled="true" :controls="false" />
+                        <el-text size="large" style="margin-left: 0.3em;">s</el-text>
+                    </el-form-item>
+                    <el-switch v-model="item.Confirm" :active-icon="CircleCheckFilled" :inactive-icon="CircleCloseFilled" 
+                    style="margin-left: 1em;--el-switch-on-color: #13ce66; --el-switch-off-color: #ff4949" size="small" 
+                    active-text="Confirm Bruxism" inactive-text="Not Bruxism"/>
+                </el-form>
+                </el-col>
+                <el-divider />
+            </el-row>
+            <el-button type='primary' text='primary' @click="dialogFormVisible = true" style="margin-top: -15px;">
+                Add Bruxism Event
+            </el-button>
+            <el-dialog v-model="dialogFormVisible" title="Add Bruxism Event" center width="30%" align-center draggable>
+                <el-form :model="form">
+                <el-form-item label="Start Time:" :label-width="formLabelWidth">
+                    <el-input-number v-model="form.Start" style="width: 70px; margin-left: 20px;"  :controls="false" />
+                        <el-text size="large" style="margin-left: 0.3em;">s</el-text>
                 </el-form-item>
-                <el-form-item label="End:" style="margin-left: 1em;">
-                    <el-input-number v-model="item.End" :placeholder="item.End" style="width: 65px;"
-                    :controls="false" />
-                    <el-text size="large" style="margin-left: 0.3em;">s</el-text>
+                <el-form-item label="End Time:" :label-width="formLabelWidth">
+                    <el-input-number v-model="form.End" style="width: 70px;margin-left: 20px;"  :controls="false" />
+                        <el-text size="large" style="margin-left: 0.3em;">s</el-text>
                 </el-form-item>
-                <el-form-item label="Duration:" style="margin-left: 1em;">
-                    <el-input-number v-model="item.Dur" :placeholder="item.Dur" style="width: 65px;"
-                    :disabled="true" :controls="false" />
-                    <el-text size="large" style="margin-left: 0.3em;">s</el-text>
-                </el-form-item>
-                <el-switch v-model="item.Confirm" :active-icon="CircleCheckFilled" :inactive-icon="CircleCloseFilled"
-                style="margin-left: 1em;--el-switch-on-color: #13ce66; --el-switch-off-color: #ff4949" size="small"
-                active-text="Confirm Bruxism" inactive-text="Not Bruxism"/>
-            </el-form>
-            </el-col>
-            <el-divider />
-        </el-row>
-        <el-button type='primary' text='primary' @click="dialogFormVisible = true" style="margin-top: -15px;">
-            Add Bruxism Event
+                </el-form>
+                <template #footer>
+                <span class="dialog-footer">
+                    <el-button @click="dialogFormVisible = false">Cancel</el-button>
+                    <el-button type="primary" @click="dialogFormVisible = false">
+                    Confirm
+                    </el-button>
+                </span>
+                </template>
+            </el-dialog>
+            <LabelButton  style="display: block;margin: 15px auto 5px auto;"/>
+        </el-card>
+    </el-row>
+    <el-row style="margin-top: 3em;">
+        <h5 style="display: block;margin: auto;">Change at least 1 label to rerun classifier</h5>
+    </el-row>
+    <el-row style="margin-top: 1em;">
+        <el-button color="#626aef" plain size="large" :disabled="!rerun" style="display: block;margin: 0 auto;">
+            Rerun Bruxism Classification
         </el-button>
-        <el-dialog v-model="dialogFormVisible" title="Add Bruxism Event" center width="30%" align-center draggable>
-            <el-form :model="form">
-            <el-form-item label="Start Time:" :label-width="formLabelWidth">
-                <el-input-number v-model="form.Start" style="width: 70px; margin-left: 20px;"  :controls="false" />
-                    <el-text size="large" style="margin-left: 0.3em;">s</el-text>
-            </el-form-item>
-            <el-form-item label="End Time:" :label-width="formLabelWidth">
-                <el-input-number v-model="form.End" style="width: 70px;margin-left: 20px;"  :controls="false" />
-                    <el-text size="large" style="margin-left: 0.3em;">s</el-text>
-            </el-form-item>
-            </el-form>
-            <template #footer>
-            <span class="dialog-footer">
-                <el-button @click="dialogFormVisible = false">Cancel</el-button>
-                <el-button type="primary" @click="dialogFormVisible = false">
-                Confirm
-                </el-button>
-            </span>
-            </template>
-        </el-dialog>
-        <LabelButton  style="display: block;margin: 15px auto 5px auto;"/>
-    </el-card>
+    </el-row>
 </template>
 
 <script>
@@ -66,6 +76,7 @@ export default {
     data () {
         return{
             Labels:[],
+            rerun: false,
             dialogFormVisible: false,
             formLabelWidth: '100px',
             form:{'id':'','Start':'','End':''}

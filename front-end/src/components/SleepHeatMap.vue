@@ -1,7 +1,7 @@
 <template>
-    <h2 align="center">Sleep stage classification</h2>
-    <p align="center">Every row represents a sleep cycle (90 minutes)</p>
-    <p align="center">The color bars represents the level of uncertainity.
+    <h2 align="center">Sleep Stage Classification</h2>
+    <p align="center">Every row represents a sleep cycle (90 minutes).</p>
+    <p align="center">The color bars represent the level of uncertainity.
         <el-tooltip placement="top" effect="light">
             <template #content>The level of uncertainity is derived from the Standard deviation of the LF/HF measure of the Heart Rate Variability (HRV) analyis. <br /> The ranges to classify the different sleep stages were taken from the following study: <br /><a href="https://www.frontiersin.org/articles/10.3389/fphys.2017.01100/full">Herzig, David, et al. "Reproducibility of heart rate variability is parameter and sleep stage dependent." Frontiers in physiology 8 (2018): 1100.</a> </template>
             <el-button size="small" circle ><el-icon><InfoFilled /></el-icon></el-button>
@@ -22,6 +22,7 @@
             </router-link>
         </el-col>
     </el-row>
+<<<<<<< front-end/src/components/SleepHeatMap.vue
 
   <div class="buttons-container">
     <el-button @click="toggleEditMode" v-if="!isEditMode">Enter Edit Mode</el-button>
@@ -30,6 +31,14 @@
   </div>
 
   <el-row>
+=======
+    <el-row style="margin-top: 2%">
+        <el-col :offset="20">
+            <el-button type="primary" plain @click="open"> <el-icon :size="25"><Edit /></el-icon> Edit</el-button>
+        </el-col>
+    </el-row>
+    <el-row>
+>>>>>>> front-end/src/components/SleepHeatMap.vue
         <el-col :span="24" v-loading="loading" element-loading-text="The dataset is loading...it might take a couple of minutes.">
             <div id="chart-container" style="position: relative; height: 80vh; overflow: hidden;"></div>
         </el-col>
@@ -40,6 +49,8 @@
 import * as echarts from 'echarts';
 import axios from 'axios';
 import { ref } from 'vue';
+import { h } from 'vue';
+import { ElMessage } from 'element-plus';
 
 export default {
   name: 'SleepHeatMap',
@@ -58,6 +69,9 @@ export default {
     this.drawTreatHeatMap(1, 1, 1222325);
   },
   methods: {
+    open() {
+        ElMessage('Please choose the cell for which you want to modify the label.')
+    },
     getMax(arr, prop) {
         var max;
         for (var i=0 ; i<arr.length ; i++) {

@@ -137,9 +137,10 @@ export default {
 
 
         // Add X axis --> it is a date format
+        var domainLen = (csv.length + 1)/this.freq;
         var x = d3.scaleLinear()
             // .domain(d3.extent(data, function(d) { return d.year; }))
-            .domain([0, (csv.length + 1)/this.freq])
+            .domain([0, domainLen])
             .range([ 0, width ]);
         var xAxis = svg.append("g")
             .attr("transform", "translate(0," + height + ")")
@@ -310,7 +311,8 @@ export default {
 
         // If user double click, reinitialize the chart
         svg.on("dblclick",function(){
-            x.domain([0, csv.length + 1])
+            console.log(domainLen)
+            x.domain([0, domainLen])
             xAxis.transition().call(d3.axisBottom(x))
             line
                 .select('.line')

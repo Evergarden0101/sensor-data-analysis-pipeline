@@ -9,46 +9,51 @@
             <Stepper step=4 />
         </el-col>
     </el-row>
-    <p style="text-align: center; margin-top: 2%;">Please select a patient id and a day:</p>
-    <el-row style="margin-top: 1%;">
-        <el-col :span="2" :offset="10">
-            <el-select v-model="value1" filterable placeholder="Patient id">
-                <el-option
-                v-for="item in options"
-                :key="item.value1"
-                :label="item.label"
-                :value="item.value1"
-                :disabled="item.disabled"
-                />
-            </el-select>
-        </el-col>
-        <el-col :span="12">
-            <el-select v-model="value2" filterable placeholder="Day">
-                <el-option
-                v-for="item in days"
-                :key="item.value2"
-                :label="item.label"
-                :value="item.value2"
-                :disabled="item.disabled"
-                />
-            </el-select>
+    <el-row style="margin-top: 3%;">
+        <el-col :span="18" :offset="6">
+            <router-link :to="'/bruxism/'">
+                <el-button type="primary" plain><el-icon class="el-icon--left"><ArrowLeft /></el-icon> Bruxism Detection</el-button>
+            </router-link>
         </el-col>
     </el-row>
-    <div v-if="value2">
-        <el-row v-if="value2" style="margin-top: 4%;">
-            <el-col :span="9" :offset="3">
-                <TreatmentHeatMap />
+    <p style="text-align: center; margin-top: 2%;">Please select a patient id to visualize mutiple weekly summary:</p>
+    <el-row style="margin-top: 1%;">
+        <el-col :offset="10">
+            <el-form :model="form" label-width="100px">
+                <el-form-item label="Patient UID">
+                    <el-autocomplete
+                        v-model="form.patientId"
+                        :fetch-suggestions="querySearch"
+                        clearable
+                        class="inline-input w-50"
+                        placeholder="Input Patient UID"
+                        @select="handleSelect"
+                        style="overflow: visible;"
+                    >
+                        <template #default="{ item }">
+                        <span
+                            style="
+                            float: left;
+                            font-size: 15px;
+                            "
+                            >{{ item.id }}</span>
+                        <span style="color: var(--el-text-color-secondary);float: right">UID</span>
+                        </template>
+                    </el-autocomplete>
+                </el-form-item>
+            </el-form>
+        </el-col>
+    </el-row>
+    <div v-if="form.patientId">
+        <el-row style="margin-top: 4%;" class="row-bg" justify="space-evenly">
+            <el-col :span="7">
+                <TreatHeatMapW1 />
             </el-col>
-            <el-col :span="12">
-                <TreatmentHeatMap />
+            <el-col :span="7">
+                <TreatHeatMapW2 />
             </el-col>
-        </el-row>
-        <el-row v-if="value2">
-            <el-col :span="9" :offset="3">
-                <TreatmentHeatMap />
-            </el-col>
-            <el-col :span="12">
-                <TreatmentHeatMap />
+            <el-col :span="7">
+                <TreatHeatMapW3 />
             </el-col>
         </el-row>
     </div>
@@ -58,53 +63,106 @@
 <script>
 import Stepper from '@/components/Stepper.vue';
 import TestButton from '@/components/TestButton.vue';
-import TreatmentHeatMap from '../components/TreatmentHeatMap.vue';
-import { ref } from 'vue';
+import TreatHeatMapW2 from '../components/TreatHeatMapW2.vue';
+import TreatHeatMapW1 from '@/components/TreatHeatMapW1.vue';
+import TreatHeatMapW3 from '@/components/TreatHeatMapW3.vue';
 
 export default {
     name: 'TreatmentPage',
     components: {
         Stepper,
         TestButton,
-        TreatmentHeatMap,
+        TreatHeatMapW2,
+        TreatHeatMapW1,
+        TreatHeatMapW3
+
     },
     data() {
-        return{
-            value1: ref(''),
-            value2: ref(''),
-            options : [
-            {
-                value1: 'Patient1',
-                label: 'Patient 1',
+        return {
+            form: {
+                patientId: '',
+                day: '',
             },
-            {
-                value1: 'Patient2',
-                label: 'Patient 2',
-                disabled: true,
-            },
-            {
-                value1: 'Patient3',
-                label: 'Patient3',
-                disabled: true
-            },
+            ids:[],
+            props : { expandTrigger: 'hover'},
+            days : [{
+                value: 'Week1',
+                label: 'Week 1',
+                children: [
+                {
+                    value: 'Day1',
+                    label: 'Day 1',
+                    disabled: true,
+                },
+                {
+                    value: 'Day2',
+                    label: 'Day 2',
+                    disabled: true,
+                },
+                {
+                    value: 'Day3',
+                    label: 'Day 3'
+                },
+                ]},
+                {
+                value: 'Week2',
+                label: 'Week 2',
+                children: [
+                {
+                    value: 'Day1',
+                    label: 'Day 1',
+                },
+                {
+                    value: 'Day2',
+                    label: 'Day 2',
+                    disabled: true,
+                },
+                {
+                    value: 'Day3',
+                    label: 'Day 3',
+                    disabled: true,
+                },
+            ]}
             ],
-            days : [
-            {
-                value2: 'Day1',
-                label: 'Day 1',
-                disabled: true,
-            },
-            {
-                value2: 'Day2',
-                label: 'Day 2',
-                disabled: true,
-            },
-            {
-                value2: 'Day3',
-                label: 'Day 3'
-            },
-            ]
         }
+    },
+    methods: {
+      onSubmit() {
+        console.log(this.form.patientId);
+        console.log(this.form.day);
+      },
+      handleChange(value) {
+        console.log(value)
+      },
+      handleSelect(item) {
+        console.log(item);
+        this.form.patientId = item.id;
+      },
+      querySearch(queryString, cb) {
+        var ids = this.ids;
+        var results = queryString ? ids.filter(this.createFilter(queryString)) : ids;
+        // call callback function to return suggestions
+        cb(results);
+      },
+      createFilter(queryString) {
+        return (id) => {
+          return (id.id.toLowerCase().indexOf(queryString.toLowerCase()) === 0);
+        };
+      },
+      loadAll() {
+        return [
+          { "id": "1111111" },
+          { "id": "2222222" },
+          { "id": "3333333" },
+          { "id": "4444444" },
+          { "id": "5555555" },
+          { "id": "6666666" },
+          { "id": "7777777" }
+         ];
+      },
+    },
+    beforeMount() {
+      this.ids = this.loadAll();
     }
 };
 </script>

@@ -1,6 +1,6 @@
 <template>
-    <h3 align="center">Weekly Bruxism Detected for Patient</h3>
-    <div id="chart-container" style="position: relative; height: 80vh;"></div>
+    <h3 align="center">Week 2</h3>
+    <div id="chart-container2" style="position: relative; height: 80vh;"></div>
 </template>
 
 <script>
@@ -8,7 +8,7 @@ import dataset from '../assets/1022102cFnorm.csv'
 import * as echarts from 'echarts';
 
 export default {
-  name: 'TreatHeatMap',
+  name: 'TreatHeatMapW2',
   data () {
     return {
       data: dataset,
@@ -19,7 +19,7 @@ export default {
   },
   methods: {
     drawTreatHeatMap(){
-        var dom = document.getElementById("chart-container");
+        var dom = document.getElementById("chart-container2");
         var myChart = echarts.init(dom, null, {
             renderer: "sgv",
             useDirtyRect: false
@@ -47,27 +47,23 @@ export default {
                 return args.seriesName + "<br />" +args.marker + parseInt(parseInt(args.value[0])+1) + 'h: ' + args.value[2] + ' brux events'
             }
         }
-
         option = {
-            title:{
-                text: ""
-            },
             tooltip: {
                 position: 'top',
                 formatter: callback
             },
             grid: {
                 height: '50%',
-                top: '5%'
+                top: '5%',
+                right: 100,
             },
             xAxis: {
                 type: 'category',
-                name: 'Sleep Hours',
-                rotate: 30,
+                name: 'Hours of sleep',
                 data: hours,
                 splitArea: {
                     show: true
-                },
+                }
             },
             yAxis: {
                 type: 'category',
@@ -91,7 +87,7 @@ export default {
                 type: 'heatmap',
                 data: data,
                 label: {
-                    show: true,
+                    show: true
                 },
                 emphasis: {
                     itemStyle: {
