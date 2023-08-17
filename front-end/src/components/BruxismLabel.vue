@@ -6,22 +6,22 @@
             <el-col :span="21">
                 <el-form :inline="true" :model="Labels" class="demo-form-inline">
                 <el-form-item label="Start:" style="margin-left: 1em;">
-                    <el-input-number v-model="item.Start" :placeholder="item.Start" style="width: 65px;" 
+                    <el-input-number v-model="item.Start" :placeholder="item.Start" style="width: 65px;"
                     :controls="false" />
                     <el-text size="large" style="margin-left: 0.3em;">s</el-text>
                 </el-form-item>
                 <el-form-item label="End:" style="margin-left: 1em;">
-                    <el-input-number v-model="item.End" :placeholder="item.End" style="width: 65px;" 
+                    <el-input-number v-model="item.End" :placeholder="item.End" style="width: 65px;"
                     :controls="false" />
                     <el-text size="large" style="margin-left: 0.3em;">s</el-text>
                 </el-form-item>
                 <el-form-item label="Duration:" style="margin-left: 1em;">
-                    <el-input-number v-model="item.Dur" :placeholder="item.Dur" style="width: 65px;" 
+                    <el-input-number v-model="item.Dur" :placeholder="item.Dur" style="width: 65px;"
                     :disabled="true" :controls="false" />
                     <el-text size="large" style="margin-left: 0.3em;">s</el-text>
                 </el-form-item>
-                <el-switch v-model="item.Confirm" :active-icon="CircleCheckFilled" :inactive-icon="CircleCloseFilled" 
-                style="margin-left: 1em;--el-switch-on-color: #13ce66; --el-switch-off-color: #ff4949" size="small" 
+                <el-switch v-model="item.Confirm" :active-icon="CircleCheckFilled" :inactive-icon="CircleCloseFilled"
+                style="margin-left: 1em;--el-switch-on-color: #13ce66; --el-switch-off-color: #ff4949" size="small"
                 active-text="Confirm Bruxism" inactive-text="Not Bruxism"/>
             </el-form>
             </el-col>
@@ -107,7 +107,7 @@ export default {
       this.Labels = this.loadAll();
       for (let label in this.Labels){
         // console.log(this.Labels[label])
-        this.Labels[label].Dur = computed(()=>{  return this.Labels[label].End - this.Labels[label].Start  }) 
+        this.Labels[label].Dur = computed(()=>{  return this.Labels[label].End - this.Labels[label].Start  })
       }
     }
 }

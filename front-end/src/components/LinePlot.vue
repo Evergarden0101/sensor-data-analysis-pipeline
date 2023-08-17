@@ -89,7 +89,7 @@ export default {
         var csv = this.csvToJson(dataset)
         // const csvs = JSON.stringify(csv, null, 2);
         // this.data = csvs;
-        
+
         // set the dimensions and margins of the graph
         var margin = {top: 10, right: 100, bottom: 40, left: 40},
             width = 850 - margin.left - margin.right,
@@ -135,7 +135,7 @@ export default {
         //     .domain(allGroup)
         //     .range(d3.schemeSet2);
 
-        
+
         // Add X axis --> it is a date format
         var x = d3.scaleLinear()
             // .domain(d3.extent(data, function(d) { return d.year; }))
@@ -156,7 +156,7 @@ export default {
         var yAxis = svg.append("g")
             .call(d3.axisLeft(y))
             .classed('axis_y', true)
-        
+
         // Add X axis label:
         svg.append("text")
             .attr("text-anchor", "end")
@@ -212,6 +212,7 @@ export default {
             .extent( [ [0,0], [width,height] ] )  // initialise the brush area: start at 0,0 and finishes at width,height: it means I select the whole graph area
             .on("end", updateChart)               // Each time the brush selection changes, trigger the 'updateChart' function
 
+
         // Create the line variable: where both the line and the brush take place
         const line = svg.append('g')
             .attr("clip-path", "url(#clip)")
@@ -245,7 +246,7 @@ export default {
                 .y(function(d) { return y(d[channel]) })
             )
             // .attr("stroke", function(d){ return myColor("MR") })
-        
+
         // Add the brushing
         line
         .append("g")
@@ -281,7 +282,7 @@ export default {
                     .x(function(d) { return x(d.cnt)})
                     .y(function(d) { return y(d[channel]) })
                 )
-            
+
 
             if(channel == 'ML'){
                 var otherLine = d3.select("#MR")
@@ -303,8 +304,8 @@ export default {
                     .y(function(d) { return y(d.ML)})
                 )
             }
-            
-            
+
+
         }
 
         // If user double click, reinitialize the chart
@@ -369,6 +370,6 @@ export default {
 <style scoped>
 .el-row{
     display:flex;
-    flex-wrap: wrap; 
+    flex-wrap: wrap;
 }
 </style>
