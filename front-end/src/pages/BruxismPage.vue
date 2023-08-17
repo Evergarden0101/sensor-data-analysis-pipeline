@@ -27,7 +27,7 @@
         <el-button type="primary" size="large" @click="rerender" style="display: block;margin: 0 auto;">
             Open Weekly Summary
         </el-button>
-        <el-dialog v-model="weekSummaryVisible" title="Weekly Summary" center>
+        <el-dialog v-model="weekSummaryVisible" title="Weekly Summary" center width="60%">
             <TreatHeatMap v-if="isShow"/>
         </el-dialog>
     </el-row>
@@ -35,17 +35,7 @@
     <el-row>
         <el-col :span="11" style="padding-left: 1.5em;">
             <el-affix :offset="20">
-                <el-row>
-                        <BruxismLabel/>
-                </el-row>
-                <el-row style="margin-top: 3em;">
-                    <h5 style="display: block;margin: auto;">Change {{ changedLabelNum }}/6 labels to rerun classifier</h5>
-                </el-row>
-                <el-row style="margin-top: 1em;">
-                    <el-button color="#626aef" plain size="large" :disabled="!rerun" style="display: block;margin: 0 auto;">
-                        Rerun Bruxism Classification
-                    </el-button>
-                </el-row>
+                <BruxismLabel/>
             </el-affix>
         </el-col>
         <el-col :span="11" :offset="1">
@@ -98,8 +88,6 @@ export default {
     data () {
         return {
             weekSummaryVisible: false,
-            rerun: false,
-            changedLabelNum: 2,
             isShow: true
         }
     },
