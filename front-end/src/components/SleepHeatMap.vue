@@ -22,7 +22,6 @@
             </router-link>
         </el-col>
     </el-row>
-<<<<<<< front-end/src/components/SleepHeatMap.vue
 
   <div class="buttons-container">
     <el-button @click="toggleEditMode" v-if="!isEditMode">Enter Edit Mode</el-button>
@@ -31,14 +30,6 @@
   </div>
 
   <el-row>
-=======
-    <el-row style="margin-top: 2%">
-        <el-col :offset="20">
-            <el-button type="primary" plain @click="open"> <el-icon :size="25"><Edit /></el-icon> Edit</el-button>
-        </el-col>
-    </el-row>
-    <el-row>
->>>>>>> front-end/src/components/SleepHeatMap.vue
         <el-col :span="24" v-loading="loading" element-loading-text="The dataset is loading...it might take a couple of minutes.">
             <div id="chart-container" style="position: relative; height: 80vh; overflow: hidden;"></div>
         </el-col>
