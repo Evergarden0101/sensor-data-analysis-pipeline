@@ -23,14 +23,31 @@
             </router-link>
         </el-col>
     </el-row>
-    <el-row style="margin-top: 2em;margin-bottom: 2em;">
-        <el-button type="primary" size="large" @click="rerender" style="display: block;margin: 0 auto;">
-            Open Weekly Summary
+    <el-row style="margin-top: 2em;margin-bottom: 2em;height: 30px;overflow: visible; ">
+        <el-col :span="3" :offset="20">
+            <div class="affix-container">
+                <el-affix target=".affix-container" :offset="20">
+                    <p style="display: block;margin: auto;text-align: center;">Weekly Summary</p>
+                    <el-button @click="rerender" style="margin-top: 0;width: 200px;height: 200px;padding: 0;border: 0;">
+                        <el-image :src="imgsrc" :fit="contain" />
+                    </el-button>
+                    <!-- <input type="image" :src="imgsrc" name="Weekly Summary" width="200" height="auto" alt="Weekly Summary"/> -->
+                    <el-dialog v-model="weekSummaryVisible" title="Weekly Summary" center width="60%">
+                        <TreatHeatMap v-if="isShow"/>
+                    </el-dialog>
+                </el-affix>
+            </div>
+        </el-col>
+    </el-row>
+    
+    <!-- <el-row style="margin-top: 2em;margin-bottom: 2em;">
+        <el-button @click="rerender" style="right:90%;width: 100px;height: 100px;padding: 0;border: 0;">
+            <el-image :src="imgsrc" :fit="contain" />
         </el-button>
         <el-dialog v-model="weekSummaryVisible" title="Weekly Summary" center width="60%">
             <TreatHeatMap v-if="isShow"/>
         </el-dialog>
-    </el-row>
+    </el-row> -->
 
     <el-row>
         <el-col :span="11" style="padding-left: 1.5em;">
@@ -88,7 +105,8 @@ export default {
     data () {
         return {
             weekSummaryVisible: false,
-            isShow: true
+            isShow: true,
+            imgsrc: require("@/assets/summary.png"),
         }
     },
     methods:{
@@ -102,3 +120,11 @@ export default {
     }
 };
 </script>
+<style scoped>
+.affix-container {
+  text-align: right;
+  height: 300px;
+  border-radius: 4px;
+  /* background: var(--el-color-primary-light-9); */
+}
+</style>
