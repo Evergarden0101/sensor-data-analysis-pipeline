@@ -8,12 +8,12 @@
                     <el-form :inline="true" :model="Labels" class="demo-form-inline">
                     <el-form-item label="Start:" style="margin-left: 1em;">
                         <el-input-number v-model="item.Start" :placeholder="item.Start" style="width: 65px;" 
-                        :controls="false" :disabled="!item.Confirm"/>
+                        :controls="false" :disabled="!item.Confirm" @change="rerun = true"/>
                         <el-text size="large" style="margin-left: 0.3em;">s</el-text>
                     </el-form-item>
                     <el-form-item label="End:" style="margin-left: 1em;">
                         <el-input-number v-model="item.End" :placeholder="item.End" style="width: 65px;" 
-                        :controls="false" :disabled="!item.Confirm"/>
+                        :controls="false" :disabled="!item.Confirm" @change="rerun = true"/>
                         <el-text size="large" style="margin-left: 0.3em;">s</el-text>
                     </el-form-item>
                     <el-form-item label="Duration:" style="margin-left: 1em;">
@@ -23,7 +23,7 @@
                     </el-form-item>
                     <el-switch v-model="item.Confirm" :active-icon="CircleCheckFilled" :inactive-icon="CircleCloseFilled" 
                     style="margin-left: 1em;--el-switch-on-color: #13ce66; --el-switch-off-color: #ff4949" size="small" 
-                    active-text="Confirm Bruxism" inactive-text="Not Bruxism"/>
+                    active-text="Confirm Bruxism" inactive-text="Not Bruxism" @change="rerun = true"/>
                 </el-form>
                 </el-col>
                 <el-divider />
@@ -58,7 +58,8 @@
         <h5 style="display: block;margin: auto;">Change at least 1 label to rerun classifier</h5>
     </el-row>
     <el-row style="margin-top: 1em;">
-        <el-button color="#626aef" plain size="large" :disabled="!rerun" style="display: block;margin: 0 auto;">
+        <el-button color="#626aef" plain size="large" :disabled="!rerun" style="display: block;margin: 0 auto;" 
+        @click="load = true" :loading="load">
             Rerun Bruxism Classification
         </el-button>
     </el-row>
@@ -77,6 +78,7 @@ export default {
         return{
             Labels:[],
             rerun: false,
+            load:false,
             dialogFormVisible: false,
             formLabelWidth: '100px',
             form:{'id':'','Start':'','End':''}
