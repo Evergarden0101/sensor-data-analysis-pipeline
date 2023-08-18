@@ -23,8 +23,8 @@
             </router-link>
         </el-col>
     </el-row>
-    <el-row style="margin-top: -100px;margin-bottom: 2em;height: 130px;overflow: visible; ">
-        <el-col :span="3" :offset="20">
+    <el-row style="margin-top: 2em;margin-bottom: 2em;height: 30px;overflow: visible; ">
+        <el-col :span="3" :offset="20" style="margin-top: -150px;height: 130px;">
             <div class="affix-container">
                 <el-affix target=".affix-container" :offset="20">
                     <p style="display: block;margin:0 auto 50px auto;text-align: center;">Weekly Summary</p>
