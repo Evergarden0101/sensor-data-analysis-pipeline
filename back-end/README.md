@@ -11,8 +11,8 @@ Get the recording of a patient on a specific day of the week.
 | Parameter | Required | Type                                  | default |
 | --------- | -------- | ------------------------------------- | ------- |
 | `patient_id`    | ✅        | int                                | -       |
-| `week`    | ✅        | int | -       |
-| `day`    | ✅        | int` | -       |
+| `week`    | ✅        | string | -       |
+| `day`    | ✅        | string | -       |
 
 ### Responses
 
@@ -43,6 +43,17 @@ Not Found if there are is no data for the specified patient on the desired day o
 
 Insert the patient's recording on a specified day of the week in the database.
 
+### Parameters
+| Parameter | Required | Type                                  | default |
+| --------- | -------- | ------------------------------------- | ------- |
+| `patient_id`    | ✅        | int                                | -       |
+| `week`    | ✅        | string | -       |
+| `day`    | ✅        | string | -       |
+| `hours`    | ✅        | string | -       |
+| `minutes`    | ✅        | string | -       |
+| `seconds`    | ✅        | string | -       |
+
+
 ### Response
 
 #### 200 OK
@@ -52,3 +63,9 @@ Insert the patient's recording on a specified day of the week in the database.
 ```
 "Successfuly inserted into Database."
 ```
+
+#### 400 Bad Request
+
+Bad Request if was not possible to insert data for the specified patient on the desired day of the week.
+
+**Response:** python Exception
