@@ -1,11 +1,14 @@
 from flask import Flask, request
 import werkzeug
-import os, json
+import os
 import sqlite3 as sql
 from database import db
 from flask_cors import CORS
 from SSD import *
+from preprocessing import *
 import sys
+import pandas as pd
+from settings import *
 
 """Example of possible structure for posting the label data"""
 def create_app(test_config=None):
@@ -30,18 +33,16 @@ def create_app(test_config=None):
         pass
 
     db.init_app(app)
+
+    DATABASE = app.config['DATABASE']
     
     # Helper functions and variables
     def insert_label(label):
-        DATABASE = app.config['DATABASE']
-
         with sql.connect(DATABASE) as con:
             cur = con.cursor()
             cur.execute(f"INSERT INTO labels (patient, location_begin, location_end, duration) VALUES {label}")
 
     def get_patient_data(patient_id):
-        DATABASE = app.config['DATABASE']
-
         with sql.connect(DATABASE) as con:
             cur = con.cursor()
             patient_data = cur.execute(f"SELECT * FROM labels WHERE patient = {patient_id}").fetchall()
@@ -68,31 +69,61 @@ def create_app(test_config=None):
         return values
              
 
-    @app.route("/upload", methods=['POST'])
-    def upload():
-        #uploaded_file = request.files['file']
-        patient_id = 1
-        uploaded_file = "./data/p1_w1/1222325cFnorm.csv"
-        time = uploaded_file[-17: -10]
-        DATABASE = app.config['DATABASE']
-        MAX = 1000000
+    @app.route("/patient-recording/<int:patient_id>/<int:week>/<string:day>/<string:hours>/<string:minutes>/<string:seconds>", methods=['POST'])
+    def upload_patient_recording(patient_id, week, day, hours, minutes, seconds):
+        try:
+            patient_file = DATA_PATH + f"p{patient_id}_w{week}/{day}{hours}{minutes}{seconds}cFnorm.csv"
+            csvData = pd.read_csv(patient_file)
+            #csvData = resample_whole_df(csvData)
 
-        csvData = pd.read_csv(uploaded_file)
-        
-        with sql.connect(DATABASE) as con:
-            cur = con.cursor()
-            for i,row in csvData.iterrows():
-        
-                params = (patient_id, int(time[:2]), int(time[2:4]), int(time[4:6]), int(time[6]), uploaded_file[-10], row['MR'],row['ML'],row['SU'],row['Microphone'],row['Eye'], row['ECG'], row['Pressure Sensor'])
-                query = "INSERT INTO patients (patient_id, day, hours, minutes, seconds, recorder, MR, ML, SU, Microphone, Eye, ECG, Pressure) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
-            
-                cur.execute(query, params)
-                print(i, patient_id, int(time[:2]), int(time[2:4]), int(time[4:6]), int(time[6]), uploaded_file[-10], row['MR'],row['ML'],row['SU'],row['Microphone'],row['Eye'], row['ECG'], row['Pressure Sensor'])
+            with sql.connect(DATABASE) as con:
+                print("DATABASE CONNECTED")
+                cur = con.cursor()
 
-                if i == MAX:
-                    break
-        return "Successfuly inserted into Database", 200
+                for i,row in csvData.iterrows():
             
+                    params = (patient_id, week, day, hours, minutes, seconds, patient_file[-10], row['MR'],row['ML'],row['SU'],row['Microphone'],row['Eye'], row['ECG'], row['Pressure Sensor'])
+                    query = "INSERT INTO patients_recordings (patient_id, week, day, hours, minutes, seconds, recorder, MR, ML, SU, Microphone, Eye, ECG, Pressure) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                
+                    cur.execute(query, params)
+                    print(f"{i} out of {csvData.index[-1]}")
+
+            return "Successfuly inserted into Database.", 200
+        
+        except Exception as e:
+            return f"{e}", 400
+    
+
+
+    @app.route("/patient-recording/<int:patient_id>/<string:week>/<string:day>", methods=["GET"])
+    def get_patient_recording(patient_id, week, day):
+        try:
+            with sql.connect(DATABASE) as con:
+                print('connected to db', file=sys.stderr)
+                cur = con.cursor()
+
+                params = (patient_id, week, day)
+                patient_recording = f"SELECT * FROM patient_recordings WHERE (patient_id=? AND week=? AND day=?)"
+                print('patient_exist query', file=sys.stderr)
+
+                patient_recording_query = cur.execute(patient_recording, params).fetchall()
+
+                if patient_recording_query:
+                    print('EXIST', file=sys.stderr)
+
+                    df = pd.DataFrame(patient_recording_query)
+                    df.columns = patient_recording_query.keys()
+
+                    print(df.info)
+
+                    return df, 200
+                
+                else:
+                    print('DOES NOT EXIST', file=sys.stderr)
+                    return f"There is no data for patient with id {patient_id} on day {day} of week {week}", 404
+
+        except Exception as e:
+            return f"{e}", 400
 
 
     @app.route("/label-brux", methods=["POST"])
@@ -127,7 +158,6 @@ def create_app(test_config=None):
             minutes = str(night_id)[4:6]
             seconds =str(night_id)[6]
 
-            DATABASE = app.config['DATABASE']
             print('database variable', file=sys.stderr)
             with sql.connect(DATABASE) as con:
                 print('connected to db', file=sys.stderr)
@@ -162,7 +192,7 @@ def create_app(test_config=None):
 
                 return values
         except Exception as e:
-            print('HEY2', file=sys.stderr)
+            print('Exception raised', file=sys.stderr)
             print(e)
             return f"{e}"
         

@@ -1,53 +1,20 @@
-import pandas as pd
+import pandas as pd 
 import matplotlib.pyplot as plt
 import datetime
 import neurokit2 as nk
 import hrvanalysis as hrvana
-
-# GLOBAL VARIABLES
-SAMPLING_RATE = 1000
-INTERVAL = 5 # We want to take data at every 5 minutes interval
-SLEEP_CYCLE = 90
-DATA_PATH = "C:/Users/Karim/Desktop/UniZH/Master/Not Done/Master Project/sensor-data-analysis-pipeline/back-end/src/data"
+from preprocessing import *
+from settings import *
 
 
 # FUNCTIONS
-"""Gets patient_id, week and night_id and return a pandas df"""
-def open_brux_csv(patient_id, week, night_id):
-    return pd.read_csv(DATA_PATH + f"p{patient_id}_w{week}/{night_id}cFnorm.csv")
-
-"""Gets complete patient df and return only the ECG column"""
-def get_ECG_data_from_df(df):
-    return df["ECG"]
-
-
-"""Gets ECG one column dataframe and return the list of values"""
-def get_ecg_array(ecg):
-    return ecg.values.tolist()
-
-
-"""Gets ECG list (default sampling rate: 2000) and resample the ECG signal to desired rate (default: 1000)"""
-def resample_signal(ecg, sampling_rate=2000, SAMPLING_RATE=SAMPLING_RATE):
-    return nk.signal_resample(ecg, sampling_rate=sampling_rate, desired_sampling_rate=SAMPLING_RATE)
-
-
-"""Testing purposes: take only first n minutes of the ecg list dataset"""
-def get_n_minutes(ecg, n, SAMPLING_RATE=SAMPLING_RATE):
-    data_points = n*60*SAMPLING_RATE
-    return ecg[:data_points]
-
-
-"""Takes ecg list and default sampling rate and returns the duration in hours, minutes and seconds"""
-def get_signal_duration(ecg, SAMPLING_RATE=SAMPLING_RATE):
-    return datetime.timedelta(seconds=(len(ecg)-1)/SAMPLING_RATE)
-
 
 """Take cleaned ecg as input and return RR intervals"""
 def find_rr_intervals(cleaned_ecg):
     pantompkins1985 = nk.ecg_findpeaks(cleaned_ecg, method="pantompkins1985") # find the R peaks
     hrv_df = pd.DataFrame(pantompkins1985)
     hrv_df["RR Intervals"] = hrv_df["ECG_R_Peaks"].diff() # calculate the value difference between two adjacent points
-    hrv_df.loc[0, "RR Intervals"]=hrv_df.loc[0]['ECG_R_Peaks'] # the first datapoint contain Nan
+    hrv_df.loc[0, "RR Intervals"]=hrv_df.loc[0]['ECG_R_Peaks'] # the first datapoint contain Nan 
 
     return hrv_df
 
@@ -96,7 +63,7 @@ def get_ako_ranges():
 """
 - patient_id: id of the patient
 - week: week number
-- night_id: id of the night that specifies which file to open
+- night_id: id of the night that specifies which file to open 
 - n: first n minutes of data are selected
 - SAMPLING_RATE: desired sampling rate (default: 1000)
 """
@@ -109,20 +76,19 @@ def get_HRV_features(patient_id, week, night_id, n,  SAMPLING_RATE=SAMPLING_RATE
     values = []
     y=0
     x=0
-
+    
     # Open right CSV file and get ECG data
     df = open_brux_csv(patient_id=patient_id, week=week, night_id=night_id)
-    ecg = get_ECG_data_from_df(df)
-    ecg_array = get_ecg_array(ecg)
+    ecg = get_column_data_from_df(df, "ECG")
+    ecg_array = get_column_array(ecg)
 
     # Downsample to 1000Hz
-    ecg_ds = resample_signal(ecg=ecg_array)
+    ecg_ds = resample_signal(signal=ecg_array)
 
     # Select first n minutes
     ecg_nmin = get_n_minutes(ecg_ds, n, SAMPLING_RATE=SAMPLING_RATE)
     print(f"Signal duration: {get_signal_duration(ecg_nmin)}")
-
-
+    
 
     while end <= len(ecg_nmin)+1:
         stage = ''
@@ -136,13 +102,13 @@ def get_HRV_features(patient_id, week, night_id, n,  SAMPLING_RATE=SAMPLING_RATE
         # Clean ECG data
         cleaned = nk.ecg_clean(filter_ecg, sampling_rate=SAMPLING_RATE, method="pantompkins1985")
 
-        #Find RR intervals
+        #Find RR intervals    
         hrv_df = find_rr_intervals(cleaned)
 
         # Clean RR intervals
-
+    
         clean_rri = clean_rr_intervals(hrv_df)
-        hrv_df["RR Intervals"] = clean_rri
+        hrv_df["RR Intervals"] = clean_rri 
 
         # HRV feature extraction
         nn_epoch = hrv_df['RR Intervals'].values
@@ -186,5 +152,5 @@ def get_HRV_features(patient_id, week, night_id, n,  SAMPLING_RATE=SAMPLING_RATE
 
         start = end
         end += window_size
-
+    
     return values

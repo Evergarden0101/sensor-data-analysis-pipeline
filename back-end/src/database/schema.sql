@@ -1,5 +1,5 @@
 DROP TABLE IF EXISTS labels;
-DROP TABLE IF EXISTS patients;
+DROP TABLE IF EXISTS patients_recordings;
 DROP TABLE IF EXISTS sleep_stage_detection;
 
 CREATE TABLE labels (
@@ -11,9 +11,10 @@ CREATE TABLE labels (
 );
 
 
-CREATE TABLE patients (
+CREATE TABLE patients_recordings (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   patient_id INTEGER NOT NULL,
+  week INTEGER NOT NULL,
   day INTEGER NOT NULL,
   hours INTEGER NOT NULL,
   minutes INTEGER NOT NULL,
