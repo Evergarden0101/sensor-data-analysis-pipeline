@@ -22,7 +22,7 @@ def get_column_array(df):
 
 """Gets ECG list (default sampling rate: 2000) and resample the ECG signal to desired rate (default: 1000)"""
 def resample_signal(signal, sampling_rate=2000, SAMPLING_RATE=SAMPLING_RATE):
-    return nk.signal_resample(signal, sampling_rate=sampling_rate, desired_sampling_rate=SAMPLING_RATE)
+    return nk.signal_resample(signal, sampling_rate=sampling_rate, desired_sampling_rate=SAMPLING_RATE, method="pandas")
 
 
 """Testing purposes: take only first n minutes of the signal list dataset"""
