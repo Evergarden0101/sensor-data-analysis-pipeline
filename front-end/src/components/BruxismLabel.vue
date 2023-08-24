@@ -51,7 +51,7 @@
                 </span>
                 </template>
             </el-dialog>
-            <LabelButton  style="display: block;margin: 15px auto 5px auto;"/>
+            <LabelButton :labels="Labels" style="display: block;margin: 15px auto 5px auto;"/>
         </el-card>
     </el-row>
     <el-row style="margin-top: 3em;">
@@ -122,6 +122,7 @@ export default {
         // console.log(this.Labels[label])
         this.Labels[label].Dur = computed(()=>{  return this.Labels[label].End - this.Labels[label].Start  })
       }
-    }
+      console.log(this.Labels)
+    },
 }
 </script>

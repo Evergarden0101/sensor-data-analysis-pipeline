@@ -73,8 +73,10 @@ def create_app(test_config=None):
     def upload_patient_recording(patient_id, week, day, hours, minutes, seconds):
         try:
             patient_file = DATA_PATH + f"p{patient_id}_w{week}/{day}{hours}{minutes}{seconds}cFnorm.csv"
-            csvData = pd.read_csv(patient_file)
-            #csvData = resample_whole_df(csvData)
+            df = pd.read_csv(patient_file)
+            # For the moment the data is automatically resampled when uploaded in DB for efficiency reasons
+            # TODO: adapt in the future
+            csvData = resample_whole_df(df)
 
             with sql.connect(DATABASE) as con:
                 print("DATABASE CONNECTED")
@@ -131,15 +133,15 @@ def create_app(test_config=None):
     def post_label_brux():
         try:
             try:
-                label = request.json
-                print(label)
+                labels = request.json
+                print(labels)
             except werkzeug.exceptions.BadRequest:
                 return "Please sent a Json package!", 400
-            if label["location_begin"] > label["location_end"]:
-                return "Start time cannot be greater than end time!", 400
-           
-            print(tuple(label.values()))
-            insert_label(tuple(label.values()))
+
+            for label in labels:
+                if label["location_begin"] > label["location_end"]:
+                    return "Start time cannot be greater than end time!", 400
+                insert_label(tuple(label.values()))
             return "Successfuly inserted into Database", 200
         except Exception as e:
             return f"{e}", 400
@@ -152,7 +154,6 @@ def create_app(test_config=None):
     @app.route("/hrv-features/<int:patient_id>/<int:week>/<int:night_id>", methods=["GET"])
     def get_hrv_features(patient_id, week, night_id):
         try:
-            print('hey', file=sys.stderr)
             day = str(night_id)[:2]
             hours = str(night_id)[2:4]
             minutes = str(night_id)[4:6]
