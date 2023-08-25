@@ -42,13 +42,6 @@ def create_app(test_config=None):
             cur = con.cursor()
             cur.execute(f"INSERT INTO labels (patient, location_begin, location_end, duration) VALUES {label}")
 
-    def get_patient_data(patient_id):
-        with sql.connect(DATABASE) as con:
-            cur = con.cursor()
-            patient_data = cur.execute(f"SELECT * FROM labels WHERE patient = {patient_id}").fetchall()
-
-        return patient_data
-    
     def get_SSD_format(columns, query_results):
         values = []
         for query_result in query_results:
@@ -68,7 +61,7 @@ def create_app(test_config=None):
             })
         return values
              
-
+    #TODO: possibly change in future and include all the parameters in json payload
     @app.route("/patient-recording/<int:patient_id>/<int:week>/<string:day>/<string:hours>/<string:minutes>/<string:seconds>", methods=['POST'])
     def upload_patient_recording(patient_id, week, day, hours, minutes, seconds):
         try:
@@ -146,11 +139,23 @@ def create_app(test_config=None):
         except Exception as e:
             return f"{e}", 400
 
+    #TODO: possibly get labels from specific patient on a specific week?
+    @app.route("/label-brux/", methods=["GET"], defaults={'patient_id': None})
     @app.route("/label-brux/<int:patient_id>", methods=["GET"])
-    @app.errorhandler(werkzeug.exceptions.BadRequest)
     def get_label_brux(patient_id):
-        return get_patient_data(patient_id)
+        with sql.connect(DATABASE) as con:
+            cur = con.cursor()
+            if patient_id != None:
+                patient_data = cur.execute(f"SELECT * FROM labels WHERE patient = {patient_id}").fetchall()
 
+                if not patient_data:
+                    return f"No labels found for patient {patient_id}.", 404
+            else:
+                patient_data = cur.execute(f"SELECT * FROM labels").fetchall()
+
+        return patient_data
+    
+    #TODO: adapt this to take the dataset directly from the DB
     @app.route("/hrv-features/<int:patient_id>/<int:week>/<int:night_id>", methods=["GET"])
     def get_hrv_features(patient_id, week, night_id):
         try:
