@@ -4,14 +4,13 @@
 </template>
 
 <script>
-import dataset from '../assets/1022102cFnorm.csv'
 import * as echarts from 'echarts';
 
 export default {
   name: 'TreatHeatMap',
   data () {
     return {
-      data: dataset,
+    //   data: dataset,
     }
   },
   mounted() {
@@ -29,7 +28,7 @@ export default {
         var option;
 
         // prettier-ignore
-        const hours = Array.from({length: 10}, (_, i) => i + 1);
+        const stages = Array.from({length: 7}, (_, i) => i + 1);
         // prettier-ignore
         const days = Array.from({length: 7}, (_, i) => i + 1);
         // prettier-ignore
@@ -62,17 +61,17 @@ export default {
             },
             xAxis: {
                 type: 'category',
-                name: 'Sleep Hours',
-                rotate: 30,
-                data: hours,
+                name: 'Day',
+                data: days,
                 splitArea: {
                     show: true
                 },
             },
             yAxis: {
                 type: 'category',
-                name: 'Day',
-                data: days,
+                name: 'Sleep Stages',
+                rotate: 30,
+                data: stages,
                 splitArea: {
                     show: true
                 },

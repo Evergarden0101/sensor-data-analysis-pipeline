@@ -6,25 +6,27 @@
                 <el-col :span="3"><h5>{{ item.id }}</h5></el-col>
                 <el-col :span="21">
                     <el-form :inline="true" :model="Labels" class="demo-form-inline">
-                    <el-form-item label="Start:" style="margin-left: 1em;">
-                        <el-input-number v-model="item.Start" :placeholder="item.Start" style="width: 65px;" 
-                        :controls="false" :disabled="!item.Confirm" @change="rerun = true"/>
-                        <el-text size="large" style="margin-left: 0.3em;">s</el-text>
-                    </el-form-item>
-                    <el-form-item label="End:" style="margin-left: 1em;">
-                        <el-input-number v-model="item.End" :placeholder="item.End" style="width: 65px;" 
-                        :controls="false" :disabled="!item.Confirm" @change="rerun = true"/>
-                        <el-text size="large" style="margin-left: 0.3em;">s</el-text>
-                    </el-form-item>
-                    <el-form-item label="Duration:" style="margin-left: 1em;">
-                        <el-input-number v-model="item.Dur" :placeholder="item.Dur" style="width: 65px;" 
-                        :disabled="true" :controls="false" />
-                        <el-text size="large" style="margin-left: 0.3em;">s</el-text>
-                    </el-form-item>
-                    <el-switch v-model="item.Confirm" :active-icon="CircleCheckFilled" :inactive-icon="CircleCloseFilled" 
-                    style="margin-left: 1em;--el-switch-on-color: #13ce66; --el-switch-off-color: #ff4949" size="small" 
-                    active-text="Confirm Bruxism" inactive-text="Not Bruxism" @change="rerun = true"/>
-                </el-form>
+                        <el-form-item label="Start:" style="margin-left: 1em;">
+                            <el-input-number v-model="item.Start" :placeholder="item.Start" style="width: 65px;" 
+                            :controls="false" :disabled="!item.Confirm" @change="rerun = true"/>
+                            <el-text size="large" style="margin-left: 0.3em;">s</el-text>
+                        </el-form-item>
+                        <el-form-item label="End:" style="margin-left: 1em;">
+                            <el-input-number v-model="item.End" :placeholder="item.End" style="width: 65px;" 
+                            :controls="false" :disabled="!item.Confirm" @change="rerun = true"/>
+                            <el-text size="large" style="margin-left: 0.3em;">s</el-text>
+                        </el-form-item>
+                        <el-form-item label="Duration:" style="margin-left: 1em;">
+                            <el-input-number v-model="item.Dur" :placeholder="item.Dur" style="width: 65px;" 
+                            :disabled="true" :controls="false" />
+                            <el-text size="large" style="margin-left: 0.3em;">s</el-text>
+                        </el-form-item>
+                        <el-switch v-model="item.Confirm" :active-icon="CircleCheckFilled" :inactive-icon="CircleCloseFilled" 
+                        style="margin-left: 1em;margin-right: 2em;--el-switch-on-color: #13ce66; --el-switch-off-color: #ff4949" size="small" 
+                        active-text="Confirm Bruxism" inactive-text="Not Bruxism" @change="rerun = true"/>
+                        <LabelInfoCard/>
+                    </el-form>
+                    
                 </el-col>
                 <el-divider />
             </el-row>
@@ -51,28 +53,32 @@
                 </span>
                 </template>
             </el-dialog>
-            <LabelButton :labels="Labels" style="display: block;margin: 15px auto 5px auto;"/>
         </el-card>
     </el-row>
     <el-row style="margin-top: 3em;">
         <h5 style="display: block;margin: auto;">Change at least 1 label to rerun classifier</h5>
     </el-row>
     <el-row style="margin-top: 1em;">
-        <el-button color="#626aef" plain size="large" :disabled="!rerun" style="display: block;margin: 0 auto;" 
+        <LabelButton :disabled="!rerun" :labels="Labels" color="#626aef" plain size="large"
+            style="display: block;margin: 0 auto"/>
+
+        <!-- <el-button  plain size="large" :disabled="!rerun" style="display: block;margin: 0 auto;" 
         @click="load = true" :loading="load">
             Rerun Bruxism Classification
-        </el-button>
+        </el-button> -->
     </el-row>
 </template>
 
 <script>
 import { CircleCheckFilled, CircleCloseFilled } from '@element-plus/icons-vue'
 import LabelButton from '@/components/LabelButton.vue'
+import LabelInfoCard from '@/components/LabelInfoCard.vue'
 import { computed } from "vue"
 export default {
     name: 'BruxismLabel',
     components: {
         LabelButton,
+        LabelInfoCard,
     },
     data () {
         return{
@@ -81,14 +87,12 @@ export default {
             load:false,
             dialogFormVisible: false,
             formLabelWidth: '100px',
-            form:{'id':'','Start':'','End':''}
+            form:{'id':'','Start':'','End':''},
         }
     },
     methods: {
-        // changeInput(e) {
-        //     if (e.toString().indexOf('.') >= 0) {
-        //         e = e.toString().substring(0, e.toString().indexOf('.') + 4);
-        //     }
+        // enableSubmit() {
+        //     localStorage.setItem('submit', true);
         // },
         loadAll() {
             return [
@@ -122,6 +126,8 @@ export default {
         // console.log(this.Labels[label])
         this.Labels[label].Dur = computed(()=>{  return this.Labels[label].End - this.Labels[label].Start  })
       }
+        //   this.submit = computed(()=>{return localStorage.getItem('submit')});
+    //   this.rerun = computed(()=>{return localStorage.getItem('rerun')});
       console.log(this.Labels)
     },
 }
