@@ -1,5 +1,5 @@
 <template>
-    <el-button type="primary" @click="postLabel">Submit Labels</el-button>
+    <el-button type="primary" @click="postLabel" :loading="load">Rerun Bruxism Classification</el-button>
 </template>
 
 <script>
@@ -7,8 +7,14 @@ import axios from 'axios';
 export default{
     name: 'LabelButton',
     props: ['labels'],
+    data(){
+        return{
+            load: false,
+        }
+    },
     methods:  {
         postLabel(){
+            this.load = true;
             const path = 'http://localhost:5000/label-brux';
             const payload = [];
 
@@ -29,6 +35,7 @@ export default{
             axios.post(path, payload, {headers})
             .then((res) => {
                 console.log(res);
+                this.load = false;
             })
             .catch(err=>{
                 console.log(err)

@@ -8,7 +8,7 @@
     <!-- </el-col> -->
     <!-- <el-col :span="22"> -->
     <el-row text-align="center" style="margin-bottom: 20px;width: 100%;">
-        <el-checkbox v-model="checkedMR" label="Use Right Masseter for Classification" border @change="rerender"/>
+        <el-checkbox v-model="checkedMR" label="Use Right Masseter for Classification" border @change="rerenderLeft"/>
     </el-row>
     <el-row v-show="checkedMR" style="width: 100%;">
         <h4 style="margin-left: 40%;margin-bottom: 10px;">Sensor Signals for Right Masseter</h4>
@@ -18,7 +18,7 @@
     </el-row>
     <!-- </el-col> -->
     <el-row text-align="center" style="margin-bottom: 20px;width: 100%;">
-        <el-checkbox v-model="checkedML" label="Use Left Masseter for Classification" border @change="rerender"/>
+        <el-checkbox v-model="checkedML" label="Use Left Masseter for Classification" border @change="rerenderRight"/>
     </el-row>
     <el-row v-show="checkedML" style="width: 100%;">
         <h4 style="margin-left: 40%;margin-bottom: 10px;">Sensor Signals for Left Masseter</h4>
@@ -45,6 +45,7 @@ export default {
         checkedML: ref(true),
         freq: 2000,
         key: Date.now(),
+        activeName: 'left',
     }
   },
   mounted() {
@@ -52,8 +53,28 @@ export default {
         this.drawLineplot('ML');
   },
   methods: {
-    rerender() {
-        this.key = Date.now();
+    rerenderLeft(tab,event) {
+        console.log(tab);
+        if(tab == false){
+            var ml = document.getElementById('mllineplot')
+            this.emptyGraph(ml);
+        } else if(tab == true){
+            this.drawLineplot('ML');
+        }
+    },
+    rerenderLeft(tab,event) {
+        console.log(tab);
+        if(tab == false){
+            var mr = document.getElementById('mrlineplot')
+            this.emptyGraph(mr);
+        } else if(tab == true){
+            this.drawLineplot('MR');
+        }
+    },
+    emptyGraph(e) {
+        while (e.firstChild) {
+            e.removeChild (e.firstChild);
+        }
     },
     csvToJson(csv) {
         // \n or \r\n depending on the EOL sequence
