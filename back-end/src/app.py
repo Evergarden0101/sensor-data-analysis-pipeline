@@ -207,8 +207,40 @@ def create_app(test_config=None):
             
         if request.method == 'POST':
             #code for posting here
-            print("Post arrived")
-            return "Post executed", 200
+            """
+                payload:
+                    {
+                        'x': int,
+                        'y': int,
+                        'stage': string
+
+                    }
+            """
+            try:
+                updates = request.json
+
+                for update in updates:
+                    with sql.connect(DATABASE) as con:
+                        print('connected to db', file=sys.stderr)
+                        cur = con.cursor()
+                        params = (update["x"], update["y"])
+
+                        if update["stage"] == 'rem':
+                            query = "UPDATE sleep_stage_detection SET stage = 'nrem' WHERE x=? AND y=?"
+                            cur.execute(query, params)
+                        elif update["stage"] == 'nrem':
+                            query = "UPDATE sleep_stage_detection SET stage = 'rem' WHERE x=? AND y=?"
+                            cur.execute(query, params)
+
+                return "sleep_stage_detection table updated successfully", 200
+
+                    
+
+            except Exception as e:
+                print('Exception raised')
+                print(e)
+                return f"{e}"
+                        
 
         
     """

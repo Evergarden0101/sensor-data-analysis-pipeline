@@ -65,7 +65,7 @@ export default {
       patientId: null,
       week: null,
       nightId: null,
-      patientData: null
+      toUpdate: []
     }
   },
   mounted() {
@@ -99,9 +99,11 @@ export default {
                 'Accept': 'application/json',
                 'Content-Type': 'application/json'
         };
-        axios.post(path, {headers})
+        const payload = this.toUpdate;
+        axios.post(path, payload, {headers})
             .then((res) => {
                 console.log(res);
+                this.toUpdate = [];
             })
             .catch(err=>{
                 console.log(err)
@@ -112,6 +114,7 @@ export default {
     },
     exitEditMode(){
         this.isEditMode = !this.isEditMode;
+        this.toUpdate = [];
         this.$router.go(0);
     },
 
@@ -267,6 +270,12 @@ export default {
                   // Remove from 'rem' dataset
                   let removedData = option.series[0].data.splice(params.dataIndex, 1)[0];
 
+                  this.toUpdate.push({
+                    "x": removedData[0],
+                    "y": removedData[1],
+                    "stage": removedData[3]
+                  })
+
                   // Modify the stage value
                   removedData[3] = 'nrem';
 
@@ -276,6 +285,12 @@ export default {
                 } else if (params.seriesIndex === 1) { // If the clicked series is 'nrem'
                   // Remove from 'nrem' dataset
                   let removedData = option.series[1].data.splice(params.dataIndex, 1)[0];
+
+                  this.toUpdate.push({
+                    "x": removedData[0],
+                    "y": removedData[1],
+                    "stage": removedData[3]
+                  })
 
                   // Modify the stage value
                   removedData[3] = 'rem';
