@@ -12,6 +12,7 @@ import TreatmentPage from './pages/TreatmentPage.vue';
 import BruxismPage from './pages/BruxismPage.vue';
 import PatientInfoPage from './pages/PatientInfoPage.vue';
 import SelectPatientPage from './pages/SelectPatientPage.vue'
+import store from './store'
 
 const app = createApp(App)
 app.use(VueRouter.createRouter({
@@ -42,7 +43,9 @@ app.use(VueRouter.createRouter({
 app.use(ElementPlus, {
     locale: en,
 })
+app.use(store)
 for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
     app.component(key, component)
 }
 app.mount('#app')
+
