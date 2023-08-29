@@ -25,7 +25,16 @@
 
   <div class="buttons-container">
     <el-button @click="toggleEditMode" v-if="!isEditMode">Enter Edit Mode</el-button>
-    <el-button @click="toggleEditMode" v-if="isEditMode">Exit Edit Mode</el-button>
+    <el-popconfirm
+    title="Are you sure you want to exit the edit mode?
+    This will update the values forever."
+    @confirm="toggleEditMode"
+    @cancel="exitEditMode"
+    width="350">
+        <template #reference>
+            <el-button v-if="isEditMode">Exit Edit Mode</el-button>
+        </template>
+    </el-popconfirm>
     <el-button @click="toggleSelectMode">Select</el-button>
   </div>
 
@@ -52,8 +61,11 @@ export default {
       isEditMode: false,
       isSelectMode: false,
       selectedTiles: [],
-      selectedIndices: []
-
+      selectedIndices: [],
+      patientId: null,
+      week: null,
+      nightId: null,
+      patientData: null
     }
   },
   mounted() {
@@ -81,6 +93,25 @@ export default {
     },
     toggleEditMode() {
       this.isEditMode = !this.isEditMode;
+      if(!this.isEditMode){
+        const path = `http://localhost:5000/ssd/1/1/1222325`
+        const headers = {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+        };
+        axios.post(path, {headers})
+            .then((res) => {
+                console.log(res);
+            })
+            .catch(err=>{
+                console.log(err)
+            })
+
+      }
+    
+    },
+    exitEditMode(){
+        this.isEditMode = !this.isEditMode;
     },
 
     toggleSelectMode() {
@@ -99,11 +130,11 @@ export default {
             useDirtyRect: false
         });
 
-        const path = `http://localhost:5000/hrv-features/${patient_id}/${week}/${night_id}`
+        const path = `http://localhost:5000/ssd/${patient_id}/${week}/${night_id}`
         const headers = {
                 'Accept': 'application/json',
                 'Content-Type': 'application/json'
-            };
+        };
 
         axios.get(path, {headers})
             .then((res) => {
@@ -117,6 +148,8 @@ export default {
 
             var remDataJson = []
             var nremDataJson = []
+            this.patientData = res.data;
+
             for (var i=0; i < res.data.length; i++) {
                 if(res.data[i]['stage'] === 'rem'){
                     remDataJson.push(res.data[i]);
