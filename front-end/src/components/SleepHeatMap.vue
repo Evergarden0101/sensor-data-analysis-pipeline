@@ -112,6 +112,7 @@ export default {
     },
     exitEditMode(){
         this.isEditMode = !this.isEditMode;
+        this.$router.go(0);
     },
 
     toggleSelectMode() {
