@@ -9,6 +9,7 @@ from preprocessing import *
 import sys
 import pandas as pd
 from settings import *
+from scipy import stats
 
 """Example of possible structure for posting the label data"""
 def create_app(test_config=None):
@@ -42,23 +43,15 @@ def create_app(test_config=None):
             cur = con.cursor()
             cur.execute(f"INSERT INTO labels (patient, location_begin, location_end, duration) VALUES {label}")
 
-    def get_SSD_format(columns, query_results):
+    def get_json_format_from_query(columns, query_results, start_id, end_id):
         values = []
         for query_result in query_results:
-            values.append({
-                columns[1]: query_result[1],
-                columns[2]: query_result[2],
-                columns[3]: query_result[3],
-                columns[4]: query_result[4],
-                columns[5]: query_result[5],
-                columns[6]: query_result[6],
-                columns[7]: query_result[7],
-                columns[8]:  query_result[8],
-                columns[9]:  query_result[9],
-                columns[10]:  query_result[10],
-                columns[11]:  query_result[11],
-                columns[12]:  query_result[12]
-            })
+            dictionary = {}
+            for i in range(start_id, end_id+1):
+                dictionary[columns[i]] = query_result[i]
+
+            values.append(dictionary)
+
         return values
              
     #TODO: possibly change in future and include all the parameters in json payload
@@ -120,7 +113,15 @@ def create_app(test_config=None):
         except Exception as e:
             return f"{e}", 400
 
-
+    """
+    request.json format:
+        {
+            "patient": int,
+            "location_begin": int,
+            "location_end": int,
+            "duration": int
+        }
+    """
     @app.route("/label-brux", methods=["POST"])
     @app.errorhandler(werkzeug.exceptions.BadRequest)
     def post_label_brux():
@@ -156,51 +157,97 @@ def create_app(test_config=None):
         return patient_data
     
     #TODO: adapt this to take the dataset directly from the DB
-    @app.route("/hrv-features/<int:patient_id>/<int:week>/<int:night_id>", methods=["GET"])
-    def get_hrv_features(patient_id, week, night_id):
-        try:
-            day = str(night_id)[:2]
-            hours = str(night_id)[2:4]
-            minutes = str(night_id)[4:6]
-            seconds =str(night_id)[6]
+    @app.route("/ssd/<int:patient_id>/<int:week>/<int:night_id>", methods=["GET", "POST"])
+    def sleep_stage_detection(patient_id, week, night_id):
+        if request.method == 'GET':
+            try:
+                day = str(night_id)[:2]
+                hours = str(night_id)[2:4]
+                minutes = str(night_id)[4:6]
+                seconds =str(night_id)[6]
 
-            print('database variable', file=sys.stderr)
-            with sql.connect(DATABASE) as con:
-                print('connected to db', file=sys.stderr)
-                cur = con.cursor()
+                print('database variable', file=sys.stderr)
+                with sql.connect(DATABASE) as con:
+                    print('connected to db', file=sys.stderr)
+                    cur = con.cursor()
 
-                print('cur variable defined', file=sys.stderr)
+                    print('cur variable defined', file=sys.stderr)
 
-                params = (patient_id, day, hours, minutes, seconds)
-                patient_exist = f"SELECT * FROM sleep_stage_detection WHERE (patient_id=? AND day=? AND hours=? AND minutes=? AND seconds=?)"
-                print('patient_exist query', file=sys.stderr)
-
-                if cur.execute(patient_exist, params).fetchall():
-                    print('EXIST', file=sys.stderr)
                     params = (patient_id, day, hours, minutes, seconds)
-                    query = "SELECT * FROM sleep_stage_detection WHERE (patient_id=? AND day=? AND hours=? AND minutes=? AND seconds=?)"
-                    result = cur.execute(query, params)
-                    columns = [description[0] for description in result.description]
-                    print(f"Columns: {columns}")
-                    values = get_SSD_format(columns, result.fetchall())
+                    patient_exist = f"SELECT * FROM sleep_stage_detection WHERE (patient_id=? AND day=? AND hours=? AND minutes=? AND seconds=?)"
+                    print('patient_exist query', file=sys.stderr)
+
+                    if cur.execute(patient_exist, params).fetchall():
+                        print('EXIST', file=sys.stderr)
+                        params = (patient_id, day, hours, minutes, seconds)
+                        query = "SELECT * FROM sleep_stage_detection WHERE (patient_id=? AND day=? AND hours=? AND minutes=? AND seconds=?)"
+                        result = cur.execute(query, params)
+                        columns = [description[0] for description in result.description]
+                        print(f"Columns: {columns}")
+                        values = get_json_format_from_query(columns=columns, query_results=result.fetchall(), start_id=1, end_id=12)
+                        #values = get_SSD_format(columns, result.fetchall())
 
 
-                    print(f"Values from db: {values}")
-                
-                else:
-                    print('DOES NOT EXIST', file=sys.stderr)
-                    values = get_HRV_features(patient_id, week, night_id, 720)
+                        print(f"Values from db: {values}")
+                    
+                    else:
+                        print('DOES NOT EXIST', file=sys.stderr)
+                        values = get_HRV_features(patient_id, week, night_id, 720)
 
-                    for value in values:
-                        params = (patient_id, day, hours, minutes, seconds, value['start_id'], value['end_id'], value['LF_HF'], value['SD'], value['stage'], value['y'], value['x'])
-                        query = "INSERT INTO sleep_stage_detection (patient_id, day, hours, minutes, seconds, start_id, end_id, LF_HF, SD, stage, y, x) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
-                        cur.execute(query, params)
+                        for value in values:
+                            params = (patient_id, day, hours, minutes, seconds, value['start_id'], value['end_id'], value['LF_HF'], value['SD'], value['stage'], value['y'], value['x'])
+                            query = "INSERT INTO sleep_stage_detection (patient_id, day, hours, minutes, seconds, start_id, end_id, LF_HF, SD, stage, y, x) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                            cur.execute(query, params)
 
-                return values
+                    return values
+            except Exception as e:
+                print('Exception raised', file=sys.stderr)
+                print(e)
+                return f"{e}"
+            
+        if request.method == 'POST':
+            #code for posting here
+            print("Post arrived")
+            return "Post executed", 200
+
+        
+    """
+        To include in preprocessing:
+        - Normalization
+        - Filtering
+        - Resampling
+    """
+    @app.route("/preprocess/<int:patient_id>/<int:week>/<string:night_id>", methods=["GET"])
+    def get_preprocessing(patient_id, week, night_id):
+        try:
+            #preprocessing_params = request.json
+
+            day = night_id[:2]
+            hours = night_id[2:4]
+            minutes = night_id[4:6]
+            seconds = night_id[6]
+
+            print("night id params okay")
+
+            params = (patient_id, week, day, hours, minutes, seconds)
+            query = "SELECT * from patients_recordings WHERE (patient_id=? AND week=? AND day=? AND hours=? AND minutes=? AND seconds=?)"
+
+            with sql.connect(DATABASE) as con:
+                print("DB connected")
+                cur = con.cursor()
+                patient_data = cur.execute(query, params)
+                columns = [description[0] for description in patient_data.description]
+                print(columns)
+                #df = get_patients_recordings_df(columns, patient_data.fetchall())
+                patient_data_json = get_json_format_from_query(columns=columns, query_results=patient_data.fetchall(), start_id=1, end_id=14)
+
+            return patient_data_json, 200
+        
         except Exception as e:
-            print('Exception raised', file=sys.stderr)
+            print('Exception raised')
             print(e)
             return f"{e}"
+
         
     return app
 
