@@ -1,7 +1,7 @@
 <template>
   <el-row style="margin-bottom: 10%; margin-top: 5%;">
     <el-col>
-      <h1 style="text-align: center;">Welcome to the sensor data pipeline for the labelling and monitoring of bruxism events!</h1>
+      <h1 style="text-align: center;">Human Centered Sensor Data Analysis Pipeline</h1>
     </el-col>
   </el-row>
   <el-row>

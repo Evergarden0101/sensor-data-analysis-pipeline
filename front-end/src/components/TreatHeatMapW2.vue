@@ -29,7 +29,7 @@ export default {
         var option;
 
         // prettier-ignore
-        const stages = Array.from({length: 7}, (_, i) => i + 1);
+        const hours = [1.5, 3, 4.5, 6, 7.5, 9, 10.5];
         // prettier-ignore
         const days = Array.from({length: 7}, (_, i) => i + 1);
         // prettier-ignore
@@ -40,11 +40,11 @@ export default {
 
         var callback = (args) => {
             if (args.value[2] === 1){
-                return args.seriesName + "<br />" +args.marker + parseInt(parseInt(args.value[0])+1) + 'h: ' + args.value[2] + ' brux event'
+                return args.seriesName + "<br />" +args.marker + parseInt(parseInt(args.value[0])+1) + 'h: ' + args.value[2] + ' event'
 
             }
             else{
-                return args.seriesName + "<br />" +args.marker + parseInt(parseInt(args.value[0])+1) + 'h: ' + args.value[2] + ' brux events'
+                return args.seriesName + "<br />" +args.marker + parseInt(parseInt(args.value[0])+1) + 'h: ' + args.value[2] + ' events'
             }
         }
         option = {
@@ -57,7 +57,7 @@ export default {
                 top: '5%',
                 right: 100,
             },
-            xAxis: {
+            yAxis: {
                 type: 'category',
                 name: 'Day',
                 data: days,
@@ -65,11 +65,11 @@ export default {
                     show: true
                 },
             },
-            yAxis: {
+            xAxis: {
                 type: 'category',
-                name: 'Sleep Stages',
+                name: 'Hours',
                 rotate: 30,
-                data: stages,
+                data: hours,
                 splitArea: {
                     show: true
                 },

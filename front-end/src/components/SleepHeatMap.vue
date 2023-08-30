@@ -1,5 +1,6 @@
 <template>
-    <h2 align="center">Sleep Stage Classification</h2>
+    <h2 align="center">Sleep Stage Detection</h2>
+    <h3 align="center">Threshold Filtering</h3>
     <p align="center">Every row represents a sleep cycle (90 minutes).</p>
     <p align="center">The color bars represent the level of uncertainity.
         <el-tooltip placement="top" effect="light">
@@ -17,7 +18,7 @@
         <el-col :span="7" :offset="5">
             <router-link :to="'/bruxism/'">
                 <el-button type="primary" plain>
-                    Bruxism Detection<el-icon class="el-icon--right"><ArrowRight /></el-icon>
+                    Events Detection<el-icon class="el-icon--right"><ArrowRight /></el-icon>
                 </el-button>
             </router-link>
         </el-col>
@@ -65,11 +66,11 @@ export default {
       patientId: null,
       week: null,
       nightId: null,
-      patientData: null
+      toUpdate: []
     }
   },
   mounted() {
-    this.drawTreatHeatMap(1, 1, 1222325);
+    this.drawTreatHeatMap(1, 1, "0901260");
   },
   methods: {
     open() {
@@ -94,14 +95,16 @@ export default {
     toggleEditMode() {
       this.isEditMode = !this.isEditMode;
       if(!this.isEditMode){
-        const path = `http://localhost:5000/ssd/1/1/1222325`
+        const path = `http://localhost:5000/ssd/1/1/0901260`
         const headers = {
                 'Accept': 'application/json',
                 'Content-Type': 'application/json'
         };
-        axios.post(path, {headers})
+        const payload = this.toUpdate;
+        axios.post(path, payload, {headers})
             .then((res) => {
                 console.log(res);
+                this.toUpdate = [];
             })
             .catch(err=>{
                 console.log(err)
@@ -112,6 +115,7 @@ export default {
     },
     exitEditMode(){
         this.isEditMode = !this.isEditMode;
+        this.toUpdate = [];
         this.$router.go(0);
     },
 
@@ -133,8 +137,8 @@ export default {
 
         const path = `http://localhost:5000/ssd/${patient_id}/${week}/${night_id}`
         const headers = {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json'
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
         };
 
         axios.get(path, {headers})
@@ -142,22 +146,27 @@ export default {
             console.log("Data received");
             this.loading = ref(false);
             var option;
-
+            var maxY = 0;
+            var hours = [];
             var minutes = [5, 10 , 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90];
-            var hours = ['1.5h', '3h', '4.5h',
-                    '6h', '7.5h', '9h', '10.5h'];
-
             var remDataJson = []
             var nremDataJson = []
             this.patientData = res.data;
 
             for (var i=0; i < res.data.length; i++) {
+                if(res.data[i]['y'] > maxY){
+                    maxY = res.data[i]['y']
+                }
                 if(res.data[i]['stage'] === 'rem'){
                     remDataJson.push(res.data[i]);
                 }
                 else {
                     nremDataJson.push(res.data[i]);
                 }
+            }
+
+            for(var i=1.5; i<=(maxY+1)*1.5; i+=1.5){
+                hours.push(i);
             }
 
             var remData = remDataJson.map(function (item) {
@@ -267,6 +276,12 @@ export default {
                   // Remove from 'rem' dataset
                   let removedData = option.series[0].data.splice(params.dataIndex, 1)[0];
 
+                  this.toUpdate.push({
+                    "x": removedData[0],
+                    "y": removedData[1],
+                    "stage": removedData[3]
+                  })
+
                   // Modify the stage value
                   removedData[3] = 'nrem';
 
@@ -276,6 +291,12 @@ export default {
                 } else if (params.seriesIndex === 1) { // If the clicked series is 'nrem'
                   // Remove from 'nrem' dataset
                   let removedData = option.series[1].data.splice(params.dataIndex, 1)[0];
+
+                  this.toUpdate.push({
+                    "x": removedData[0],
+                    "y": removedData[1],
+                    "stage": removedData[3]
+                  })
 
                   // Modify the stage value
                   removedData[3] = 'rem';
