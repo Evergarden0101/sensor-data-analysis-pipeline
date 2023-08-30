@@ -1,5 +1,5 @@
 <template>
-    <el-button @click="postLabel" :loading="load">Rerun Bruxism Classification</el-button>
+    <el-button @click="postLabel" :loading="load">Rerun Events Classification</el-button>
 </template>
 
 <script>

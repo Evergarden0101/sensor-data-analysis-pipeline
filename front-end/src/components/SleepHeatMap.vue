@@ -1,5 +1,6 @@
 <template>
-    <h2 align="center">Sleep Stage Classification</h2>
+    <h2 align="center">Sleep Stage Detection</h2>
+    <h3 align="center">Threshold Filtering</h3>
     <p align="center">Every row represents a sleep cycle (90 minutes).</p>
     <p align="center">The color bars represent the level of uncertainity.
         <el-tooltip placement="top" effect="light">
@@ -17,7 +18,7 @@
         <el-col :span="7" :offset="5">
             <router-link :to="'/bruxism/'">
                 <el-button type="primary" plain>
-                    Bruxism Detection<el-icon class="el-icon--right"><ArrowRight /></el-icon>
+                    Events Detection<el-icon class="el-icon--right"><ArrowRight /></el-icon>
                 </el-button>
             </router-link>
         </el-col>
@@ -163,7 +164,7 @@ export default {
                     nremDataJson.push(res.data[i]);
                 }
             }
-            
+
             for(var i=1.5; i<=(maxY+1)*1.5; i+=1.5){
                 hours.push(i);
             }

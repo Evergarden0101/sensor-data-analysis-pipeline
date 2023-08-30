@@ -1,7 +1,7 @@
 <template>
     <el-row style="margin-bottom: 2%;">
         <el-col>
-            <h1 style="text-align: center;">This is the Bruxism Detection page!</h1>
+            <h1 style="text-align: center;">This is the Events Detection page!</h1>
         </el-col>
     </el-row>
     <el-row>

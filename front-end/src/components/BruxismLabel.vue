@@ -1,7 +1,7 @@
 <template>
     <el-row>
         <el-card class="box-card" style="border: solid 1px;border-radius: 10px; width: 100%; margin-left: auto;margin-right: auto;">
-            <h3 align="center" style="margin-bottom: 30px;">Bruxism Event Predictions</h3>
+            <h3 align="center" style="margin-bottom: 30px;">Events Predictions</h3>
             <el-row v-for="(item,index) in Labels" :key="index" style="margin-bottom: 10px;">
                 <el-col :span="3"><h5>{{ item.id }}</h5></el-col>
                 <el-col :span="21">
@@ -23,7 +23,7 @@
                         </el-form-item>
                         <el-switch v-model="item.Confirm" :active-icon="CircleCheckFilled" :inactive-icon="CircleCloseFilled" 
                         style="margin-left: 1em;margin-right: 2em;--el-switch-on-color: #13ce66; --el-switch-off-color: #ff4949" size="small" 
-                        active-text="Confirm Bruxism" inactive-text="Not Bruxism" @change="rerun = true"/>
+                        active-text="Confirm Event" inactive-text="Discard Event" @change="rerun = true"/>
                         <LabelInfoCard/>
                     </el-form>
                     
@@ -31,9 +31,9 @@
                 <el-divider />
             </el-row>
             <el-button type='primary' text='primary' @click="dialogFormVisible = true" style="margin-top: -15px;">
-                Add Bruxism Event
+                Add Event
             </el-button>
-            <el-dialog v-model="dialogFormVisible" title="Add Bruxism Event" center width="30%" align-center draggable>
+            <el-dialog v-model="dialogFormVisible" title="Add Event" center width="30%" align-center draggable>
                 <el-form :model="form">
                 <el-form-item label="Start Time:" :label-width="formLabelWidth">
                     <el-input-number v-model="form.Start" style="width: 70px; margin-left: 20px;"  :controls="false" />

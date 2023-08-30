@@ -1,5 +1,5 @@
 <template>
-    <h3 align="center">Weekly Bruxism Detected for Patient</h3>
+    <h3 align="center">Weekly Events Detected for Patient</h3>
     <div id="chart-container" style="position: relative; height: 80vh;"></div>
 </template>
 
@@ -39,11 +39,11 @@ export default {
 
         var callback = (args) => {
             if (args.value[2] === 1){
-                return args.seriesName + "<br />" +args.marker + parseInt(parseInt(args.value[0])+1) + 'h: ' + args.value[2] + ' brux event'
+                return args.seriesName + "<br />" +args.marker + parseInt(parseInt(args.value[0])+1) + 'h: ' + args.value[2] + ' event'
 
             }
             else{
-                return args.seriesName + "<br />" +args.marker + parseInt(parseInt(args.value[0])+1) + 'h: ' + args.value[2] + ' brux events'
+                return args.seriesName + "<br />" +args.marker + parseInt(parseInt(args.value[0])+1) + 'h: ' + args.value[2] + ' events'
             }
         }
 
