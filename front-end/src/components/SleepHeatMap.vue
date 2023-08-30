@@ -69,7 +69,7 @@ export default {
     }
   },
   mounted() {
-    this.drawTreatHeatMap(1, 1, 1222325);
+    this.drawTreatHeatMap(1, 1, "0901260");
   },
   methods: {
     open() {
@@ -94,7 +94,7 @@ export default {
     toggleEditMode() {
       this.isEditMode = !this.isEditMode;
       if(!this.isEditMode){
-        const path = `http://localhost:5000/ssd/1/1/1222325`
+        const path = `http://localhost:5000/ssd/1/1/0901260`
         const headers = {
                 'Accept': 'application/json',
                 'Content-Type': 'application/json'
@@ -136,8 +136,8 @@ export default {
 
         const path = `http://localhost:5000/ssd/${patient_id}/${week}/${night_id}`
         const headers = {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json'
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
         };
 
         axios.get(path, {headers})
@@ -145,22 +145,27 @@ export default {
             console.log("Data received");
             this.loading = ref(false);
             var option;
-
+            var maxY = 0;
+            var hours = [];
             var minutes = [5, 10 , 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90];
-            var hours = ['1.5h', '3h', '4.5h',
-                    '6h', '7.5h', '9h', '10.5h'];
-
             var remDataJson = []
             var nremDataJson = []
             this.patientData = res.data;
 
             for (var i=0; i < res.data.length; i++) {
+                if(res.data[i]['y'] > maxY){
+                    maxY = res.data[i]['y']
+                }
                 if(res.data[i]['stage'] === 'rem'){
                     remDataJson.push(res.data[i]);
                 }
                 else {
                     nremDataJson.push(res.data[i]);
                 }
+            }
+            
+            for(var i=1.5; i<=(maxY+1)*1.5; i+=1.5){
+                hours.push(i);
             }
 
             var remData = remDataJson.map(function (item) {
