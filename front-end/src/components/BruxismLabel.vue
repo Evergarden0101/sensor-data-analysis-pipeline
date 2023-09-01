@@ -2,7 +2,7 @@
     <el-row>
         <el-card class="box-card" style="border: solid 1px;border-radius: 10px; width: 100%; margin-left: auto;margin-right: auto;">
             <h3 align="center" style="margin-bottom: 30px;">Events Predictions</h3>
-            <el-row v-for="(item,index) in Labels" :key="index" style="margin-bottom: 10px;">
+            <el-row v-for="(item,index) in [Labels[currentPage - 1]]" :key="index" >
                 <el-col :span="3"><h5>{{ item.id }}</h5></el-col>
                 <el-col :span="21">
                     <el-form :inline="true" :model="Labels" class="demo-form-inline">
@@ -30,29 +30,36 @@
                 </el-col>
                 <el-divider />
             </el-row>
-            <el-button type='primary' text='primary' @click="dialogFormVisible = true" style="margin-top: -15px;">
-                Add Event
-            </el-button>
-            <el-dialog v-model="dialogFormVisible" title="Add Event" center width="30%" align-center draggable>
-                <el-form :model="form">
-                <el-form-item label="Start Time:" :label-width="formLabelWidth">
-                    <el-input-number v-model="form.Start" style="width: 70px; margin-left: 20px;"  :controls="false" />
-                        <el-text size="large" style="margin-left: 0.3em;">s</el-text>
-                </el-form-item>
-                <el-form-item label="End Time:" :label-width="formLabelWidth">
-                    <el-input-number v-model="form.End" style="width: 70px;margin-left: 20px;"  :controls="false" />
-                        <el-text size="large" style="margin-left: 0.3em;">s</el-text>
-                </el-form-item>
-                </el-form>
-                <template #footer>
-                <span class="dialog-footer">
-                    <el-button @click="dialogFormVisible = false">Cancel</el-button>
-                    <el-button type="primary" @click="dialogFormVisible = false">
-                    Confirm
-                    </el-button>
-                </span>
-                </template>
-            </el-dialog>
+            <el-row>
+                <el-pagination v-model:current-page="currentPage" :page-size="1"
+                layout="prev, pager, next, jumper" :total="labelNum" style="display: flex;margin: auto;"
+                @size-change="handleSizeChange" @current-change="handleCurrentChange"/>
+            </el-row>
+            <el-row style="margin-top: 10px;">
+                <el-button type='primary' text='primary' @click="openDialog" style="margin-top: -15px;">
+                    Add Event
+                </el-button>
+                <el-dialog v-model="dialogFormVisible" title="Add Event" center width="30%" align-center draggable>
+                    <el-form :model="form">
+                    <el-form-item label="Start Time:" :label-width="formLabelWidth">
+                        <el-input-number v-model="form.Start" style="width: 70px; margin-left: 20px;"  :controls="false" />
+                            <el-text size="large" style="margin-left: 0.3em;">s</el-text>
+                    </el-form-item>
+                    <el-form-item label="End Time:" :label-width="formLabelWidth">
+                        <el-input-number v-model="form.End" style="width: 70px;margin-left: 20px;"  :controls="false" />
+                            <el-text size="large" style="margin-left: 0.3em;">s</el-text>
+                    </el-form-item>
+                    </el-form>
+                    <template #footer>
+                    <span class="dialog-footer">
+                        <el-button @click="dialogFormVisible = false">Cancel</el-button>
+                        <el-button type="primary" @click="submitNewLable">
+                        Confirm
+                        </el-button>
+                    </span>
+                    </template>
+                </el-dialog>
+            </el-row>
         </el-card>
     </el-row>
     <el-row style="margin-top: 3em;">
@@ -83,17 +90,35 @@ export default {
     data () {
         return{
             Labels:[],
+            labelNum: 0,
+            currentPage: 1,
             rerun: false,
             load:false,
             dialogFormVisible: false,
             formLabelWidth: '100px',
-            form:{'id':'','Start':'','End':''},
+            form:{'id':'','Start':0,'End':0},
         }
     },
     methods: {
-        // enableSubmit() {
-        //     localStorage.setItem('submit', true);
-        // },
+        openDialog(){
+            this.form.Start = this.$store.state.startPoint;
+            this.form.End = this.$store.state.endPoint;
+            this.dialogFormVisible = true;
+        },
+        submitNewLable(){
+            this.form.id = 'Label ' + (this.labelNum + 1);
+            this.Labels.push(this.form);
+            this.labelNum ++;
+            this.form = {'id':'','Start':0,'End':0};
+            this.dialogFormVisible = false;
+        },
+        handleSizeChange(val){
+            console.log(`${val} items per page`)
+        },
+        handleCurrentChange(page){
+            this.currentPage = page;
+            console.log(`current page: ${this.currentPage}`)
+        },
         loadAll() {
             return [
                 {
@@ -121,14 +146,14 @@ export default {
         },
     },
     beforeMount() {
-      this.Labels = this.loadAll();
-      for (let label in this.Labels){
-        // console.log(this.Labels[label])
-        this.Labels[label].Dur = computed(()=>{  return this.Labels[label].End - this.Labels[label].Start  })
-      }
+        this.Labels = this.loadAll();
+        for (let label in this.Labels){
+            // console.log(this.Labels[label])
+            this.Labels[label].Dur = computed(()=>{  return this.Labels[label].End - this.Labels[label].Start  })
+            this.labelNum ++;
+        }
         //   this.submit = computed(()=>{return localStorage.getItem('submit')});
-    //   this.rerun = computed(()=>{return localStorage.getItem('rerun')});
-      console.log(this.Labels)
+        //   this.rerun = computed(()=>{return localStorage.getItem('rerun')});
     },
 }
 </script>

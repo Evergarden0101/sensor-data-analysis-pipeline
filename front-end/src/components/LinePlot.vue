@@ -49,6 +49,7 @@ export default {
     }
   },
   mounted() {
+        this.$store.commit('updataPoint',{startPoint:0, endPoint:(dataset.length-1)/this.freq})
         this.drawLineplot('MR');
         this.drawLineplot('ML');
   },
@@ -167,7 +168,8 @@ export default {
             .attr("transform", "translate(0," + height + ")")
             // .call(d3.axisBottom(x).ticks(5));
             .call(d3.axisBottom(x))
-            .classed('axis_x', true);
+            .classed('axis_x', true)
+            .attr("id", channel+'X');
 
         var max = 10;
         // Add Y axis
@@ -278,7 +280,7 @@ export default {
         // A function that set idleTimeOut to null
         let idleTimeout
         function idled() { idleTimeout = null; }
-
+        var store = this.$store;
         // A function that update the chart for given boundaries
         function updateChart(event,d) {
             // What are the selected boundaries?
@@ -289,7 +291,11 @@ export default {
                 if (!idleTimeout) return idleTimeout = setTimeout(idled, 350); // This allows to wait a little bit
                 x.domain([ 4,8])
             }else{
-                x.domain([ x.invert(extent[0]), x.invert(extent[1])])
+                let sp = x.invert(extent[0]);
+                let ep = x.invert(extent[1]);
+                store.commit('updataPoint',
+                    {startPoint:Math.floor(sp * 1000) / 1000, endPoint:Math.floor(ep * 1000) / 1000})
+                x.domain([sp, ep])
                 line.select(".brush").call(brush.move, null) // This remove the grey brush area as soon as the selection has been done
             }
 
@@ -307,6 +313,9 @@ export default {
 
 
             if(channel == 'ML'){
+                var otherX = d3.select("#MRX")
+                otherX.transition().duration(1000).call(d3.axisBottom(x))
+
                 var otherLine = d3.select("#MR")
                 otherLine.select('.line')
                 .transition()
@@ -317,6 +326,9 @@ export default {
                 )
             }
             else if(channel == 'MR'){
+                var otherX = d3.select("#MLX")
+                otherX.transition().duration(1000).call(d3.axisBottom(x))
+
                 var otherLine = d3.select("#ML")
                 otherLine.select('.line')
                 .transition()
@@ -332,7 +344,7 @@ export default {
 
         // If user double click, reinitialize the chart
         svg.on("dblclick",function(){
-            console.log(domainLen)
+            store.commit('updataPoint',{startPoint:0, endPoint:(csv.length)/this.freq})
             x.domain([0, domainLen])
             xAxis.transition().call(d3.axisBottom(x))
             line
@@ -344,6 +356,9 @@ export default {
             )
 
             if(channel == 'ML'){
+                var otherX = d3.select("#MRX")
+                otherX.transition().call(d3.axisBottom(x))
+
                 var otherLine = d3.select("#MR")
                 otherLine.select('.line')
                 .transition()
@@ -352,6 +367,9 @@ export default {
                 .y(function(d) { return y(d.MR)}))
             }
             else if(channel == 'MR'){
+                var otherX = d3.select("#MLX")
+                otherX.transition().call(d3.axisBottom(x))
+
                 var otherLine = d3.select("#ML")
                 otherLine.select('.line')
                 .transition()
