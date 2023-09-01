@@ -49,7 +49,8 @@ export default {
     }
   },
   mounted() {
-        this.$store.commit('updataPoint',{startPoint:0, endPoint:(dataset.length-1)/this.freq})
+        let len = (dataset.length-1)/this.freq;
+        this.$store.commit('updataPoint',{startPoint:0, endPoint:Math.floor(len * 1000) / 1000})
         this.drawLineplot('MR');
         this.drawLineplot('ML');
   },
@@ -343,8 +344,10 @@ export default {
         }
 
         // If user double click, reinitialize the chart
+        var freq = this.freq;
         svg.on("dblclick",function(){
-            store.commit('updataPoint',{startPoint:0, endPoint:(csv.length)/this.freq})
+            let len = (csv.length)/freq;
+            store.commit('updataPoint',{startPoint:0, endPoint:Math.floor(len * 1000) / 1000});
             x.domain([0, domainLen])
             xAxis.transition().call(d3.axisBottom(x))
             line
