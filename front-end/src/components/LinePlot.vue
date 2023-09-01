@@ -168,7 +168,8 @@ export default {
             .attr("transform", "translate(0," + height + ")")
             // .call(d3.axisBottom(x).ticks(5));
             .call(d3.axisBottom(x))
-            .classed('axis_x', true);
+            .classed('axis_x', true)
+            .attr("id", channel+'X');
 
         var max = 10;
         // Add Y axis
@@ -312,6 +313,9 @@ export default {
 
 
             if(channel == 'ML'){
+                var otherX = d3.select("#MRX")
+                otherX.transition().duration(1000).call(d3.axisBottom(x))
+
                 var otherLine = d3.select("#MR")
                 otherLine.select('.line')
                 .transition()
@@ -322,6 +326,9 @@ export default {
                 )
             }
             else if(channel == 'MR'){
+                var otherX = d3.select("#MLX")
+                otherX.transition().duration(1000).call(d3.axisBottom(x))
+
                 var otherLine = d3.select("#ML")
                 otherLine.select('.line')
                 .transition()
@@ -349,6 +356,9 @@ export default {
             )
 
             if(channel == 'ML'){
+                var otherX = d3.select("#MRX")
+                otherX.transition().call(d3.axisBottom(x))
+
                 var otherLine = d3.select("#MR")
                 otherLine.select('.line')
                 .transition()
@@ -357,6 +367,9 @@ export default {
                 .y(function(d) { return y(d.MR)}))
             }
             else if(channel == 'MR'){
+                var otherX = d3.select("#MLX")
+                otherX.transition().call(d3.axisBottom(x))
+
                 var otherLine = d3.select("#ML")
                 otherLine.select('.line')
                 .transition()
