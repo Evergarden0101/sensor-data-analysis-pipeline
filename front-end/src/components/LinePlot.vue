@@ -49,6 +49,7 @@ export default {
     }
   },
   mounted() {
+        this.$store.commit('updataPoint',{startPoint:0, endPoint:(dataset.length-1)/this.freq})
         this.drawLineplot('MR');
         this.drawLineplot('ML');
   },
@@ -278,7 +279,7 @@ export default {
         // A function that set idleTimeOut to null
         let idleTimeout
         function idled() { idleTimeout = null; }
-
+        var store = this.$store;
         // A function that update the chart for given boundaries
         function updateChart(event,d) {
             // What are the selected boundaries?
@@ -289,7 +290,11 @@ export default {
                 if (!idleTimeout) return idleTimeout = setTimeout(idled, 350); // This allows to wait a little bit
                 x.domain([ 4,8])
             }else{
-                x.domain([ x.invert(extent[0]), x.invert(extent[1])])
+                let sp = x.invert(extent[0]);
+                let ep = x.invert(extent[1]);
+                store.commit('updataPoint',
+                    {startPoint:Math.floor(sp * 1000) / 1000, endPoint:Math.floor(ep * 1000) / 1000})
+                x.domain([sp, ep])
                 line.select(".brush").call(brush.move, null) // This remove the grey brush area as soon as the selection has been done
             }
 
@@ -332,7 +337,7 @@ export default {
 
         // If user double click, reinitialize the chart
         svg.on("dblclick",function(){
-            console.log(domainLen)
+            store.commit('updataPoint',{startPoint:0, endPoint:(csv.length)/this.freq})
             x.domain([0, domainLen])
             xAxis.transition().call(d3.axisBottom(x))
             line
