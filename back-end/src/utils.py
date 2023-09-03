@@ -2,7 +2,7 @@ import sqlite3 as sql
 from settings import *
 from preprocessing import *
 from SSD import *
-import sys
+import sys, os, re
 
 # TODO: create all utils function for app here separately to make app.py code lighter
 
@@ -150,3 +150,35 @@ def post_ssd_updates(DATABASE, updates):
             elif update["stage"] == 'nrem':
                 query = "UPDATE sleep_stage_detection SET stage = 'rem' WHERE x=? AND y=?"
                 cur.execute(query, params)
+
+
+"""Get all the patients, weeks and night ids"""
+def get_existing_patients_data():
+    existing_patients_recordings = []
+
+    for folder in os.listdir(DATA_PATH):
+        patient_id = re.search('p(.*?)_', folder).group(1)
+
+        patient_week_folder = DATA_PATH + folder
+
+        csv_files = [f for f in os.listdir(patient_week_folder) if f.endswith(".csv")]
+
+        night_id_list= []
+        for csv in csv_files:
+            night_id = re.search("[0-9]+", csv).group(0)
+            night_id_list.append(night_id)
+
+        if night_id_list:
+            week = re.search('w(.*)', folder).group(1)
+            night_id_list = list(set(night_id_list))
+            night_id_list = sorted(night_id_list)
+            
+            for night_id in night_id_list:
+                existing_patients_recordings.append({
+                    "patient_id": patient_id,
+                    "week": week,
+                    "night_id": night_id
+
+                })
+
+    return existing_patients_recordings
