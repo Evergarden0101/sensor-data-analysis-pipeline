@@ -11,39 +11,48 @@ import SleepPage from './pages/SleepPage.vue';
 import TreatmentPage from './pages/TreatmentPage.vue';
 import BruxismPage from './pages/BruxismPage.vue';
 import PatientInfoPage from './pages/PatientInfoPage.vue';
-import SelectPatientPage from './pages/SelectPatientPage.vue';
+import SelectPatientPage from './pages/SelectPatientPage.vue'
 import PatientDataPage from './pages/PatientDataPage.vue';
 import store from './store'
 
-const app = createApp(App)
-app.use(VueRouter.createRouter({
-   history: VueRouter.createWebHistory(process.env.BASE_URL),
-    routes:[{
-        path: '/',
-        component: HomePage,
-    }, {
-        path: '/sleep',
-        component: SleepPage,
-        name: 'SleepPage',
-        props: true
-    }, {
-        path: '/treatment',
-        component: TreatmentPage,
-    },{
-        path: '/bruxism',
-        component: BruxismPage,
-    },{
-        path: '/patient',
-        component: PatientInfoPage,
-    },{
-        path: '/select-patient',
-        component: SelectPatientPage,
-        props: true
-    }, {
+const router = VueRouter.createRouter({
+    history: VueRouter.createWebHistory(process.env.BASE_URL),
+     routes:[{
+         path: '/',
+         component: HomePage,
+     }, {
+         path: '/sleep',
+         component: SleepPage,
+         name: 'SleepPage',
+         props: true
+     }, {
+         path: '/treatment',
+         component: TreatmentPage,
+     },{
+         path: '/bruxism',
+         component: BruxismPage,
+     },{
+         path: '/patient',
+         component: PatientInfoPage,
+     },{
+         path: '/select-patient',
+         component: SelectPatientPage,
+         props: true
+     }, {
         path: '/patient-data',
         component: PatientDataPage
     }] 
-}))
+ })
+
+router.beforeEach(async (to, from, next) => {
+await store.restored;
+next();
+});
+
+export default router;
+
+const app = createApp(App)
+app.use(router)
 app.use(ElementPlus, {
     locale: en,
 })
