@@ -11,6 +11,8 @@ import sys
 import pandas as pd
 from settings import *
 from scipy import stats
+import os
+import re
 
 """Example of possible structure for posting the label data"""
 def create_app(test_config=None):
@@ -200,8 +202,21 @@ def create_app(test_config=None):
             print(e)
             return f"{e}"
 
+    @app.route("/existing-patients-recordings/", methods=["GET"])
+    def get_existing_patients_datasets():
+        try:
+            existing_patients_recordings = get_existing_patients_data()
+
+            return existing_patients_recordings, 200
         
+        except Exception as e:
+            print('Exception raised')
+            print(e)
+            return f"{e}"
+    
+
     return app
+
 
 
     
