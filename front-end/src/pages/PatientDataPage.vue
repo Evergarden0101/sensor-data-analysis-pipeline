@@ -13,10 +13,25 @@
     <el-row style="margin-top: 2%;">
         <el-col :span="10" :offset="7">
             <h2>Patients data available:</h2>
-            <el-table :data="tableData" :default-sort="{ prop: 'patient_id', order: 'ascending' }" @row-dblclick="saveSelectedPatientData" style="width: 100%">
+            <el-table :data="tableData"
+                      :default-sort="{ prop: 'patient_id', order: 'ascending' }"
+                      highlight-current-row
+                      @row-dblclick="saveSelectedPatientData" style="width: 100%">
                 <el-table-column prop="patient_id" label="Patient ID" sortable width="180" />
                 <el-table-column prop="week" label="Week" width="180" />
                 <el-table-column prop="night_id" label="Night ID" />
+                <el-table-column fixed="right" label="Operations" width="120">
+                    <template #default="scope">
+                        <el-button
+                        link
+                        type="primary"
+                        size="small"
+                        @click.prevent="choosePatient(scope.$index)"
+                        >
+                        Select
+                        </el-button>
+                    </template>
+                </el-table-column>
             </el-table>
         </el-col>
     </el-row>
@@ -57,6 +72,13 @@ export default {
         },
         saveSelectedPatientData(){
             console.log("Double clicked");
+        },
+        choosePatient(index){
+            console.log(this.tableData[index])
+            this.$store.commit('updatePatientSeletion', this.tableData[index]);
+            console.log(this.$store.state);
+            this.$router.push('/sleep');
+
         }
     },
     beforeMount(){

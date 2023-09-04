@@ -16,7 +16,7 @@
         <el-button type="primary" plain>Start</el-button>
       </router-link>
       -->
-      <router-link :to="'/patient/'">
+      <router-link :to="'/patient-data/'">
         <el-button type="primary" plain>Start</el-button>
       </router-link>
     </el-col>

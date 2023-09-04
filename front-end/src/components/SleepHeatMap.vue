@@ -1,5 +1,5 @@
 <template>
-    <h2 align="center">Sleep Stage Detection</h2>
+    <h2 align="center">Patient: {{ this.$store.state.patientId }}, Week: {{ this.$store.state.week }}, Night id: {{ this.$store.state.nightId }}</h2>
     <h3 align="center">Threshold Filtering</h3>
     <p align="center">Every row represents a sleep cycle (90 minutes).</p>
     <p align="center">The color bars represent the level of uncertainity.
@@ -11,20 +11,20 @@
 
     <el-row style="margin-top: 3%;">
         <el-col :span="7" :offset="5">
-            <router-link :to="'/patient/'">
+            <router-link :to="'/patient-data/'">
                 <el-button type="primary" plain><el-icon class="el-icon--left"><ArrowLeft /></el-icon> Patient Information</el-button>
             </router-link>
         </el-col>
         <el-col :span="7" :offset="5">
             <router-link :to="'/bruxism/'">
-                <el-button type="primary" plain>
+                <el-button v-if="!error" type="primary" plain>
                     Events Detection<el-icon class="el-icon--right"><ArrowRight /></el-icon>
                 </el-button>
             </router-link>
         </el-col>
     </el-row>
 
-  <div class="buttons-container">
+  <div v-if="!error" class="buttons-container">
     <el-button @click="toggleEditMode" v-if="!isEditMode">Enter Edit Mode</el-button>
     <el-popconfirm
     title="Are you sure you want to exit the edit mode?
@@ -40,7 +40,20 @@
   </div>
 
   <el-row>
-        <el-col :span="24" v-loading="loading" element-loading-text="The dataset is loading...it might take a couple of minutes.">
+        <el-col v-if="error" :span="24">
+            <el-result
+                icon="error"
+                title="Error"
+            >
+                <template #extra>
+                    <p>{{ getSubtitle() }}</p>
+                    <router-link :to="'/patient-data/'">
+                        <el-button type="primary" plain>Back</el-button>
+                    </router-link>
+                </template>
+            </el-result>
+        </el-col>
+        <el-col v-if="!error" :span="24" v-loading="loading" element-loading-text="The dataset is loading...it might take a couple of minutes.">
             <div id="chart-container" style="position: relative; height: 80vh; overflow: hidden;"></div>
         </el-col>
     </el-row>
@@ -50,7 +63,6 @@
 import * as echarts from 'echarts';
 import axios from 'axios';
 import { ref } from 'vue';
-import { h } from 'vue';
 import { ElMessage } from 'element-plus';
 
 export default {
@@ -63,18 +75,19 @@ export default {
       isSelectMode: false,
       selectedTiles: [],
       selectedIndices: [],
-      patientId: null,
-      week: null,
-      nightId: null,
+      error: false,
       toUpdate: []
     }
   },
   mounted() {
-    this.drawTreatHeatMap(1, 1, "0901260");
+    this.drawTreatHeatMap(this.$store.state.patientId, this.$store.state.week, this.$store.state.nightId);
   },
   methods: {
     open() {
         ElMessage('Please choose the cell for which you want to modify the label.')
+    },
+    getSubtitle(){
+        return "No dataset found for user " + this.$store.state.patientId + " on night " + this.$store.state.nightId + " of week " + this.$store.state.week + "."
     },
     getMax(arr, prop) {
         var max;
@@ -95,7 +108,7 @@ export default {
     toggleEditMode() {
       this.isEditMode = !this.isEditMode;
       if(!this.isEditMode){
-        const path = `http://localhost:5000/ssd/1/1/0901260`
+        const path = `http://localhost:5000/ssd/${this.$store.state.patientId}/${this.$store.state.week}/${this.$store.state.nightId}`
         const headers = {
                 'Accept': 'application/json',
                 'Content-Type': 'application/json'
@@ -116,7 +129,7 @@ export default {
     exitEditMode(){
         this.isEditMode = !this.isEditMode;
         this.toUpdate = [];
-        this.$router.go(0);
+        this.$router.go();
     },
 
     toggleSelectMode() {
@@ -137,8 +150,8 @@ export default {
 
         const path = `http://localhost:5000/ssd/${patient_id}/${week}/${night_id}`
         const headers = {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
         };
 
         axios.get(path, {headers})
@@ -275,7 +288,7 @@ export default {
                 if (params.seriesIndex === 0) { // If the clicked series is 'rem'
                   // Remove from 'rem' dataset
                   let removedData = option.series[0].data.splice(params.dataIndex, 1)[0];
-
+                  
                   this.toUpdate.push({
                     "x": removedData[0],
                     "y": removedData[1],
@@ -346,6 +359,7 @@ export default {
         })
         .catch(err=>{
             console.log(err)
+            this.error = true;
         })
     }
 
