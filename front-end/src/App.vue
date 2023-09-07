@@ -1,5 +1,12 @@
 <template>
-  <el-row><HomeButton/></el-row>
+  <el-row>
+    <el-col :span="23">
+      <HomeButton/>
+    </el-col>
+    <el-col :span="1">
+      <SettingsButton/>
+    </el-col>
+    </el-row>
   <div class="page-wrap">
     <router-view></router-view>
   </div>
@@ -8,10 +15,12 @@
 
 <script>
 import HomeButton from './components/HomeButton.vue';
+import SettingsButton from './components/SettingsButton.vue';
 export default {
   name: 'App',
   components: {
-    HomeButton
+    HomeButton,
+    SettingsButton
   },
 }
 </script>

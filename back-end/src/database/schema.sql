@@ -1,6 +1,9 @@
 DROP TABLE IF EXISTS labels;
 DROP TABLE IF EXISTS patients_recordings;
 DROP TABLE IF EXISTS sleep_stage_detection;
+DROP TABLE IF EXISTS settings;
+DROP TABLE IF EXISTS sensors;
+
 
 CREATE TABLE labels (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -45,3 +48,21 @@ CREATE TABLE sleep_stage_detection (
   y INTEGER NOT NULL,
   x INTEGER NOT NULL
 )
+
+CREATE TABLE settings (
+  id INTEGER PRIMARY KEY,
+  study_type TEXT NOT NULL,
+  activity TEXT NOT NULL,
+  original_sampling INTEGER NOT NULL,
+  REM_sampling INTEGER NOT NULL,
+  NREM_sampling INTEGER NOT NULL,
+  dataset_format TEXT NOT NULL,
+  filtered BOOLEAN NOT NULL,
+  normalized BOOLEAN NOT NULL
+);
+
+CREATE TABLE sensors (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  type TEXT NOT NULL,
+  name TEXT NOT NULL
+);

@@ -13,6 +13,7 @@ import BruxismPage from './pages/BruxismPage.vue';
 import PatientInfoPage from './pages/PatientInfoPage.vue';
 import SelectPatientPage from './pages/SelectPatientPage.vue'
 import PatientDataPage from './pages/PatientDataPage.vue';
+import SettingsPage from './pages/SettingsPage.vue';
 import store from './store'
 
 const router = VueRouter.createRouter({
@@ -41,6 +42,9 @@ const router = VueRouter.createRouter({
      }, {
         path: '/patient-data',
         component: PatientDataPage
+    }, {
+        path: '/settings',
+        component: SettingsPage
     }] 
  })
 

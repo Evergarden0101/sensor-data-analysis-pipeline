@@ -214,6 +214,48 @@ def create_app(test_config=None):
             print(e)
             return f"{e}"
     
+    @app.route("/settings/", methods=["POST"])
+    def post_settings():
+        try: 
+            settings = request.json
+
+            print(settings)
+            print(tuple(settings.values()))
+                
+
+
+            with sql.connect(DATABASE) as con:
+                cur = con.cursor()
+                cur.execute("DELETE FROM settings")
+                params = tuple(settings.values())
+                query = "INSERT  INTO settings (study_type, activity, original_sampling, REM_sampling, NREM_sampling, dataset_format, filtered, normalized) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+                cur.execute(query, params)
+
+            return "Inserted settings into DB", 200
+        except Exception as e:
+            print('Exception raised')
+            print(e)
+            return f"{e}", 500
+        
+    @app.route("/sensors/", methods=["POST"])
+    def post_sensors():
+        try: 
+            sensors = request.json
+
+            with sql.connect(DATABASE) as con:
+                cur = con.cursor()
+                cur.execute("DELETE FROM sensors")
+
+                for sensor in sensors:
+                    params = tuple(sensor.values())
+                    query = "INSERT  INTO sensors (type, name) VALUES (?, ?)"
+                    cur.execute(query, params)
+
+            return "Inserted sensors into DB", 200
+        except Exception as e:
+            print('Exception raised')
+            print(e)
+            return f"{e}", 500
 
     return app
 
