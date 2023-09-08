@@ -182,3 +182,89 @@ def get_existing_patients_data():
                 })
 
     return existing_patients_recordings
+
+
+"""Returns study type stored in db"""
+def get_study_type(DATABASE):
+    with sql.connect(DATABASE) as con:
+        cur = con.cursor()
+
+        study_type = cur.execute("SELECT study_type FROM settings WHERE id=1")
+
+    return study_type
+
+"""Returns activity type stored in db"""
+def get_activity(DATABASE):
+    with sql.connect(DATABASE) as con:
+        cur = con.cursor()
+
+        activity = cur.execute("SELECT activity FROM settings WHERE id=1")
+
+    return activity
+
+"""Returns original sampling rate stored in db"""
+def get_original_sampling(DATABASE):
+    with sql.connect(DATABASE) as con:
+        cur = con.cursor()
+
+        original_sampling = cur.execute("SELECT original_sampling FROM settings WHERE id=1")
+
+    return original_sampling
+
+
+"""Returns REM sampling rate stored in db"""
+def get_REM_sampling(DATABASE):
+    with sql.connect(DATABASE) as con:
+        cur = con.cursor()
+
+        REM_sampling = cur.execute("SELECT REM_sampling FROM settings WHERE id=1")
+
+    return REM_sampling
+
+"""Returns NREM sampling rate stored in db"""
+def get_NREM_sampling(DATABASE):
+    with sql.connect(DATABASE) as con:
+        cur = con.cursor()
+
+        NREM_sampling = cur.execute("SELECT NREM_sampling FROM settings WHERE id=1")
+
+    return NREM_sampling
+
+"""Returns dataset format stored in db"""
+def get_dataset_format(DATABASE):
+    with sql.connect(DATABASE) as con:
+        cur = con.cursor()
+
+        dataset_format = cur.execute("SELECT dataset_format FROM settings WHERE id=1")
+
+    return dataset_format
+
+"""Returns boolean that indicates if dataset is filtered stored in db"""
+def get_is_filtered(DATABASE):
+    with sql.connect(DATABASE) as con:
+        cur = con.cursor()
+
+        filtered = cur.execute("SELECT filtered FROM settings WHERE id=1")
+
+    return filtered
+
+"""Returns boolean that indicates if dataset is filtered stored in db"""
+def get_is_normalized(DATABASE):
+    with sql.connect(DATABASE) as con:
+        cur = con.cursor()
+
+        normalized = cur.execute("SELECT normalized FROM settings WHERE id=1")
+
+    return normalized
+
+"""Returns settings stored in db as list of json"""
+def get_settings(DATABASE):
+    with sql.connect(DATABASE) as con:
+        cur = con.cursor()
+
+        settings = cur.execute("SELECT * FROM settings WHERE id=1")
+        columns = [description[0] for description in settings.description]
+
+
+        return get_json_format_from_query(columns, settings.fetchall(), 1, 8)
+

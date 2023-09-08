@@ -214,28 +214,33 @@ def create_app(test_config=None):
             print(e)
             return f"{e}"
     
-    @app.route("/settings/", methods=["POST"])
+    @app.route("/settings/", methods=["POST", "GET"])
     def post_settings():
-        try: 
-            settings = request.json
+        if request.method == 'POST':
+            try: 
+                settings = request.json
 
-            print(settings)
-            print(tuple(settings.values()))
-                
+                print(settings)
+                print(tuple(settings.values()))
+                    
 
 
-            with sql.connect(DATABASE) as con:
-                cur = con.cursor()
-                cur.execute("DELETE FROM settings")
-                params = tuple(settings.values())
-                query = "INSERT  INTO settings (study_type, activity, original_sampling, REM_sampling, NREM_sampling, dataset_format, filtered, normalized) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
-                cur.execute(query, params)
+                with sql.connect(DATABASE) as con:
+                    cur = con.cursor()
+                    cur.execute("DELETE FROM settings")
+                    params = tuple(settings.values())
+                    query = "INSERT  INTO settings (study_type, activity, original_sampling, REM_sampling, NREM_sampling, dataset_format, filtered, normalized) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+                    cur.execute(query, params)
 
-            return "Inserted settings into DB", 200
-        except Exception as e:
-            print('Exception raised')
-            print(e)
-            return f"{e}", 500
+                return "Inserted settings into DB", 200
+            except Exception as e:
+                print('Exception raised')
+                print(e)
+                return f"{e}", 500
+            
+        if request.method == "GET":
+            settings = get_settings(DATABASE)
+            return settings
         
     @app.route("/sensors/", methods=["POST"])
     def post_sensors():
