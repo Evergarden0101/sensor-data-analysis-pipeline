@@ -205,14 +205,22 @@ export default {
                     top: '10%'
                 },
                 xAxis: {
+                    axisLabel: {
+                        padding: [0, -60, 0, 0]
+                    },
+                    position: 'right',
                     type: 'category',
                     name: 'minutes',
                     data: minutes,
                     splitArea: {
                         show: true
-                    }
+                    },
                 },
                 yAxis: {
+                    axisLabel: {
+                        //why padding not working for 'top'?
+                        padding: [-60, 0, 0, 0],
+                    },
                     type: 'category',
                     data: hours,
                     name: 'hours',
