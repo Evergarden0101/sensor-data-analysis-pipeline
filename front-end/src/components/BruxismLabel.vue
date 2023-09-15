@@ -42,11 +42,11 @@
                 <el-dialog v-model="dialogFormVisible" title="Add Event" center width="30%" align-center draggable>
                     <el-form :model="form">
                     <el-form-item label="Start Time:" :label-width="formLabelWidth">
-                        <el-input-number v-model="form.Start" style="width: 70px; margin-left: 20px;"  :controls="false" />
+                        <el-input-number v-model="form.Start" style="width: 90px; margin-left: 20px;"  :controls="false" />
                             <el-text size="large" style="margin-left: 0.3em;">s</el-text>
                     </el-form-item>
                     <el-form-item label="End Time:" :label-width="formLabelWidth">
-                        <el-input-number v-model="form.End" style="width: 70px;margin-left: 20px;"  :controls="false" />
+                        <el-input-number v-model="form.End" style="width: 90px;margin-left: 20px;"  :controls="false" />
                             <el-text size="large" style="margin-left: 0.3em;">s</el-text>
                     </el-form-item>
                     </el-form>
