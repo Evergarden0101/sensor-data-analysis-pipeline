@@ -11,7 +11,7 @@ const vuexLocal = new VuexPersistence({
 const store = createStore({
   state () {
     return {
-      patientId: 1111111,
+      patientId: 1,
       week: 1,
       day: 3,
       nightId: "",
