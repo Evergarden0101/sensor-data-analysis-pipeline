@@ -47,7 +47,7 @@
             </el-affix>
         </el-col>
         <el-col :span="11" :offset="1">
-            <LinePlot/>
+            <LinePlot :key="this.$store.state.linePlotKey"></LinePlot>
         </el-col>
     </el-row>
 </template>

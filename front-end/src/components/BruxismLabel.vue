@@ -3,7 +3,7 @@
         <el-card class="box-card" style="border: solid 1px;border-radius: 10px; width: 100%; margin-left: auto;margin-right: auto;">
             <h3 align="center" style="margin-bottom: 30px;">Events Predictions</h3>
             <el-row v-for="(item,index) in [Labels[currentPage - 1]]" :key="index" >
-                <el-col :span="3"><el-button text="plain" type=""><h5>{{ item.id }}</h5></el-button></el-col>
+                <el-col :span="3"><el-button text="plain" type="" @click="locateLabel(item)"><h5>{{ item.id }}</h5></el-button></el-col>
                 <el-col :span="21">
                     <el-form :inline="true" :model="Labels" class="demo-form-inline">
                         <el-form-item label="Start:" style="margin-left: 1em;">
@@ -100,6 +100,10 @@ export default {
         }
     },
     methods: {
+        locateLabel(item){
+            this.$store.commit('updateLinePlotKey');
+            this.$store.commit('setLabelRange',{labelStart:item.Start, labelEnd:item.End});
+        },
         openDialog(){
             this.form.Start = this.$store.state.startPoint;
             this.form.End = this.$store.state.endPoint;
