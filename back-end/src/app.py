@@ -75,7 +75,7 @@ def create_app(test_config=None):
                 range_min = request.json
             except:
                 range_min = None
-            response = retrieve_patient_recording(DATABASE, patient_id, week, day, range_min)
+            response = retrieve_patient_recording(DATABASE, patient_id, week, day, range_min, SAMPLING_RATE=2000)
 
             return response
 
@@ -257,6 +257,30 @@ def create_app(test_config=None):
                     cur.execute(query, params)
 
             return "Inserted sensors into DB", 200
+        except Exception as e:
+            print('Exception raised')
+            print(e)
+            return f"{e}", 500
+
+ 
+    @app.route("/lineplot-data/<int:patient_id>/<int:week>/<string:night_id>", methods=["GET"])
+    def get_lineplot_data(patient_id, week, night_id):
+        try:
+            df = open_brux_csv(patient_id, week, night_id)
+
+            mr = df["MR"].values.tolist()
+            ml = df["ML"].values.tolist()
+            su = df["SU"].values.tolist()
+
+            rem_ranges =  get_rem_intervals(patient_id, week, night_id, DATABASE)
+
+            sampling_ranges = get_sampling_ranges(mr, ml, su, rem_ranges)
+
+            resampled_ranges = get_resampled_ranges(sampling_ranges)
+
+            return resampled_ranges, 200
+
+
         except Exception as e:
             print('Exception raised')
             print(e)
