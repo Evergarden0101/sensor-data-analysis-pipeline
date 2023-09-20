@@ -89,21 +89,35 @@ export default {
     getSubtitle(){
         return "No dataset found for user " + this.$store.state.patientId + " on night " + this.$store.state.nightId + " of week " + this.$store.state.week + "."
     },
-    getMax(arr, prop) {
+    getMaxSD(arr, prop) {
         var max;
-        for (var i=0 ; i<arr.length ; i++) {
-            if (max == null || parseInt(arr[i][prop]) > parseInt(max[prop]))
-                max = arr[i];
+        if(arr.length === 0){
+            return 0;
         }
-        return max;
+        else{
+            for (var i=0 ; i<arr.length ; i++) {
+                if (max == null || parseInt(arr[i][prop]) > parseInt(max[prop]))
+                    max = arr[i];
+            }
+            return max.SD;
+        }
+
+        
     },
-    getMin(arr, prop) {
+    getMinSD(arr, prop) {
         var min;
-        for (var i=0 ; i<arr.length ; i++) {
+        if(arr.length === 0){
+            return 0;
+        }
+        else{
+           for (var i=0 ; i<arr.length ; i++) {
             if (min == null || parseInt(arr[i][prop]) < parseInt(min[prop]))
                 min = arr[i];
+            }
+            return min.SD; 
         }
-        return min;
+
+        
     },
     toggleEditMode() {
       this.isEditMode = !this.isEditMode;
@@ -229,8 +243,8 @@ export default {
                     }
                 },
                 visualMap: [{
-                    min: this.getMin(remDataJson, "SD").SD,
-                    max: this.getMax(remDataJson, "SD").SD,
+                    min: this.getMinSD(remDataJson, "SD"),
+                    max: this.getMaxSD(remDataJson, "SD"),
                     dimension: 2,
                     inRange : {
                         color: ['#1919ff', '#CCCCFF'] //From bigger to smaller value ->
@@ -241,8 +255,8 @@ export default {
                     left: 'center',
                     bottom: '30%',
                 }, {
-                    min: this.getMin(nremDataJson, "SD").SD,
-                    max: this.getMax(nremDataJson, "SD").SD,
+                    min: this.getMinSD(nremDataJson, "SD"),
+                    max: this.getMaxSD(nremDataJson, "SD"),
                     dimension: 2,
                     inRange : {
                         color: ['#999999', '#eeeeee'] //From bigger to smaller value ->
