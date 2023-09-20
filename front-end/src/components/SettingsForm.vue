@@ -248,6 +248,7 @@ export default {
                 console.log(this.form)
                 this.postSettings();
                 this.postSensors();
+                this.$router.go(-1);
             }
             else{
                 this.setError();
