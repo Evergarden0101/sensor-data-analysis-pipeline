@@ -74,7 +74,7 @@ export default {
             weekSummaryVisible: false,
             isShow: true,
             imgsrc: require("@/assets/summary.png"),
-        }
+         }
     },
     methods:{
         rerender(){
