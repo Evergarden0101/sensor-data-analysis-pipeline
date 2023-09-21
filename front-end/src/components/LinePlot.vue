@@ -186,7 +186,75 @@ export default {
             .call(d3.axisLeft(y))
             .classed('axis_y', true)
 
-        // Add X axis label:
+        // Define highlighted periods for MR (Right Masseter)
+        const highlightedPeriodsMR = [
+          { start: 6, end: 8 },
+          { start: 10, end: 13 },
+          { start: 16, end: 19 },
+          { start: 26, end: 30 }// Example: Highlight from 2s to 4s for MR
+        ];
+
+        // Define highlighted periods for ML (Left Masseter)
+        const highlightedPeriodsML = [
+          { start: 4, end: 20 },
+        ];
+
+        const highlightedEventsMR = [
+          {start: 7},
+          {start: 12},
+          {start: 18},
+          {start: 27},
+        ]
+
+        const highlightedEventsML = [
+          {start: 15}
+        ]
+
+        // Create rectangles for the highlighted periods based on the channel
+        let highlightedPeriods;
+        if (channel === 'MR') {
+          highlightedPeriods = highlightedPeriodsMR;
+        } else if (channel === 'ML') {
+          highlightedPeriods = highlightedPeriodsML;
+        }
+
+      let highlightedEvents;
+      if (channel === 'MR') {
+        highlightedEvents = highlightedEventsMR;
+      } else if (channel === 'ML') {
+        highlightedEvents = highlightedEventsML;
+      }
+
+        if (highlightedPeriods) {
+          svg.selectAll(".highlight")
+              .data(highlightedPeriods)
+              .enter()
+              .append("rect")
+              .attr("class", "highlight")
+              .attr("x", function(d) { return x(d.start); })
+              .attr("width", function(d) { return x(d.end) - x(d.start); })
+              .attr("y", 0)
+              .attr("height", height)
+              .attr("fill", "lightblue"); // Set the highlight color
+        }
+
+        if (highlightedEvents) {
+          svg.selectAll(".vertical-bar")
+              .data(highlightedEvents)
+              .enter()
+              .append("rect")
+              .attr("class", "vertical-bar")
+              .attr("x", function(d) { return x(d.start); })
+              .attr("width", 2) // Adjust the width of the vertical bars as needed
+              .attr("y", 0)
+              .attr("height", height)
+              .attr("fill", "red");
+        }
+
+
+
+
+      // Add X axis label:
         svg.append("text")
             .attr("text-anchor", "end")
             .attr("x", width)
