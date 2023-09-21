@@ -20,8 +20,8 @@ const store = createStore({
       startPoint: 0,
       endPoint: 0,
       linePlotKey: 0,
-      labelStart: 0,
-      labelEnd: 0,
+      plotStart: 0,
+      plotEnd: 0,
     }
   },
   mutations: {
@@ -42,8 +42,8 @@ const store = createStore({
       state.linePlotKey++;
     },
     setLabelRange(state, payload){
-      state.labelStart = payload.labelStart;
-      state.labelEnd = payload.labelEnd;
+      state.plotStart = payload.plotStart;
+      state.plotEnd = payload.plotEnd;
     }
   },
   plugins: [vuexLocal.plugin],

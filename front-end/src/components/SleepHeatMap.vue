@@ -29,14 +29,14 @@
     <el-popconfirm
     title="Are you sure you want to exit the edit mode?
     This will update the values forever."
-    @confirm="toggleEditMode"
+    @confirm="toggleEditModeAndSelect"
     @cancel="exitEditMode"
     width="350">
         <template #reference>
             <el-button v-if="isEditMode">Exit Edit Mode</el-button>
         </template>
     </el-popconfirm>
-    <el-button @click="toggleSelectMode">Select</el-button>
+<!--    <el-button @click="toggleSelectMode">Select</el-button>-->
   </div>
 
   <el-row>
@@ -119,6 +119,12 @@ export default {
 
         
     },
+
+    toggleEditModeAndSelect() {
+      this.toggleEditMode(); // Toggle off the edit mode
+      this.toggleSelectMode(); // Toggle on the select mode
+    },
+
     toggleEditMode() {
       this.isEditMode = !this.isEditMode;
       if(!this.isEditMode){
@@ -138,7 +144,7 @@ export default {
             })
 
       }
-    
+
     },
     exitEditMode(){
         this.isEditMode = !this.isEditMode;
@@ -310,7 +316,7 @@ export default {
                 if (params.seriesIndex === 0) { // If the clicked series is 'rem'
                   // Remove from 'rem' dataset
                   let removedData = option.series[0].data.splice(params.dataIndex, 1)[0];
-                  
+
                   this.toUpdate.push({
                     "x": removedData[0],
                     "y": removedData[1],
@@ -346,28 +352,22 @@ export default {
 
               else if (this.isSelectMode) {
                 console.log('Select mode is active');
-                let dataIndex = `${params.seriesIndex}-${params.dataIndex}`;
-                console.log('Selected Indices:', this.selectedIndices);
+                let seriesIndex = params.seriesIndex;
 
-                if (this.selectedIndices.includes(dataIndex)) {
-                  // If already selected, remove from the selectedIndices array
-                  this.selectedIndices = this.selectedIndices.filter(i => i !== dataIndex);
+                // Get the total number of data points in the selected series
+                let seriesData = option.series[seriesIndex].data;
+                let numDataPoints = seriesData.length;
 
-                  // De-emphasize
-                  myChart.dispatchAction({
-                    type: 'downplay',
-                    seriesIndex: params.seriesIndex,
-                    dataIndex: params.dataIndex
-                  });
-                } else {
-                  // Otherwise, add to the selectedIndices array
+                // Emphasize all data points in the selected series
+                for (let i = 0; i < numDataPoints; i++) {
+                  let dataIndex = `${seriesIndex}-${i}`;
                   this.selectedIndices.push(dataIndex);
 
-                  // Emphasize
+                  // Emphasize each data point
                   myChart.dispatchAction({
                     type: 'highlight',
-                    seriesIndex: params.seriesIndex,
-                    dataIndex: params.dataIndex
+                    seriesIndex: seriesIndex,
+                    dataIndex: i
                   });
                 }
               }
