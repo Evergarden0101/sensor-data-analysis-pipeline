@@ -75,7 +75,7 @@ def create_app(test_config=None):
                 range_min = request.json
             except:
                 range_min = None
-            response = retrieve_patient_recording(DATABASE, patient_id, week, day, range_min)
+            response = retrieve_patient_recording(DATABASE, patient_id, week, day, range_min, SAMPLING_RATE=2000)
 
             return response
 
@@ -214,28 +214,33 @@ def create_app(test_config=None):
             print(e)
             return f"{e}"
     
-    @app.route("/settings/", methods=["POST"])
+    @app.route("/settings/", methods=["POST", "GET"])
     def post_settings():
-        try: 
-            settings = request.json
+        if request.method == 'POST':
+            try: 
+                settings = request.json
 
-            print(settings)
-            print(tuple(settings.values()))
-                
+                print(settings)
+                print(tuple(settings.values()))
+                    
 
 
-            with sql.connect(DATABASE) as con:
-                cur = con.cursor()
-                cur.execute("DELETE FROM settings")
-                params = tuple(settings.values())
-                query = "INSERT  INTO settings (study_type, activity, original_sampling, REM_sampling, NREM_sampling, dataset_format, filtered, normalized) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
-                cur.execute(query, params)
+                with sql.connect(DATABASE) as con:
+                    cur = con.cursor()
+                    cur.execute("DELETE FROM settings")
+                    params = tuple(settings.values())
+                    query = "INSERT  INTO settings (study_type, activity, original_sampling, REM_sampling, NREM_sampling, dataset_format, filtered, normalized) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+                    cur.execute(query, params)
 
-            return "Inserted settings into DB", 200
-        except Exception as e:
-            print('Exception raised')
-            print(e)
-            return f"{e}", 500
+                return "Inserted settings into DB", 200
+            except Exception as e:
+                print('Exception raised')
+                print(e)
+                return f"{e}", 500
+            
+        if request.method == "GET":
+            settings = get_settings(DATABASE)
+            return settings
         
     @app.route("/sensors/", methods=["POST"])
     def post_sensors():
@@ -252,6 +257,30 @@ def create_app(test_config=None):
                     cur.execute(query, params)
 
             return "Inserted sensors into DB", 200
+        except Exception as e:
+            print('Exception raised')
+            print(e)
+            return f"{e}", 500
+
+ 
+    @app.route("/lineplot-data/<int:patient_id>/<int:week>/<string:night_id>", methods=["GET"])
+    def get_lineplot_data(patient_id, week, night_id):
+        try:
+            df = open_brux_csv(patient_id, week, night_id)
+
+            mr = df["MR"].values.tolist()
+            ml = df["ML"].values.tolist()
+            su = df["SU"].values.tolist()
+
+            rem_ranges =  get_rem_intervals(patient_id, week, night_id, DATABASE)
+
+            sampling_ranges = get_sampling_ranges(DATABASE, mr, ml, su, rem_ranges)
+
+            resampled_ranges = get_resampled_ranges(DATABASE, sampling_ranges)
+
+            return resampled_ranges, 200
+
+
         except Exception as e:
             print('Exception raised')
             print(e)

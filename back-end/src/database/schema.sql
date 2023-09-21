@@ -36,6 +36,7 @@ CREATE TABLE patients_recordings (
 CREATE TABLE sleep_stage_detection (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   patient_id INTEGER NOT NULL,
+  week INTEGER NOT NULL,
   day INTEGER NOT NULL,
   hours INTEGER NOT NULL,
   minutes INTEGER NOT NULL,

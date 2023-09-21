@@ -1,7 +1,7 @@
 import sqlite3 as sql
 from settings import *
 from preprocessing import *
-from SSD import *
+from SSD2 import *
 import sys, os, re
 
 # TODO: create all utils function for app here separately to make app.py code lighter
@@ -57,7 +57,7 @@ def post_patient_recording(DATABASE, patient_id, week, day, hours, minutes, seco
                 end_min: int
             }
 """
-def retrieve_patient_recording(DATABASE, patient_id, week, day, range_min):
+def retrieve_patient_recording(DATABASE, patient_id, week, day, range_min, SAMPLING_RATE):
     with sql.connect(DATABASE) as con:
             print('connected to db', file=sys.stderr)
             cur = con.cursor()
@@ -109,18 +109,18 @@ def get_ssd_values(DATABASE, patient_id, week, night_id):
 
         print('cur variable defined', file=sys.stderr)
 
-        params = (patient_id, day, hours, minutes, seconds)
-        patient_exist = f"SELECT * FROM sleep_stage_detection WHERE (patient_id=? AND day=? AND hours=? AND minutes=? AND seconds=?)"
+        params = (patient_id, week, day, hours, minutes, seconds)
+        patient_exist = f"SELECT * FROM sleep_stage_detection WHERE (patient_id=? AND week=? AND day=? AND hours=? AND minutes=? AND seconds=?)"
         print('patient_exist query', file=sys.stderr)
 
         if cur.execute(patient_exist, params).fetchall():
             print('EXIST', file=sys.stderr)
-            params = (patient_id, day, hours, minutes, seconds)
-            query = "SELECT * FROM sleep_stage_detection WHERE (patient_id=? AND day=? AND hours=? AND minutes=? AND seconds=?)"
+            params = (patient_id, week, day, hours, minutes, seconds)
+            query = "SELECT * FROM sleep_stage_detection WHERE (patient_id=? AND week=? AND day=? AND hours=? AND minutes=? AND seconds=?)"
             result = cur.execute(query, params)
             columns = [description[0] for description in result.description]
             print(f"Columns: {columns}")
-            values = get_json_format_from_query(columns=columns, query_results=result.fetchall(), start_id=1, end_id=12)
+            values = get_json_format_from_query(columns=columns, query_results=result.fetchall(), start_id=1, end_id=13)
             #values = get_SSD_format(columns, result.fetchall())
 
 
@@ -128,11 +128,12 @@ def get_ssd_values(DATABASE, patient_id, week, night_id):
         
         else:
             print('DOES NOT EXIST', file=sys.stderr)
-            values = get_HRV_features(patient_id, week, night_id, 720)
+            print(patient_id, week, night_id)
+            values = get_HRV_features(patient_id, week, night_id, 2000)
 
             for value in values:
-                params = (patient_id, day, hours, minutes, seconds, value['start_id'], value['end_id'], value['LF_HF'], value['SD'], value['stage'], value['y'], value['x'])
-                query = "INSERT INTO sleep_stage_detection (patient_id, day, hours, minutes, seconds, start_id, end_id, LF_HF, SD, stage, y, x) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                params = (patient_id, week, day, hours, minutes, seconds, value['start_id'], value['end_id'], value['LF_HF'], value['SD'], value['stage'], value['y'], value['x'])
+                query = "INSERT INTO sleep_stage_detection (patient_id, week, day, hours, minutes, seconds, start_id, end_id, LF_HF, SD, stage, y, x) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
                 cur.execute(query, params)
 
         return values
@@ -184,3 +185,201 @@ def get_existing_patients_data():
                 })
 
     return existing_patients_recordings
+
+
+"""Returns study type stored in db"""
+def get_study_type(DATABASE):
+    with sql.connect(DATABASE) as con:
+        cur = con.cursor()
+
+        study_type = cur.execute("SELECT study_type FROM settings WHERE id=1").fetchone()[0]
+
+    return study_type
+
+"""Returns activity type stored in db"""
+def get_activity(DATABASE):
+    with sql.connect(DATABASE) as con:
+        cur = con.cursor()
+
+        activity = cur.execute("SELECT activity FROM settings WHERE id=1").fetchone()[0]
+
+    return activity
+
+"""Returns original sampling rate stored in db"""
+def get_original_sampling(DATABASE):
+    with sql.connect(DATABASE) as con:
+        cur = con.cursor()
+
+        original_sampling = cur.execute("SELECT original_sampling FROM settings WHERE id=1").fetchone()[0]
+
+    return original_sampling
+
+
+"""Returns REM sampling rate stored in db"""
+def get_REM_sampling(DATABASE):
+    with sql.connect(DATABASE) as con:
+        cur = con.cursor()
+
+        REM_sampling = cur.execute("SELECT REM_sampling FROM settings WHERE id=1").fetchone()[0]
+
+    return REM_sampling
+
+"""Returns NREM sampling rate stored in db"""
+def get_NREM_sampling(DATABASE):
+    with sql.connect(DATABASE) as con:
+        cur = con.cursor()
+
+        NREM_sampling = cur.execute("SELECT NREM_sampling FROM settings WHERE id=1").fetchone()[0]
+
+    return NREM_sampling
+
+"""Returns dataset format stored in db"""
+def get_dataset_format(DATABASE):
+    with sql.connect(DATABASE) as con:
+        cur = con.cursor()
+
+        dataset_format = cur.execute("SELECT dataset_format FROM settings WHERE id=1").fetchone()[0]
+
+    return dataset_format
+
+"""Returns boolean that indicates if dataset is filtered stored in db"""
+def get_is_filtered(DATABASE):
+    with sql.connect(DATABASE) as con:
+        cur = con.cursor()
+
+        filtered = cur.execute("SELECT filtered FROM settings WHERE id=1").fetchone()[0]
+
+    return filtered
+
+"""Returns boolean that indicates if dataset is filtered stored in db"""
+def get_is_normalized(DATABASE):
+    with sql.connect(DATABASE) as con:
+        cur = con.cursor()
+
+        normalized = cur.execute("SELECT normalized FROM settings WHERE id=1").fetchone()[0]
+
+    return normalized
+
+"""Returns settings stored in db as list of json"""
+def get_settings(DATABASE):
+    with sql.connect(DATABASE) as con:
+        cur = con.cursor()
+
+        settings = cur.execute("SELECT * FROM settings WHERE id=1")
+        columns = [description[0] for description in settings.description]
+
+
+        return get_json_format_from_query(columns, settings.fetchall(), 1, 8)
+
+"""Retrieve REM intervals from DB""" 
+def get_rem_intervals(patient_id, week, night_id, DATABASE):
+    with sql.connect(DATABASE) as con:
+        cur = con.cursor()
+
+        day, hours, minutes, seconds = get_patient_time_values(night_id)
+
+        params = ('rem', patient_id, week, day, hours, minutes, seconds)
+        query = "SELECT start_id, end_id FROM sleep_stage_detection WHERE stage=? AND patient_id=? AND week=? AND day=? AND hours=? AND minutes=? and seconds=?"
+
+        rem_intervals = cur.execute(query, params)
+        columns = [description[0] for description in rem_intervals.description]
+
+
+        return get_json_format_from_query(columns=columns, query_results=rem_intervals.fetchall(), start_id=0, end_id=1)
+    
+
+"""Get the ranges for the resampling of the dataset"""
+def get_sampling_ranges(DATABASE, mr, ml, su, ranges):
+    if len(mr) == len(ml) == len(su):
+        final_ds = []
+        ranges_nr = len(ranges)
+        tmp = 0
+
+        for idx, range in enumerate(ranges):
+            # Corner case: start
+            if range["start_id"] == 0:
+                mr_start = mr[range["start_id"]: range["end_id"]]
+                ml_start = ml[range["start_id"]: range["end_id"]]
+                su_start = su[range["start_id"]: range["end_id"]]
+
+                final_ds.append({
+                    "start_id": range["start_id"],
+                    "end_id": range["end_id"],
+                    "target_sampling_rate": get_REM_sampling(DATABASE),
+                    "mr_array": mr_start,
+                    "ml_array": ml_start,
+                    "su_array": su_start
+
+                })
+                tmp = range["end_id"]
+
+            else:
+                # 256 Hz
+
+                if tmp != range["start_id"]:
+                    mr_256 = mr[tmp: range["start_id"]]
+                    ml_256 = ml[tmp: range["start_id"]]
+                    su_256 = su[tmp: range["start_id"]]
+
+                    final_ds.append({
+                        "start_id": tmp,
+                        "end_id": range["start_id"],
+                        "target_sampling_rate":  get_NREM_sampling(DATABASE),
+                        "mr_array": mr_256,
+                        "ml_array": ml_256,
+                        "su_array": su_256
+                    })
+
+
+                # 1000 Hz
+                mr_1000 = mr[range["start_id"]: range["end_id"]]
+                ml_1000 = ml[range["start_id"]: range["end_id"]]
+                su_1000 = su[range["start_id"]: range["end_id"]]
+
+                final_ds.append({
+                    "start_id": range["start_id"],
+                    "end_id": range["end_id"],
+                    "target_sampling_rate": get_REM_sampling(DATABASE),
+                    "mr_array": mr_1000,
+                    "ml_array": ml_1000,
+                    "su_array": su_1000
+                })
+                tmp = range["end_id"]
+
+                # Corner case: end
+                if idx == ranges_nr-1:
+                    if range["end_id"] != len(mr):
+                        mr_end = mr[tmp: len(mr)]
+                        ml_end = ml[tmp: len(mr)]
+                        su_end = su[tmp: len(mr)]
+
+                        final_ds.append({
+                        "start_id": tmp,
+                        "end_id": len(mr),
+                        "target_sampling_rate":  get_NREM_sampling(DATABASE),
+                        "mr_array": mr_end,
+                        "ml_array": ml_end,
+                        "su_array": su_end
+                    })
+        return final_ds
+
+    else:
+        return "MR, ML and SU should have the same length."
+    
+
+"""Resample the ranges obtained from the function above and return dataframe with columns"""
+def get_resampled_ranges(DATABASE, sampling_ranges):
+    for sampling_range in sampling_ranges:
+        print(sampling_range["target_sampling_rate"])
+        sampling_range["mr_array"] = nk.signal_resample(sampling_range['mr_array'], method="pandas", sampling_rate=get_original_sampling(DATABASE), desired_sampling_rate=sampling_range["target_sampling_rate"]).tolist()
+        sampling_range["ml_array"] = nk.signal_resample(sampling_range["ml_array"], method="pandas", sampling_rate=get_original_sampling(DATABASE), desired_sampling_rate=sampling_range["target_sampling_rate"]).tolist()
+        sampling_range["su_array"] = nk.signal_resample(sampling_range["su_array"], method="pandas", sampling_rate=get_original_sampling(DATABASE), desired_sampling_rate=sampling_range["target_sampling_rate"]).tolist()
+
+    return sampling_ranges
+
+   
+
+        
+
+
+
