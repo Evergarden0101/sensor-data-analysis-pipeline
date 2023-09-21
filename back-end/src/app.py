@@ -274,9 +274,9 @@ def create_app(test_config=None):
 
             rem_ranges =  get_rem_intervals(patient_id, week, night_id, DATABASE)
 
-            sampling_ranges = get_sampling_ranges(mr, ml, su, rem_ranges)
+            sampling_ranges = get_sampling_ranges(DATABASE, mr, ml, su, rem_ranges)
 
-            resampled_ranges = get_resampled_ranges(sampling_ranges)
+            resampled_ranges = get_resampled_ranges(DATABASE, sampling_ranges)
 
             return resampled_ranges, 200
 
