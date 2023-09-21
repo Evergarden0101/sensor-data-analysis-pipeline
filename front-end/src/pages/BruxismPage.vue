@@ -9,6 +9,7 @@
             <Stepper step=3 />
         </el-col>
     </el-row>
+    <h2 align="center">Patient: {{ this.$store.state.patientId }}, Week: {{ this.$store.state.week }}, Night id: {{ this.$store.state.nightId }}</h2>
     <el-row style="margin-top: 3%;">
         <el-col :span="7" :offset="5">
             <router-link :to="'/sleep/'">
@@ -46,7 +47,7 @@
             </el-affix>
         </el-col>
         <el-col :span="11" :offset="1">
-            <LinePlot/>
+            <LinePlot :key="this.$store.state.linePlotKey"></LinePlot>
         </el-col>
     </el-row>
 </template>

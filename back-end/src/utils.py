@@ -158,6 +158,8 @@ def get_existing_patients_data():
     existing_patients_recordings = []
 
     for folder in os.listdir(DATA_PATH):
+        if not os.path.isdir(DATA_PATH + folder):
+            continue
         patient_id = re.search('p(.*?)_', folder).group(1)
 
         patient_week_folder = DATA_PATH + folder

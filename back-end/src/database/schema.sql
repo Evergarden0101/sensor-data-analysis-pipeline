@@ -48,7 +48,7 @@ CREATE TABLE sleep_stage_detection (
   stage TEXT,
   y INTEGER NOT NULL,
   x INTEGER NOT NULL
-)
+);
 
 CREATE TABLE settings (
   id INTEGER PRIMARY KEY,

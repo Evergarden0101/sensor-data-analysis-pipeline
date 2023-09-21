@@ -121,7 +121,6 @@ export default {
             peakML: 5.053,
             avgMR: 1.233,
             avgML: 1.722,
-
         }
     },
 }

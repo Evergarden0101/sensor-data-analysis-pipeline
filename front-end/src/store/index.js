@@ -11,7 +11,7 @@ const vuexLocal = new VuexPersistence({
 const store = createStore({
   state () {
     return {
-      patientId: 1111111,
+      patientId: 1,
       week: 1,
       day: 3,
       nightId: "",
@@ -19,23 +19,32 @@ const store = createStore({
       endStage: 0,
       startPoint: 0,
       endPoint: 0,
+      linePlotKey: 0,
+      labelStart: 0,
+      labelEnd: 0,
     }
   },
   mutations: {
-    selectStage (state,payload) {
+    selectStage(state,payload) {
       state.startStage = payload.startStage;
       state.endStage = payload.endStage;
     },
-    updataPoint (state,payload) {
+    updataPoint(state,payload) {
       state.startPoint = payload.startPoint;
       state.endPoint = payload.endPoint;
     },
     updatePatientSeletion(state, payload){
-        state.patientId = payload.patient_id;
-        state.week = payload.week;
-        state.nightId = payload.night_id;
+      state.patientId = payload.patient_id;
+      state.week = payload.week;
+      state.nightId = payload.night_id;
     },
-    
+    updateLinePlotKey(state){
+      state.linePlotKey++;
+    },
+    setLabelRange(state, payload){
+      state.labelStart = payload.labelStart;
+      state.labelEnd = payload.labelEnd;
+    }
   },
   plugins: [vuexLocal.plugin],
 

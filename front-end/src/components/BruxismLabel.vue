@@ -2,8 +2,9 @@
     <el-row>
         <el-card class="box-card" style="border: solid 1px;border-radius: 10px; width: 100%; margin-left: auto;margin-right: auto;">
             <h3 align="center" style="margin-bottom: 30px;">Events Predictions</h3>
-            <el-row v-for="(item,index) in [Labels[currentPage - 1]]" :key="index" >
-                <el-col :span="3"><h5>{{ item.id }}</h5></el-col>
+            <!-- <el-row v-for="(item,index) in [Labels[currentPage - 1]]" :key="index" > -->
+            <el-row v-for="(item,index) in Labels" :key="index" >
+                <el-col :span="3"><el-button text="plain" type="" bg @click="locateLabel(item)" style="border-radius: 8px;"><el-link>{{ item.id }}</el-link></el-button></el-col>
                 <el-col :span="21">
                     <el-form :inline="true" :model="Labels" class="demo-form-inline">
                         <el-form-item label="Start:" style="margin-left: 1em;">
@@ -30,11 +31,11 @@
                 </el-col>
                 <el-divider />
             </el-row>
-            <el-row>
+            <!-- <el-row>
                 <el-pagination v-model:current-page="currentPage" :page-size="1"
                 layout="prev, pager, next, jumper" :total="labelNum" style="display: flex;margin: auto;"
                 @size-change="handleSizeChange" @current-change="handleCurrentChange"/>
-            </el-row>
+            </el-row> -->
             <el-row style="margin-top: 10px;">
                 <el-button type='primary' text='primary' @click="openDialog" style="margin-top: -15px;">
                     Add Event
@@ -42,11 +43,11 @@
                 <el-dialog v-model="dialogFormVisible" title="Add Event" center width="30%" align-center draggable>
                     <el-form :model="form">
                     <el-form-item label="Start Time:" :label-width="formLabelWidth">
-                        <el-input-number v-model="form.Start" style="width: 70px; margin-left: 20px;"  :controls="false" />
+                        <el-input-number v-model="form.Start" style="width: 90px; margin-left: 20px;"  :controls="false" />
                             <el-text size="large" style="margin-left: 0.3em;">s</el-text>
                     </el-form-item>
                     <el-form-item label="End Time:" :label-width="formLabelWidth">
-                        <el-input-number v-model="form.End" style="width: 70px;margin-left: 20px;"  :controls="false" />
+                        <el-input-number v-model="form.End" style="width: 90px;margin-left: 20px;"  :controls="false" />
                             <el-text size="large" style="margin-left: 0.3em;">s</el-text>
                     </el-form-item>
                     </el-form>
@@ -81,6 +82,7 @@ import { CircleCheckFilled, CircleCloseFilled } from '@element-plus/icons-vue'
 import LabelButton from '@/components/LabelButton.vue'
 import LabelInfoCard from '@/components/LabelInfoCard.vue'
 import { computed } from "vue"
+
 export default {
     name: 'BruxismLabel',
     components: {
@@ -100,6 +102,10 @@ export default {
         }
     },
     methods: {
+        locateLabel(item){
+            this.$store.commit('updateLinePlotKey');
+            this.$store.commit('setLabelRange',{labelStart:item.Start, labelEnd:item.End});
+        },
         openDialog(){
             this.form.Start = this.$store.state.startPoint;
             this.form.End = this.$store.state.endPoint;

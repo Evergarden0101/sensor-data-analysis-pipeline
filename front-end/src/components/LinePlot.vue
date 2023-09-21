@@ -49,10 +49,14 @@ export default {
     }
   },
   mounted() {
-        let len = (dataset.length-1)/this.freq;
-        this.$store.commit('updataPoint',{startPoint:0, endPoint:Math.floor(len * 1000) / 1000})
-        this.drawLineplot('MR');
-        this.drawLineplot('ML');
+        let start = this.$store.state.labelStart;
+        let end = this.$store.state.labelEnd;
+        if(start == 0 && end == 0){
+            end = (dataset.length-1)/this.freq;
+        }
+        this.$store.commit('updataPoint',{startPoint:start, endPoint:Math.floor(end * 1000) / 1000})
+        this.drawLineplot('MR',start,end);
+        this.drawLineplot('ML',start,end);
   },
   methods: {
     rerenderLeft(tab,event) {
@@ -106,7 +110,7 @@ export default {
         return result;
     },
 
-    drawLineplot(channel){
+    drawLineplot(channel,start, end){
         // const csvFilePath = '@/assets/1022102cFnorm.csv';
         // var csv = await csvToJson().fromFile(csvFilePath);
         var csv = this.csvToJson(dataset)
@@ -160,10 +164,10 @@ export default {
 
 
         // Add X axis --> it is a date format
-        var domainLen = (csv.length + 1)/this.freq;
+        var domainLen = (csv.length + 1)/freq;
         var x = d3.scaleLinear()
             // .domain(d3.extent(data, function(d) { return d.year; }))
-            .domain([0, domainLen])
+            .domain([start, end])
             .range([ 0, width ]);
         var xAxis = svg.append("g")
             .attr("transform", "translate(0," + height + ")")
@@ -348,7 +352,8 @@ export default {
         svg.on("dblclick",function(){
             let len = (csv.length)/freq;
             store.commit('updataPoint',{startPoint:0, endPoint:Math.floor(len * 1000) / 1000});
-            x.domain([0, domainLen])
+            store.commit('setLabelRange',{labelStart:0, labelEnd:0});
+            x.domain([0, (csv.length + 1)/freq])
             xAxis.transition().call(d3.axisBottom(x))
             line
                 .select('.line')
