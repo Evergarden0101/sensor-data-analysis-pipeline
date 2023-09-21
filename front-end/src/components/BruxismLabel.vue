@@ -104,7 +104,7 @@ export default {
     methods: {
         locateLabel(item){
             this.$store.commit('updateLinePlotKey');
-            this.$store.commit('setLabelRange',{labelStart:item.Start, labelEnd:item.End});
+            this.$store.commit('setLabelRange',{plotStart:item.Start, plotEnd:item.End});
         },
         openDialog(){
             this.form.Start = this.$store.state.startPoint;
