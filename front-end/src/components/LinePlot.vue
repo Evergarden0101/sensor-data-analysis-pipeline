@@ -8,7 +8,7 @@
     <!-- </el-col> -->
     <!-- <el-col :span="22"> -->
     <el-row text-align="center" style="margin-bottom: 20px;width: 100%;">
-        <el-checkbox v-model="checkedMR" label="Use Right Masseter for Classification" border @change="rerenderLeft"/>
+        <el-checkbox v-model="checkedMR" label="Use Right Masseter for Classification" border @change="rerenderRight"/>
     </el-row>
     <el-row v-show="checkedMR" style="width: 100%;">
         <h4 style="margin-left: 40%;margin-bottom: 10px;">Sensor Signals for Right Masseter</h4>
@@ -18,7 +18,7 @@
     </el-row>
     <!-- </el-col> -->
     <el-row text-align="center" style="margin-bottom: 20px;width: 100%;">
-        <el-checkbox v-model="checkedML" label="Use Left Masseter for Classification" border @change="rerenderRight"/>
+        <el-checkbox v-model="checkedML" label="Use Left Masseter for Classification" border @change="rerenderLeft"/>
     </el-row>
     <el-row v-show="checkedML" style="width: 100%;">
         <h4 style="margin-left: 40%;margin-bottom: 10px;">Sensor Signals for Left Masseter</h4>
@@ -46,7 +46,9 @@ export default {
             freq: 2000,
             key: Date.now(),
             activeName: 'left',
-            Labels:[],
+            Labels: [],
+            start: 0,
+            end: 0,
         }
     },
     mounted() {
@@ -56,14 +58,14 @@ export default {
             this.Labels[label].Start *= 22;
         }
         console.log(this.Labels);
-        let start = this.$store.state.labelStart;
-        let end = this.$store.state.labelEnd;
-        if(start == 0 && end == 0){
-            end = (dataset.length-1)/this.freq;
+        this.start = this.$store.state.labelStart;
+        this.end = this.$store.state.labelEnd;
+        if(this.start == 0 && this.end == 0){
+            this.end = (dataset.length-1)/this.freq;
         }
-        this.$store.commit('updataPoint',{startPoint:start, endPoint:Math.floor(end * 1000) / 1000})
-        this.drawLineplot('MR',start,end);
-        this.drawLineplot('ML',start,end);
+        this.$store.commit('updataPoint',{startPoint:this.start, endPoint:Math.floor(this.end * 1000) / 1000})
+        this.drawLineplot('MR',this.start,this.end);
+        this.drawLineplot('ML',this.start,this.end);
     },
     methods: {
         loadAll() {
@@ -92,21 +94,31 @@ export default {
             ]
         },
         rerenderLeft(tab,event) {
-            console.log(tab);
             if(tab == false){
                 var ml = document.getElementById('mllineplot')
                 this.emptyGraph(ml);
             } else if(tab == true){
-                this.drawLineplot('ML');
+                var start = this.$store.state.startPoint;
+                var end = this.$store.state.endPoint;
+                if (start == 0 && end == 0){
+                    start = this.start;
+                    end = this.end;
+                }
+                this.drawLineplot('ML', start, end);
             }
         },
-        rerenderLeft(tab,event) {
-            console.log(tab);
+        rerenderRight(tab,event) {
             if(tab == false){
                 var mr = document.getElementById('mrlineplot')
                 this.emptyGraph(mr);
             } else if(tab == true){
-                this.drawLineplot('MR');
+                var start = this.$store.state.startPoint;
+                var end = this.$store.state.endPoint;
+                if (start == 0 && end == 0){
+                    start = this.start;
+                    end = this.end;
+                }
+                this.drawLineplot('MR', start, end);
             }
         },
         emptyGraph(e) {
@@ -369,6 +381,7 @@ export default {
                     store.commit('updataPoint',
                         {startPoint:Math.floor(sp * 1000) / 1000, endPoint:Math.floor(ep * 1000) / 1000})
                     x.domain([sp, ep])
+                    console.log(this.end)
                     line.select(".brush").call(brush.move, null) // This remove the grey brush area as soon as the selection has been done
                 }
 
@@ -421,6 +434,8 @@ export default {
                 store.commit('updataPoint',{startPoint:0, endPoint:Math.floor(len * 1000) / 1000});
                 store.commit('setLabelRange',{labelStart:0, labelEnd:0});
                 x.domain([0, (csv.length + 1)/freq])
+                this.start = 0;
+                this.end = (csv.length + 1)/freq;
                 xAxis.transition().call(d3.axisBottom(x))
                 line
                     .select('.line')
