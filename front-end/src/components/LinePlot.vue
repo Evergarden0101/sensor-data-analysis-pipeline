@@ -49,17 +49,18 @@ export default {
             Labels: [],
             start: 0,
             end: 0,
+            max: 10,
         }
     },
     mounted() {
         this.Labels = this.loadAll();
-        for (let label in this.Labels){
-            this.Labels[label].End *= 22;
-            this.Labels[label].Start *= 22;
-        }
+        // for (let label in this.Labels){
+        //     this.Labels[label].End *= 22;
+        //     this.Labels[label].Start *= 22;
+        // }
         console.log(this.Labels);
-        this.start = this.$store.state.labelStart;
-        this.end = this.$store.state.labelEnd;
+        this.start = this.$store.state.plotStart;
+        this.end = this.$store.state.plotEnd;
         if(this.start == 0 && this.end == 0){
             this.end = (dataset.length-1)/this.freq;
         }
@@ -123,8 +124,34 @@ export default {
         },
         emptyGraph(e) {
             while (e.firstChild) {
+                console.log(e.firstChild)
                 e.removeChild (e.firstChild);
             }
+        },
+        emptyLabelGraph(name) {
+            let e = document.getElementById(name);
+            console.log(e.children)
+            let labels = e.getElementsByClassName("labels")
+            while(labels!=null && labels.length!=0){
+                e.removeChild (labels[0]);
+                labels = e.getElementsByClassName("labels");
+            }
+            // for (let i = 0; i < labels.length;i++) {
+            //     console.log(labels[i])
+            //     e.removeChild (labels[i]);
+            // }
+            e = document.getElementById(name);
+            console.log(e.children)
+
+        },
+        jsontoCsv(json){
+            const jsonKeys = Object.keys(json[0]);
+            const headerData = jsonKeys.join(',');
+            const rowData = json.map((item) => {
+                return jsonKeys.map((key) => item[key]).join(',');
+                });
+            const json2CSV = `${headerData}\n${rowData.join('\n')}`;
+            return json2CSV;
         },
         csvToJson(csv) {
             // \n or \r\n depending on the EOL sequence
@@ -400,30 +427,46 @@ export default {
             // Prettify output
             return result;
         },
-        drawLabel(){
+        drawLabel(channel, start, end){
             var margin = {top: 10, right: 100, bottom: 40, left: 40};
             var height = document.body.clientHeight/4 - margin.top - margin.bottom;
-            var svg = d3.select("#mrlineplot svg");
-            var rects = svg.selectAll("foo")
+            var width = document.body.clientWidth/2 - margin.left - margin.right;
+            var x = d3.scaleLinear()
+                // .domain(d3.extent(data, function(d) { return d.year; }))
+                .domain([start, end])
+                .range([ 0, width ]);
+                
+            var line = d3.select("#"+channel);
+            console.log(line)
+            var rects = line
+                            .selectAll("rect")
                             .data(this.Labels)
                             .enter()
                             .append("rect")
-                            .attr("x", chart.margin().left + chart.xAxis.scale()( d=> d.Start ) )
+                            // .datum(this.Labels)
+                            .attr("x", (d=> x((d.Start))))
                             .attr("y", 0)
-                            .attr("width", chart.xAxis.scale()(d=> d.End) - chart.xAxis.scale()(d=>d.Start))
+                            .attr("width", (d=> x(d.End) - x(d.Start)))
                             .attr("height", height)
-                            .attr("fill", "teal");
-            console.log(rects);
-            svg = d3.select("#mllineplot svg");
-            rects = svg.selectAll("foo")
-                            .data(this.Labels)
-                            .enter()
-                            .append("rect")
-                            .attr("x", d=> d.Start)
-                            .attr("y", 0)
-                            .attr("width", d=> d.End - d.Start)
-                            .attr("height", height)
-                            .attr("fill", "teal");
+                            .attr("fill", "teal")
+                            .attr("opacity", 0.3)
+                            .attr("class", "labels");
+            console.log("draw")
+
+            // line = d3.select("#ML");
+            // rects = line
+            //                 .selectAll("rect")
+            //                 .data(this.Labels)
+            //                 .enter()
+            //                 .append("rect")
+            //                 // .datum(this.Labels)
+            //                 .attr("x", (d=> x((d.Start))))
+            //                 .attr("y", 0)
+            //                 .attr("width", (d=> x(d.End) - x(d.Start)))
+            //                 .attr("height", height)
+            //                 .attr("fill", "teal")
+            //                 .attr("opacity", 0.3)
+            //                 .attr("class", "labels");
         },
         drawLineplot(channel,start, end){
             // const csvFilePath = '@/assets/1022102cFnorm.csv';
@@ -491,11 +534,10 @@ export default {
                 .classed('axis_x', true)
                 .attr("id", channel+'X');
 
-            var max = 10;
             // Add Y axis
             var y = d3.scaleLinear()
                 // .domain([0, d3.max(data, function(d) { return +d.n; })])
-                .domain([-10, max])
+                .domain([-this.max, this.max])
                 .range([ height, 0 ]);
             var yAxis = svg.append("g")
                 .call(d3.axisLeft(y))
@@ -591,18 +633,8 @@ export default {
                 )
                 // .attr("stroke", function(d){ return myColor("MR") })
             
-            // this.drawLabel();
-            // console.log(x.scale);
-            // var rects = line.selectAll("foo")
-            //                 .data(this.Labels)
-            //                 .enter()
-            //                 .append("rect")
-            //                 .attr("x", ( d=> ( + d.Start) ) )
-            //                 .attr("y", 0)
-            //                 .attr("width", (d=> d.End -d.Start))
-            //                 .attr("height", height)
-            //                 .attr("fill", "teal")
-            //                 .attr("opacity", 0.3);
+            this.drawLabel(channel, start, end);
+
             // Add the brushing
             line
             .append("g")
@@ -613,6 +645,7 @@ export default {
             let idleTimeout
             function idled() { idleTimeout = null; }
             var store = this.$store;
+            var that = this;
             // A function that update the chart for given boundaries
             function updateChart(event,d) {
                 // What are the selected boundaries?
@@ -627,8 +660,13 @@ export default {
                     let ep = x.invert(extent[1]);
                     store.commit('updataPoint',
                         {startPoint:Math.floor(sp * 1000) / 1000, endPoint:Math.floor(ep * 1000) / 1000})
-                    x.domain([sp, ep])
-                    console.log(this.end)
+                    
+                    store.commit('setLabelRange',{plotStart:Math.floor(sp * 1000) / 1000, plotEnd:Math.floor(ep * 1000) / 1000});
+                    store.commit('updateLinePlotKey');
+                    x.domain([sp, ep]);
+
+                    that.drawLabel('MR', sp, ep);
+                    that.drawLabel('ML', sp, ep);
                     line.select(".brush").call(brush.move, null) // This remove the grey brush area as soon as the selection has been done
                 }
 
@@ -679,41 +717,48 @@ export default {
             svg.on("dblclick",function(){
                 let len = (csv.length)/freq;
                 store.commit('updataPoint',{startPoint:0, endPoint:Math.floor(len * 1000) / 1000});
-                store.commit('setLabelRange',{labelStart:0, labelEnd:0});
-                x.domain([0, (csv.length + 1)/freq])
-                this.start = 0;
-                this.end = (csv.length + 1)/freq;
-                xAxis.transition().call(d3.axisBottom(x))
-                line
-                    .select('.line')
-                    .transition()
-                    .attr("d", d3.line()
-                    .x(function(d) { return x(d.cnt)})
-                    .y(function(d) { return y(d[channel]) })
-                )
+                store.commit('setLabelRange',{plotStart:0, plotEnd:0});
+                // x.domain([0, (csv.length + 1)/freq])
+                // that.start = 0;
+                // that.end = (csv.length + 1)/freq;
+                // // that.emptyLabelGraph("MR")
+                // // that.emptyLabelGraph("ML")
 
-                if(channel == 'ML'){
-                    var otherX = d3.select("#MRX")
-                    otherX.transition().call(d3.axisBottom(x))
+                // that.drawLabel('MR', that.start, that.end);
+                // that.drawLabel('ML', that.start, that.end);
+                // xAxis.transition().call(d3.axisBottom(x))
+                // line
+                //     .select('.line')
+                //     .transition()
+                //     .attr("d", d3.line()
+                //     .x(function(d) { return x(d.cnt)})
+                //     .y(function(d) { return y(d[channel]) })
+                // )
 
-                    var otherLine = d3.select("#MR")
-                    otherLine.select('.line')
-                    .transition()
-                    .attr("d", d3.line()
-                    .x(function(d) { return x(d.cnt)})
-                    .y(function(d) { return y(d.MR)}))
-                }
-                else if(channel == 'MR'){
-                    var otherX = d3.select("#MLX")
-                    otherX.transition().call(d3.axisBottom(x))
+                // if(channel == 'ML'){
+                //     var otherX = d3.select("#MRX")
+                //     otherX.transition().call(d3.axisBottom(x))
 
-                    var otherLine = d3.select("#ML")
-                    otherLine.select('.line')
-                    .transition()
-                    .attr("d", d3.line()
-                    .x(function(d) { return x(d.cnt)})
-                    .y(function(d) { return y(d.ML)}))
-                }
+                //     var otherLine = d3.select("#MR")
+                //     otherLine.select('.line')
+                //     .transition()
+                //     .attr("d", d3.line()
+                //     .x(function(d) { return x(d.cnt)})
+                //     .y(function(d) { return y(d.MR)}))
+                // }
+                // else if(channel == 'MR'){
+                //     var otherX = d3.select("#MLX")
+                //     otherX.transition().call(d3.axisBottom(x))
+
+                //     var otherLine = d3.select("#ML")
+                //     otherLine.select('.line')
+                //     .transition()
+                //     .attr("d", d3.line()
+                //     .x(function(d) { return x(d.cnt)})
+                //     .y(function(d) { return y(d.ML)}))
+                // }
+
+                store.commit('updateLinePlotKey');
             });
 
             // A function that update the chart
