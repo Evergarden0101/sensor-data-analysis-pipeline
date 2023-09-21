@@ -269,7 +269,20 @@ def get_settings(DATABASE):
         columns = [description[0] for description in settings.description]
 
 
-        return get_json_format_from_query(columns, settings.fetchall(), 1, 8)
+        return get_json_format_from_query(columns, settings.fetchall(), 1, 8)[0]
+    
+
+"""Returns sensors stored in db as list of json"""
+def get_sensors(DATABASE):
+    with sql.connect(DATABASE) as con:
+        cur = con.cursor()
+
+        sensors = cur.execute("SELECT * FROM sensors")
+        columns = [description[0] for description in sensors.description]
+
+        return get_json_format_from_query(columns, sensors.fetchall(), 1, 2)
+
+
 
 """Retrieve REM intervals from DB""" 
 def get_rem_intervals(patient_id, week, night_id, DATABASE):

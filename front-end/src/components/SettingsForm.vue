@@ -152,10 +152,12 @@ export default {
     name: 'SettingsForm',
     data() {
         return {
+            settings: {},
+            sensors: [],
             form: reactive({
                 studyType: ref(''),
                 activityType: ref(''),
-                sensorsTypes: ref(["ECG", "EMG"]),
+                sensorsTypes: ref([]),
                 originalSampling: ref(2000),
                 REMSampling: ref(1000),
                 NREMSampling: ref(256),
@@ -240,6 +242,54 @@ export default {
             ]
         }
     },
+    async mounted(){
+        await this.getSettings();
+        await this.getSensors();
+
+        if(Object.keys(this.settings).length > 0 && Object.keys(this.sensors).length > 0){
+            this.form.studyType = this.settings.study_type;
+            this.form.activityType = this.settings.activity;
+            this.form.originalSampling = this.settings.original_sampling;
+            this.form.REMSampling = this.settings.REM_sampling;
+            this.form.NREMSampling = this.settings.NREM_sampling;
+            this.form.fileFormat = this.settings.dataset_format;
+
+            if(this.settings.normalized == 1){
+                this.form.normalized = true;
+            } else {
+                this.form.normalized = false;
+            }
+
+            if(this.settings.filtered == 1){
+                this.form.filtered = true;
+            } else {
+                this.form.filtered = false;
+            }
+
+
+            
+            var sensorsTypes = [];
+            var sensorsNames = [];
+            for(let i = 0; i < this.sensors.length; i++) {
+                console.log(this.sensors[i]);
+                sensorsTypes.push(this.sensors[i].type);
+
+                sensorsNames.push(this.sensors[i].name);
+            }
+
+            sensorsTypes = sensorsTypes.filter((c, index) => {
+                return sensorsTypes.indexOf(c) === index;
+            });
+
+            this.form.sensorsTypes = sensorsTypes;
+            this.form.ecgChannelName = sensorsNames[0];
+            this.form.emgChannel1Name = sensorsNames[1];
+            this.form.emgChannel2Name = sensorsNames[2];
+            this.form.emgChannel3Name = sensorsNames[3];
+        }
+
+        console.log(this.settings)
+    },
     methods: {
         onSubmit(){
             
@@ -321,6 +371,41 @@ export default {
         },
         setError(){
             this.error = !this.error;
+        },
+        async getSettings(){
+            const path = 'http://localhost:5000/settings/';
+
+            const headers = { 
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            };
+
+            await axios.get(path, {headers})
+            .then((res) => {
+                console.log(res.data);
+                this.settings = res.data;
+            })
+            .catch(err=>{
+                console.log(err)
+            })
+        },
+        async getSensors(){
+
+            const path = 'http://localhost:5000/sensors/';
+
+            const headers = { 
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            };
+
+            await axios.get(path, {headers})
+            .then((res) => {
+                console.log(res.data);
+                this.sensors = res.data;
+            })
+            .catch(err=>{
+                console.log(err)
+            })
         }
     }
 

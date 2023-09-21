@@ -242,25 +242,35 @@ def create_app(test_config=None):
             settings = get_settings(DATABASE)
             return settings
         
-    @app.route("/sensors/", methods=["POST"])
+    @app.route("/sensors/", methods=["POST", "GET"])
     def post_sensors():
-        try: 
-            sensors = request.json
+        if request.method == "POST":
+            try: 
+                sensors = request.json
 
-            with sql.connect(DATABASE) as con:
-                cur = con.cursor()
-                cur.execute("DELETE FROM sensors")
+                with sql.connect(DATABASE) as con:
+                    cur = con.cursor()
+                    cur.execute("DELETE FROM sensors")
 
-                for sensor in sensors:
-                    params = tuple(sensor.values())
-                    query = "INSERT  INTO sensors (type, name) VALUES (?, ?)"
-                    cur.execute(query, params)
+                    for sensor in sensors:
+                        params = tuple(sensor.values())
+                        query = "INSERT  INTO sensors (type, name) VALUES (?, ?)"
+                        cur.execute(query, params)
 
-            return "Inserted sensors into DB", 200
-        except Exception as e:
-            print('Exception raised')
-            print(e)
-            return f"{e}", 500
+                return "Inserted sensors into DB", 200
+            except Exception as e:
+                print('Exception raised')
+                print(e)
+                return f"{e}", 500
+            
+        if request.method == "GET":
+            try:
+                return get_sensors(DATABASE)
+            
+            except Exception as e:
+                print('Exception raised')
+                print(e)
+                return f"{e}", 500
 
  
     @app.route("/lineplot-data/<int:patient_id>/<int:week>/<string:night_id>", methods=["GET"])
