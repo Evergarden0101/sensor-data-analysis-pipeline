@@ -18,7 +18,7 @@ const store = createStore({
       startStage: 0,
       endStage: 0,
       startPoint: 0,
-      endPoint: 0,
+      endPoint: Infinity,
       linePlotKey: 0,
       plotStart: 0,
       plotEnd: 0,

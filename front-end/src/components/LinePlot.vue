@@ -31,7 +31,8 @@
 
 <script>
 import * as d3 from "d3";
-import dataset from '../assets/1022102cFnorm.csv'
+import dataset from '../assets/1022102cFnorm copy.csv'
+import axios from 'axios';
 import { ref,computed } from 'vue'
 import { style } from "plotly.js/lib/bar";
 // import csvToJson from 'csvtojson';
@@ -40,7 +41,7 @@ export default {
     name: 'LinePlot',
     data () {
         return {
-            data: dataset,
+            data: null,
             checkedMR: ref(true),
             checkedML: ref(true),
             freq: 2000,
@@ -50,23 +51,25 @@ export default {
             start: 0,
             end: 0,
             max: 10,
+            error: false,
         }
     },
     mounted() {
         this.Labels = this.loadAll();
-        // for (let label in this.Labels){
-        //     this.Labels[label].End *= 22;
-        //     this.Labels[label].Start *= 22;
-        // }
-        console.log(this.Labels);
         this.start = this.$store.state.plotStart;
         this.end = this.$store.state.plotEnd;
-        if(this.start == 0 && this.end == 0){
-            this.end = (dataset.length-1)/this.freq;
+        this.data = dataset;
+        if(this.data == null){
+            this.loadLinePlotData(this.$store.state.patientId, this.$store.state.week, this.$store.state.nightId);
+        }else{
+            if(this.start == 0 && this.end == 0){
+                this.end = (this.data.length-1)/this.freq;
+            }
+            this.$store.commit('updataPoint',{startPoint:this.start, endPoint:Math.floor(this.end * 1000) / 1000})
+            this.drawLineplot('MR',this.start,this.end);
+            this.drawLineplot('ML',this.start,this.end);
         }
-        this.$store.commit('updataPoint',{startPoint:this.start, endPoint:Math.floor(this.end * 1000) / 1000})
-        this.drawLineplot('MR',this.start,this.end);
-        this.drawLineplot('ML',this.start,this.end);
+        
     },
     methods: {
         loadAll() {
@@ -93,6 +96,63 @@ export default {
                     'Confirm': false,
                 }
             ]
+        },
+        loadLinePlotData(patient_id, week, night_id){
+            const path = `http://127.0.0.1:5000/lineplot-data/${patient_id}/${week}/${night_id}`
+            const headers = {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*',
+                    'Access-Control-Allow-Methods': 'GET',
+                    'Access-Control-Max-Age': "3600",
+                    'Access-Control-Allow-Credentials': "true",
+                    'Access-Control-Allow-Headers': 'Content-Type'
+            };
+
+            axios.get(path, {headers})
+                .then((res) => {
+                    console.log("Data received");
+                    // this.loading = ref(false);
+                    console.log(res)
+                    var option;
+                    var maxY = 0;
+                    var hours = [];
+                    // var minutes = [5, 10 , 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90];
+                    // var remDataJson = []
+                    // var nremDataJson = []
+                    // this.patientData = res.data;
+
+                    // for (var i=0; i < res.data.length; i++) {
+                    //     if(res.data[i]['y'] > maxY){
+                    //         maxY = res.data[i]['y']
+                    //     }
+                        // if(res.data[i]['stage'] === 'rem'){
+                        //     remDataJson.push(res.data[i]);
+                        // }
+                        // else {
+                        //     nremDataJson.push(res.data[i]);
+                        // }
+                    // }
+
+                    // for(var i=1.5; i<=(maxY+1)*1.5; i+=1.5){
+                    //     hours.push(i);
+                    // }
+                    this.data = res.data;
+                    
+                    if(this.start == 0 && this.end == 0){
+                        this.end = (this.data.length-1)/this.freq;
+                    }
+                    this.$store.commit('updataPoint',{startPoint:this.start, endPoint:Math.floor(this.end * 1000) / 1000})
+                    this.drawLineplot('MR',this.start,this.end);
+                    this.drawLineplot('ML',this.start,this.end);
+                    // var callback = (args) => {
+                    //     return args.seriesName + "<br />" +args.marker  + args.value[4].toFixed(2) + '±' + args.value[2]
+                    // }
+                })
+                .catch(err=>{
+                    console.log(err)
+                    this.error = true;
+                })
         },
         rerenderLeft(tab,event) {
             if(tab == false){
@@ -156,6 +216,7 @@ export default {
         csvToJson(csv) {
             // \n or \r\n depending on the EOL sequence
             // const lines = csv.split('\n');
+            console.log(csv)
             const lines = csv;
             const delimeter = ',';
 
@@ -167,6 +228,7 @@ export default {
                 var line = lines[i];
                 const obj = {};
                 const row = String(line).split(delimeter);
+                // console.log(row)
 
                 for (let j = 0; j < headers.length-1; j++) {
                     const header = headers[j];
@@ -181,6 +243,7 @@ export default {
             return result;
         },
         drawLabel(channel, start, end){
+            console.log('labels')
             var margin = {top: 10, right: 100, bottom: 40, left: 40};
             var height = document.body.clientHeight/4 - margin.top - margin.bottom;
             var width = document.body.clientWidth/2 - margin.left - margin.right;
@@ -207,7 +270,7 @@ export default {
         drawLineplot(channel,start, end){
             // const csvFilePath = '@/assets/1022102cFnorm.csv';
             // var csv = await csvToJson().fromFile(csvFilePath);
-            var csv = this.csvToJson(dataset)
+            var csv = this.csvToJson(this.data)
             // const csvs = JSON.stringify(csv, null, 2);
             // this.data = csvs;
 
@@ -259,6 +322,7 @@ export default {
 
             // Add X axis --> it is a date format
             var domainLen = (csv.length + 1)/this.freq;
+            console.log(domainLen)
             var x = d3.scaleLinear()
                 // .domain(d3.extent(data, function(d) { return d.year; }))
                 .domain([start, end])
@@ -325,24 +389,24 @@ export default {
             // }
 
 
-            let highlightedEvents;
-            if (channel === 'MR') {
-                highlightedEvents = highlightedEventsMR;
-            } else if (channel === 'ML') {
-                highlightedEvents = highlightedEventsML;
-            }
-            if (highlightedEvents) {
-            svg.selectAll(".vertical-bar")
-                .data(highlightedEvents)
-                .enter()
-                .append("rect")
-                .attr("class", "vertical-bar")
-                .attr("x", function(d) { return x(d.start); })
-                .attr("width", 2) // Adjust the width of the vertical bars as needed
-                .attr("y", 0)
-                .attr("height", height)
-                .attr("fill", "red");
-            }
+            // let highlightedEvents;
+            // if (channel === 'MR') {
+            //     highlightedEvents = highlightedEventsMR;
+            // } else if (channel === 'ML') {
+            //     highlightedEvents = highlightedEventsML;
+            // }
+            // if (highlightedEvents) {
+            // svg.selectAll(".vertical-bar")
+            //     .data(highlightedEvents)
+            //     .enter()
+            //     .append("rect")
+            //     .attr("class", "vertical-bar")
+            //     .attr("x", function(d) { return x(d.start); })
+            //     .attr("width", 2) // Adjust the width of the vertical bars as needed
+            //     .attr("y", 0)
+            //     .attr("height", height)
+            //     .attr("fill", "red");
+            // }
 
             // Add X axis label:
             svg.append("text")
@@ -364,10 +428,10 @@ export default {
 
             // color palette
             // var res = sumstat.map(function(d){ return d.key }) // list of group names
-            var res = this.data[0];
-            var color = d3.scaleOrdinal()
-                .domain(res)
-                .range(['#e41a1c','#377eb8','#4daf4a','#984ea3','#ff7f00','#ffff33','#a65628'])
+            // var res = this.data[0];
+            // var color = d3.scaleOrdinal()
+            //     .domain(res)
+            //     .range(['#e41a1c','#377eb8','#4daf4a','#984ea3','#ff7f00','#ffff33','#a65628'])
                 // ,'#f781bf','#999999'])
 
             // Draw the line
