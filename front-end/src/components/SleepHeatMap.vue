@@ -27,16 +27,16 @@
   <div v-if="!error" class="buttons-container">
     <el-button @click="toggleEditMode" v-if="!isEditMode">Enter Edit Mode</el-button>
     <el-popconfirm
-    title="Are you sure you want to exit the edit mode?
-    This will update the values forever."
-    @confirm="toggleEditModeAndSelect"
+    title="Do you want to the events detection phase with the currently selected values?"
+    confirm-button-text="Yes"
+    cancel-button-text="Select again"
+    @confirm="toggleEditMode"
     @cancel="exitEditMode"
     width="350">
         <template #reference>
             <el-button v-if="isEditMode">Exit Edit Mode</el-button>
         </template>
     </el-popconfirm>
-<!--    <el-button @click="toggleSelectMode">Select</el-button>-->
   </div>
 
   <el-row>
@@ -72,11 +72,9 @@ export default {
       dataReceived: false,
       loading: ref(true),
       isEditMode: false,
-      isSelectMode: false,
-      selectedTiles: [],
-      selectedIndices: [],
       error: false,
-      toUpdate: []
+      clicked: [],
+      firstEnteredEditMode: false
     }
   },
   mounted() {
@@ -89,55 +87,87 @@ export default {
     getSubtitle(){
         return "No dataset found for user " + this.$store.state.patientId + " on night " + this.$store.state.nightId + " of week " + this.$store.state.week + "."
     },
-    getMaxSD(arr, prop) {
-        var max;
-        if(arr.length === 0){
-            return 0;
+    arrayEquals(a, b){
+        return a.length === b.length && a.every((item,idx) => item === b[idx])
+    },
+    getMaxSD(arr1, arr2, prop) {
+        var max1;
+        var max2;
+        if(arr1.length === 0){
+            max1 = 0;
         }
-        else{
-            for (var i=0 ; i<arr.length ; i++) {
-                if (max == null || parseInt(arr[i][prop]) > parseInt(max[prop]))
-                    max = arr[i];
+        if(arr2.length === 0){
+            max2 = 0;
+        }
+        if(arr1.length > 0 || arr2.length >0){
+            for (var i=0 ; i<arr1.length ; i++) {
+                if (max1 == null || parseInt(arr1[i][prop]) > parseInt(max1[prop]))
+                    max1 = arr1[i];
             }
-            return max.SD;
+
+            for (var i=0 ; i<arr2.length ; i++) {
+                if (max2 == null || parseInt(arr2[i][prop]) > parseInt(max2[prop]))
+                    max2 = arr2[i];
+            }
+
+
+            return Math.max(max1.SD, max2.SD);
         }
 
         
     },
-    getMinSD(arr, prop) {
-        var min;
-        if(arr.length === 0){
-            return 0;
+    getMinSD(arr1, arr2, prop) {
+        var min1;
+        var min2;
+        if(arr1.length === 0 ){
+            min1 = 0
         }
-        else{
-           for (var i=0 ; i<arr.length ; i++) {
-            if (min == null || parseInt(arr[i][prop]) < parseInt(min[prop]))
-                min = arr[i];
+        if(arr2.length === 0){
+            min2 = 0
+        }
+        if(arr1.length > 0 || arr2.length >0){
+           for (var i=0 ; i<arr1.length ; i++) {
+            if (min1 == null || parseInt(arr1[i][prop]) < parseInt(min1[prop]))
+                min1 = arr1[i];
             }
-            return min.SD; 
+
+            for (var i=0 ; i<arr2.length ; i++) {
+            if (min2 == null || parseInt(arr2[i][prop]) < parseInt(min2[prop]))
+                min2 = arr2[i];
+            }
+
+            return Math.min(min1.SD, min2.SD)
         }
 
         
-    },
-
-    toggleEditModeAndSelect() {
-      this.toggleEditMode(); // Toggle off the edit mode
-      this.toggleSelectMode(); // Toggle on the select mode
     },
 
     toggleEditMode() {
       this.isEditMode = !this.isEditMode;
+      this.firstEnteredEditMode = true;
       if(!this.isEditMode){
         const path = `http://localhost:5000/ssd/${this.$store.state.patientId}/${this.$store.state.week}/${this.$store.state.nightId}`
         const headers = {
                 'Accept': 'application/json',
                 'Content-Type': 'application/json'
         };
-        const payload = this.toUpdate;
+
+        let payload = [];
+
+        for(let i=0; i<this.clicked.length; i++){
+            payload.push({
+                "x": this.clicked[i][0],
+                "y": this.clicked[i][1],
+                "stage": this.clicked[i][3]
+            })
+        }
+        
         axios.post(path, payload, {headers})
             .then((res) => {
                 console.log(res);
-                this.toUpdate = [];
+                this.clicked = [];
+                this.$router.push('/bruxism/');
+
             })
             .catch(err=>{
                 console.log(err)
@@ -148,17 +178,8 @@ export default {
     },
     exitEditMode(){
         this.isEditMode = !this.isEditMode;
-        this.toUpdate = [];
+        this.clicked = [];
         this.$router.go();
-    },
-
-    toggleSelectMode() {
-      this.isSelectMode = !this.isSelectMode;
-
-      // Ensure that you can't be in both edit and select mode simultaneously
-      if (!this.isSelectMode) {
-        this.isEditMode = false;
-      }
     },
 
     drawTreatHeatMap(patient_id, week, night_id){
@@ -249,8 +270,9 @@ export default {
                     }
                 },
                 visualMap: [{
-                    min: this.getMinSD(remDataJson, "SD"),
-                    max: this.getMaxSD(remDataJson, "SD"),
+                    min: this.getMinSD(remDataJson, nremDataJson, "SD"),
+                    max: this.getMaxSD(remDataJson, nremDataJson, "SD"),
+                    text: ["high", "low"],
                     dimension: 2,
                     inRange : {
                         color: ['#1919ff', '#CCCCFF'] //From bigger to smaller value ->
@@ -261,8 +283,9 @@ export default {
                     left: 'center',
                     bottom: '30%',
                 }, {
-                    min: this.getMinSD(nremDataJson, "SD"),
-                    max: this.getMaxSD(nremDataJson, "SD"),
+                    min: this.getMinSD(nremDataJson, remDataJson, "SD"),
+                    max: this.getMaxSD(nremDataJson, remDataJson, "SD"),
+                    text: ["high", "low"],
                     dimension: 2,
                     inRange : {
                         color: ['#999999', '#eeeeee'] //From bigger to smaller value ->
@@ -293,7 +316,8 @@ export default {
                         itemStyle: {
                             shadowBlur: 10,
                             shadowColor: 'rgba(0, 0, 0, 0.5)',
-                            borderColor: 'black'
+                            borderColor: 'black',
+                            borderWidth: 3
                         }
                     }
                 }, {
@@ -303,72 +327,67 @@ export default {
                     emphasis: {
                         itemStyle: {
                             shadowBlur: 10,
-                            shadowColor: 'rgba(0, 0, 0, 0.5)'
+                            shadowColor: 'rgba(0, 0, 0, 0.5)',
+                            borderColor: 'black',
+                            borderWidth: 3
                         }
                     }
                 }]
             };
 
+
             myChart.on('click', (params) => {
               console.log('Tile clicked:', params);
+            
 
+              if(this.firstEnteredEditMode){
+                console.log("FIRST")
+                let remData = option.series[0].data
+            
+                for(const key in remData){
+                    this.clicked.push(remData[key])
+                    myChart.dispatchAction({
+                        type: 'highlight',
+                        seriesIndex: 0,
+                        dataIndex: key
+                    })
+                }
+                this.firstEnteredEditMode = !this.firstEnteredEditMode;
+              } else {
+                if(JSON.stringify(this.clicked).includes(JSON.stringify(params.data))){
+                    console.log("includes")
+                    this.clicked = this.clicked.filter(item => !this.arrayEquals(item, params.data))
+                    myChart.dispatchAction({
+                        type: 'downplay',
+                        seriesIndex: params.seriesIndex,
+                        dataIndex: params.dataIndex
+                    })
+
+                } else {
+                    console.log("ELSE")
+                    this.clicked.push(params.data)
+                    myChart.dispatchAction({
+                        type: 'highlight',
+                        seriesIndex: params.seriesIndex,
+                        dataIndex: params.dataIndex
+                    })
+                }
+
+              }
+            
               if (this.isEditMode) {
                 if (params.seriesIndex === 0) { // If the clicked series is 'rem'
+
+                    console.log("CLICKED REM")
                   // Remove from 'rem' dataset
-                  let removedData = option.series[0].data.splice(params.dataIndex, 1)[0];
+                  let tileClicked = params.data;
 
-                  this.toUpdate.push({
-                    "x": removedData[0],
-                    "y": removedData[1],
-                    "stage": removedData[3]
-                  })
-
-                  // Modify the stage value
-                  removedData[3] = 'nrem';
-
-                  // Add to 'nrem' dataset
-                  option.series[1].data.push(removedData);
+                  console.log(params.data)
 
                 } else if (params.seriesIndex === 1) { // If the clicked series is 'nrem'
                   // Remove from 'nrem' dataset
-                  let removedData = option.series[1].data.splice(params.dataIndex, 1)[0];
-
-                  this.toUpdate.push({
-                    "x": removedData[0],
-                    "y": removedData[1],
-                    "stage": removedData[3]
-                  })
-
-                  // Modify the stage value
-                  removedData[3] = 'rem';
-
-                  // Add to 'rem' dataset
-                  option.series[0].data.push(removedData);
-                }
-
-                // Update the chart with the modified options
-                myChart.setOption(option);
-              }
-
-              else if (this.isSelectMode) {
-                console.log('Select mode is active');
-                let seriesIndex = params.seriesIndex;
-
-                // Get the total number of data points in the selected series
-                let seriesData = option.series[seriesIndex].data;
-                let numDataPoints = seriesData.length;
-
-                // Emphasize all data points in the selected series
-                for (let i = 0; i < numDataPoints; i++) {
-                  let dataIndex = `${seriesIndex}-${i}`;
-                  this.selectedIndices.push(dataIndex);
-
-                  // Emphasize each data point
-                  myChart.dispatchAction({
-                    type: 'highlight',
-                    seriesIndex: seriesIndex,
-                    dataIndex: i
-                  });
+                  console.log("CLICKED NREM")
+                  let tileClicked = params.data;
                 }
               }
             });

@@ -120,7 +120,7 @@ def get_ssd_values(DATABASE, patient_id, week, night_id):
             result = cur.execute(query, params)
             columns = [description[0] for description in result.description]
             print(f"Columns: {columns}")
-            values = get_json_format_from_query(columns=columns, query_results=result.fetchall(), start_id=1, end_id=13)
+            values = get_json_format_from_query(columns=columns, query_results=result.fetchall(), start_id=1, end_id=14)
             #values = get_SSD_format(columns, result.fetchall())
 
 
@@ -132,25 +132,24 @@ def get_ssd_values(DATABASE, patient_id, week, night_id):
             values = get_HRV_features(patient_id, week, night_id, 2000)
 
             for value in values:
-                params = (patient_id, week, day, hours, minutes, seconds, value['start_id'], value['end_id'], value['LF_HF'], value['SD'], value['stage'], value['y'], value['x'])
-                query = "INSERT INTO sleep_stage_detection (patient_id, week, day, hours, minutes, seconds, start_id, end_id, LF_HF, SD, stage, y, x) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                params = (patient_id, week, day, hours, minutes, seconds, value['start_id'], value['end_id'], value['LF_HF'], value['SD'], value['stage'], value['y'], value['x'], 0)
+                query = "INSERT INTO sleep_stage_detection (patient_id, week, day, hours, minutes, seconds, start_id, end_id, LF_HF, SD, stage, y, x, selected) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
                 cur.execute(query, params)
 
         return values
     
 def post_ssd_updates(DATABASE, updates):
-    for update in updates:
-        with sql.connect(DATABASE) as con:
-            print('connected to db', file=sys.stderr)
-            cur = con.cursor()
+    with sql.connect(DATABASE) as con:
+        print('connected to db', file=sys.stderr)
+        cur = con.cursor()
+
+        cur.execute("UPDATE sleep_stage_detection SET selected = 0")
+   
+        for update in updates:
             params = (update["x"], update["y"])
 
-            if update["stage"] == 'rem':
-                query = "UPDATE sleep_stage_detection SET stage = 'nrem' WHERE x=? AND y=?"
-                cur.execute(query, params)
-            elif update["stage"] == 'nrem':
-                query = "UPDATE sleep_stage_detection SET stage = 'rem' WHERE x=? AND y=?"
-                cur.execute(query, params)
+            query = "UPDATE sleep_stage_detection SET selected = 1 WHERE x=? AND y=?"
+            cur.execute(query, params)
 
 
 """Get all the patients, weeks and night ids"""
@@ -389,10 +388,3 @@ def get_resampled_ranges(DATABASE, sampling_ranges):
         sampling_range["su_array"] = nk.signal_resample(sampling_range["su_array"], method="pandas", sampling_rate=get_original_sampling(DATABASE), desired_sampling_rate=sampling_range["target_sampling_rate"]).tolist()
 
     return sampling_ranges
-
-   
-
-        
-
-
-
