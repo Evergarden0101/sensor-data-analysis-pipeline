@@ -31,7 +31,8 @@
 
 <script>
 import * as d3 from "d3";
-import dataset from '../assets/1022102cFnorm.csv'
+import dataset from '../assets/1022102cFnorm copy.csv'
+import axios from 'axios';
 import { ref,computed } from 'vue'
 import { style } from "plotly.js/lib/bar";
 // import csvToJson from 'csvtojson';
@@ -40,7 +41,7 @@ export default {
     name: 'LinePlot',
     data () {
         return {
-            data: dataset,
+            data: null,
             checkedMR: ref(true),
             checkedML: ref(true),
             freq: 2000,
@@ -50,23 +51,25 @@ export default {
             start: 0,
             end: 0,
             max: 10,
+            error: false,
         }
     },
     mounted() {
         this.Labels = this.loadAll();
-        // for (let label in this.Labels){
-        //     this.Labels[label].End *= 22;
-        //     this.Labels[label].Start *= 22;
-        // }
-        console.log(this.Labels);
         this.start = this.$store.state.plotStart;
         this.end = this.$store.state.plotEnd;
-        if(this.start == 0 && this.end == 0){
-            this.end = (dataset.length-1)/this.freq;
+        this.data = dataset;
+        if(this.data == null){
+            this.loadLinePlotData(this.$store.state.patientId, this.$store.state.week, this.$store.state.nightId);
+        }else{
+            if(this.start == 0 && this.end == 0){
+                this.end = (this.data.length-1)/this.freq;
+            }
+            this.$store.commit('updataPoint',{startPoint:this.start, endPoint:Math.floor(this.end * 1000) / 1000})
+            this.drawLineplot('MR',this.start,this.end);
+            this.drawLineplot('ML',this.start,this.end);
         }
-        this.$store.commit('updataPoint',{startPoint:this.start, endPoint:Math.floor(this.end * 1000) / 1000})
-        this.drawLineplot('MR',this.start,this.end);
-        this.drawLineplot('ML',this.start,this.end);
+        
     },
     methods: {
         loadAll() {
@@ -93,6 +96,63 @@ export default {
                     'Confirm': false,
                 }
             ]
+        },
+        loadLinePlotData(patient_id, week, night_id){
+            const path = `http://127.0.0.1:5000/lineplot-data/${patient_id}/${week}/${night_id}`
+            const headers = {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*',
+                    'Access-Control-Allow-Methods': 'GET',
+                    'Access-Control-Max-Age': "3600",
+                    'Access-Control-Allow-Credentials': "true",
+                    'Access-Control-Allow-Headers': 'Content-Type'
+            };
+
+            axios.get(path, {headers})
+                .then((res) => {
+                    console.log("Data received");
+                    // this.loading = ref(false);
+                    console.log(res)
+                    var option;
+                    var maxY = 0;
+                    var hours = [];
+                    // var minutes = [5, 10 , 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90];
+                    // var remDataJson = []
+                    // var nremDataJson = []
+                    // this.patientData = res.data;
+
+                    // for (var i=0; i < res.data.length; i++) {
+                    //     if(res.data[i]['y'] > maxY){
+                    //         maxY = res.data[i]['y']
+                    //     }
+                        // if(res.data[i]['stage'] === 'rem'){
+                        //     remDataJson.push(res.data[i]);
+                        // }
+                        // else {
+                        //     nremDataJson.push(res.data[i]);
+                        // }
+                    // }
+
+                    // for(var i=1.5; i<=(maxY+1)*1.5; i+=1.5){
+                    //     hours.push(i);
+                    // }
+                    this.data = res.data;
+                    
+                    if(this.start == 0 && this.end == 0){
+                        this.end = (this.data.length-1)/this.freq;
+                    }
+                    this.$store.commit('updataPoint',{startPoint:this.start, endPoint:Math.floor(this.end * 1000) / 1000})
+                    this.drawLineplot('MR',this.start,this.end);
+                    this.drawLineplot('ML',this.start,this.end);
+                    // var callback = (args) => {
+                    //     return args.seriesName + "<br />" +args.marker  + args.value[4].toFixed(2) + '±' + args.value[2]
+                    // }
+                })
+                .catch(err=>{
+                    console.log(err)
+                    this.error = true;
+                })
         },
         rerenderLeft(tab,event) {
             if(tab == false){
@@ -156,6 +216,7 @@ export default {
         csvToJson(csv) {
             // \n or \r\n depending on the EOL sequence
             // const lines = csv.split('\n');
+            console.log(csv)
             const lines = csv;
             const delimeter = ',';
 
@@ -167,6 +228,7 @@ export default {
                 var line = lines[i];
                 const obj = {};
                 const row = String(line).split(delimeter);
+                // console.log(row)
 
                 for (let j = 0; j < headers.length-1; j++) {
                     const header = headers[j];
@@ -174,260 +236,14 @@ export default {
                 }
                 obj['cnt'] = (i-1)/this.freq;
 
-        // append the svg object to the body of the page
-        if(channel == 'MR'){
-            var svg = d3.select("#mrlineplot")
-            .append("svg")
-                .attr("width", width + margin.left + margin.right)
-                .attr("height", height + margin.top + margin.bottom)
-            .append("g")
-                .attr("transform",
-                    "translate(" + margin.left + "," + margin.top + ")");
-        } else if(channel == 'ML'){
-            var svg = d3.select("#mllineplot")
-            .append("svg")
-                .attr("width", width + margin.left + margin.right)
-                .attr("height", height + margin.top + margin.bottom)
-            .append("g")
-                .attr("transform",
-                    "translate(" + margin.left + "," + margin.top + ")");
-        }
-
-        // group the data: I want to draw one line per group
-        // var sumstat = d3.group() // nest function allows to group the calculation per level of a factor
-        //     .key(function(d) { return d.key;})
-        //     .entries(data);
-
-
-        // add the options to the button
-        // var allGroup = String(this.data[0]).split(',');
-        // d3.select("#selectButton")
-        // .selectAll('myOptions')
-        //     .data(allGroup)
-        // .enter()
-        //     .append('option')
-        // .text(function (d) { return d; }) // text showed in the menu
-        // .attr("value", function (d) { return d; }) // corresponding value returned by the button
-
-        // A color scale: one color for each group
-        // var myColor = d3.scaleOrdinal()
-        //     .domain(allGroup)
-        //     .range(d3.schemeSet2);
-
-
-        // Add X axis --> it is a date format
-        var domainLen = (csv.length + 1)/freq;
-        var x = d3.scaleLinear()
-            // .domain(d3.extent(data, function(d) { return d.year; }))
-            .domain([start, end])
-            .range([ 0, width ]);
-        var xAxis = svg.append("g")
-            .attr("transform", "translate(0," + height + ")")
-            // .call(d3.axisBottom(x).ticks(5));
-            .call(d3.axisBottom(x))
-            .classed('axis_x', true)
-            .attr("id", channel+'X');
-
-        var max = 10;
-        // Add Y axis
-        var y = d3.scaleLinear()
-            // .domain([0, d3.max(data, function(d) { return +d.n; })])
-            .domain([-10, max])
-            .range([ height, 0 ]);
-        var yAxis = svg.append("g")
-            .call(d3.axisLeft(y))
-            .classed('axis_y', true)
-
-        // Define highlighted periods for MR (Right Masseter)
-        const highlightedPeriodsMR = [
-          { start: 6, end: 8 },
-          { start: 10, end: 13 },
-          { start: 16, end: 19 },
-          { start: 26, end: 30 }// Example: Highlight from 2s to 4s for MR
-        ];
-
-        // Define highlighted periods for ML (Left Masseter)
-        const highlightedPeriodsML = [
-          { start: 4, end: 20 },
-        ];
-
-        const highlightedEventsMR = [
-          {start: 7},
-          {start: 12},
-          {start: 18},
-          {start: 27},
-        ]
-
-        const highlightedEventsML = [
-          {start: 15}
-        ]
-
-        // Create rectangles for the highlighted periods based on the channel
-        let highlightedPeriods;
-        if (channel === 'MR') {
-          highlightedPeriods = highlightedPeriodsMR;
-        } else if (channel === 'ML') {
-          highlightedPeriods = highlightedPeriodsML;
-        }
-
-      let highlightedEvents;
-      if (channel === 'MR') {
-        highlightedEvents = highlightedEventsMR;
-      } else if (channel === 'ML') {
-        highlightedEvents = highlightedEventsML;
-      }
-
-        if (highlightedPeriods) {
-          svg.selectAll(".highlight")
-              .data(highlightedPeriods)
-              .enter()
-              .append("rect")
-              .attr("class", "highlight")
-              .attr("x", function(d) { return x(d.start); })
-              .attr("width", function(d) { return x(d.end) - x(d.start); })
-              .attr("y", 0)
-              .attr("height", height)
-              .attr("fill", "lightblue"); // Set the highlight color
-        }
-
-        if (highlightedEvents) {
-          svg.selectAll(".vertical-bar")
-              .data(highlightedEvents)
-              .enter()
-              .append("rect")
-              .attr("class", "vertical-bar")
-              .attr("x", function(d) { return x(d.start); })
-              .attr("width", 2) // Adjust the width of the vertical bars as needed
-              .attr("y", 0)
-              .attr("height", height)
-              .attr("fill", "red");
-        }
-
-
-
-
-      // Add X axis label:
-        svg.append("text")
-            .attr("text-anchor", "end")
-            .attr("x", width)
-            .attr("y", height + 35)
-            .attr("style","font-size: 13px")
-            .text("Time (s)");
-
-        // Add Y axis label:
-        svg.append("text")
-            .attr("text-anchor", "end")
-            .attr("y", 6)
-            .attr("dy", "-2.5em")
-            .attr("transform", "rotate(-90)")
-            .attr("style","font-size: 13px")
-            .text("Amplitude (mV)")
-            // .attr("text-anchor", "start")
-
-        // color palette
-        // var res = sumstat.map(function(d){ return d.key }) // list of group names
-        var res = this.data[0];
-        var color = d3.scaleOrdinal()
-            .domain(res)
-            .range(['#e41a1c','#377eb8','#4daf4a','#984ea3','#ff7f00','#ffff33','#a65628'])
-            // ,'#f781bf','#999999'])
-
-        // Draw the line
-        // svg.selectAll(".line")
-        //     .data(this.data)
-        //     .enter()
-        //     .append("path")
-        //         .attr("fill", "none")
-        //         .attr("stroke", function(d){ return color(d.key) })
-        //         .attr("stroke-width", 1.5)
-        //         .attr("d", function(d){
-        //         return d3.line()
-        //             .x(function(d) { return x(range([0,d.length+1])); })
-        //             .y(function(d) { return y(d.MR); })
-        //             (d.values)
-        //         })
-
-        // Add a clipPath: everything out of this area won't be drawn.
-        const clip = svg.append("defs").append("svg:clipPath")
-            .attr("id", "clip")
-            .append("svg:rect")
-            .attr("width", width )
-            .attr("height", height )
-            .attr("x", 0)
-            .attr("y", 0);
-
-        // Add brushing
-        const brush = d3.brushX()                   // Add the brush feature using the d3.brush function
-            .extent( [ [0,0], [width,height] ] )  // initialise the brush area: start at 0,0 and finishes at width,height: it means I select the whole graph area
-            .on("end", updateChart)               // Each time the brush selection changes, trigger the 'updateChart' function
-
-
-        // Create the line variable: where both the line and the brush take place
-        const line = svg.append('g')
-            .attr("clip-path", "url(#clip)")
-            .attr("id", channel)
-
-        // Set the gradient
-        svg.append("linearGradient")
-        .attr("id", "line-gradient")
-        .attr("gradientUnits", "userSpaceOnUse")
-        .attr("x1", 0)
-        .attr("y1", y(0))
-        .attr("x2", 0)
-        .attr("y2", y(2))
-        .selectAll("stop")
-            .data([
-            {offset: "0%", color: "blue"},
-            {offset: "100%", color: "red"}
-            ])
-        .enter().append("stop")
-            .attr("offset", function(d) { return d.offset; })
-            .attr("stop-color", function(d) { return d.color; });
-
-        line.append("path")
-            .datum(csv)
-            .attr("class", "line")  // I add the class line to be able to modify this line later on.
-            .attr("fill", "none")
-            .attr("stroke", "url(#line-gradient)" )
-            .attr("stroke-width", 1.5)
-            .attr("d", d3.line()
-                .x(function(d) { return x((d.cnt))})
-                .y(function(d) { return y(d[channel]) })
-            )
-            // .attr("stroke", function(d){ return myColor("MR") })
-
-        // Add the brushing
-        line
-        .append("g")
-            .attr("class", "brush")
-            .call(brush);
-
-        // A function that set idleTimeOut to null
-        let idleTimeout
-        function idled() { idleTimeout = null; }
-        var store = this.$store;
-        // A function that update the chart for given boundaries
-        function updateChart(event,d) {
-            // What are the selected boundaries?
-            var extent = event.selection
-
-            // If no selection, back to initial coordinate. Otherwise, update X axis domain
-            if(!extent){
-                if (!idleTimeout) return idleTimeout = setTimeout(idled, 350); // This allows to wait a little bit
-                x.domain([ 4,8])
-            }else{
-                let sp = x.invert(extent[0]);
-                let ep = x.invert(extent[1]);
-                store.commit('updataPoint',
-                    {startPoint:Math.floor(sp * 1000) / 1000, endPoint:Math.floor(ep * 1000) / 1000})
-                x.domain([sp, ep])
-                line.select(".brush").call(brush.move, null) // This remove the grey brush area as soon as the selection has been done
+                result.push(obj);
             }
 
             // Prettify output
             return result;
         },
         drawLabel(channel, start, end){
+            console.log('labels')
             var margin = {top: 10, right: 100, bottom: 40, left: 40};
             var height = document.body.clientHeight/4 - margin.top - margin.bottom;
             var width = document.body.clientWidth/2 - margin.left - margin.right;
@@ -437,7 +253,6 @@ export default {
                 .range([ 0, width ]);
                 
             var line = d3.select("#"+channel);
-            console.log(line)
             var rects = line
                             .selectAll("rect")
                             .data(this.Labels)
@@ -451,27 +266,11 @@ export default {
                             .attr("fill", "teal")
                             .attr("opacity", 0.3)
                             .attr("class", "labels");
-            console.log("draw")
-
-            // line = d3.select("#ML");
-            // rects = line
-            //                 .selectAll("rect")
-            //                 .data(this.Labels)
-            //                 .enter()
-            //                 .append("rect")
-            //                 // .datum(this.Labels)
-            //                 .attr("x", (d=> x((d.Start))))
-            //                 .attr("y", 0)
-            //                 .attr("width", (d=> x(d.End) - x(d.Start)))
-            //                 .attr("height", height)
-            //                 .attr("fill", "teal")
-            //                 .attr("opacity", 0.3)
-            //                 .attr("class", "labels");
         },
         drawLineplot(channel,start, end){
             // const csvFilePath = '@/assets/1022102cFnorm.csv';
             // var csv = await csvToJson().fromFile(csvFilePath);
-            var csv = this.csvToJson(dataset)
+            var csv = this.csvToJson(this.data)
             // const csvs = JSON.stringify(csv, null, 2);
             // this.data = csvs;
 
@@ -523,6 +322,7 @@ export default {
 
             // Add X axis --> it is a date format
             var domainLen = (csv.length + 1)/this.freq;
+            console.log(domainLen)
             var x = d3.scaleLinear()
                 // .domain(d3.extent(data, function(d) { return d.year; }))
                 .domain([start, end])
@@ -542,6 +342,71 @@ export default {
             var yAxis = svg.append("g")
                 .call(d3.axisLeft(y))
                 .classed('axis_y', true)
+
+            // // Define highlighted periods for MR (Right Masseter)
+            // const highlightedPeriodsMR = [
+            // { start: 6, end: 8 },
+            // { start: 10, end: 13 },
+            // { start: 16, end: 19 },
+            // { start: 26, end: 30 }// Example: Highlight from 2s to 4s for MR
+            // ];
+
+            // // Define highlighted periods for ML (Left Masseter)
+            // const highlightedPeriodsML = [
+            // { start: 4, end: 20 },
+            // ];
+
+            const highlightedEventsMR = [
+            {start: 7},
+            {start: 12},
+            {start: 18},
+            // {start: 27},
+            ]
+
+            const highlightedEventsML = [
+            {start: 15}
+            ]
+
+            // Create rectangles for the highlighted periods based on the channel
+            // let highlightedPeriods;
+            // if (channel === 'MR') {
+            // highlightedPeriods = highlightedPeriodsMR;
+            // } else if (channel === 'ML') {
+            // highlightedPeriods = highlightedPeriodsML;
+            // }
+
+            // if (highlightedPeriods) {
+            // svg.selectAll(".highlight")
+            //     .data(highlightedPeriods)
+            //     .enter()
+            //     .append("rect")
+            //     .attr("class", "highlight")
+            //     .attr("x", function(d) { return x(d.start); })
+            //     .attr("width", function(d) { return x(d.end) - x(d.start); })
+            //     .attr("y", 0)
+            //     .attr("height", height)
+            //     .attr("fill", "lightblue"); // Set the highlight color
+            // }
+
+
+            // let highlightedEvents;
+            // if (channel === 'MR') {
+            //     highlightedEvents = highlightedEventsMR;
+            // } else if (channel === 'ML') {
+            //     highlightedEvents = highlightedEventsML;
+            // }
+            // if (highlightedEvents) {
+            // svg.selectAll(".vertical-bar")
+            //     .data(highlightedEvents)
+            //     .enter()
+            //     .append("rect")
+            //     .attr("class", "vertical-bar")
+            //     .attr("x", function(d) { return x(d.start); })
+            //     .attr("width", 2) // Adjust the width of the vertical bars as needed
+            //     .attr("y", 0)
+            //     .attr("height", height)
+            //     .attr("fill", "red");
+            // }
 
             // Add X axis label:
             svg.append("text")
@@ -563,10 +428,10 @@ export default {
 
             // color palette
             // var res = sumstat.map(function(d){ return d.key }) // list of group names
-            var res = this.data[0];
-            var color = d3.scaleOrdinal()
-                .domain(res)
-                .range(['#e41a1c','#377eb8','#4daf4a','#984ea3','#ff7f00','#ffff33','#a65628'])
+            // var res = this.data[0];
+            // var color = d3.scaleOrdinal()
+            //     .domain(res)
+            //     .range(['#e41a1c','#377eb8','#4daf4a','#984ea3','#ff7f00','#ffff33','#a65628'])
                 // ,'#f781bf','#999999'])
 
             // Draw the line

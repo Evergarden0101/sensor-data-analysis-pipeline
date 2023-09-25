@@ -17,7 +17,7 @@ Depending on what you are making, it can be a good idea to include screenshots o
 
 ### Backend
 - Inside back-enfd folder: ``python -m venv .venv``
-- macOS: ``.venv/bin/activate``
+- macOS: ``source .venv/bin/activate``
 - Windows: ``.venv\Scripts\activate``
 - ``pip install Flask``
 - Initialize database: ``flask --app src/app init-db``
