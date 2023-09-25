@@ -5,9 +5,12 @@
         </el-col>
     </el-row>
 
-    <el-row justify="center">
-        <SettingsForm />
-    </el-row>
+    <div style="display: flex; justify-content: center;">
+        <el-card>
+            <SettingsForm />
+        </el-card>
+    </div>
+        
 </template>
 
 <script>
