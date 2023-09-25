@@ -47,7 +47,8 @@ CREATE TABLE sleep_stage_detection (
   SD REAL NOT NULL,
   stage TEXT,
   y INTEGER NOT NULL,
-  x INTEGER NOT NULL
+  x INTEGER NOT NULL,
+  selected BOOLEAN NOT NULL
 );
 
 CREATE TABLE settings (
