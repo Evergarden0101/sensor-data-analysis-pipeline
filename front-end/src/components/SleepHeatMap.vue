@@ -70,15 +70,18 @@ export default {
   data () {
     return {
       dataReceived: false,
+      selectedOnDb: [],
       loading: ref(true),
       isEditMode: false,
       error: false,
       clicked: [],
-      firstEnteredEditMode: false
+      firstEnteredEditMode: false,
     }
   },
-  mounted() {
+  async mounted() {
     this.drawTreatHeatMap(this.$store.state.patientId, this.$store.state.week, this.$store.state.nightId);
+
+    await this.getCurrentlySelected()
   },
   methods: {
     open() {
@@ -146,7 +149,7 @@ export default {
       this.isEditMode = !this.isEditMode;
       this.firstEnteredEditMode = true;
       if(!this.isEditMode){
-        const path = `http://localhost:5000/ssd/${this.$store.state.patientId}/${this.$store.state.week}/${this.$store.state.nightId}`
+        const path = `http://localhost:5000/selected-sleep-phases/${this.$store.state.patientId}/${this.$store.state.week}/${this.$store.state.nightId}`
         const headers = {
                 'Accept': 'application/json',
                 'Content-Type': 'application/json'
@@ -158,13 +161,11 @@ export default {
             payload.push({
                 "x": this.clicked[i][0],
                 "y": this.clicked[i][1],
-                "stage": this.clicked[i][3]
             })
         }
         
         axios.post(path, payload, {headers})
             .then((res) => {
-                console.log(res);
                 this.clicked = [];
                 this.$router.push('/bruxism/');
 
@@ -175,6 +176,24 @@ export default {
 
       }
 
+    },
+    async getCurrentlySelected(){
+        const path = `http://localhost:5000/selected-sleep-phases/${this.$store.state.patientId}/${this.$store.state.week}/${this.$store.state.nightId}`
+        const headers = {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+        };
+
+        await axios.get(path, {headers})
+            .then((res) => {
+                console.log("DATA RECEIVED!")
+                console.log(res.data);
+                this.clicked = res.data;
+                this.dataReceived = true;
+            })
+            .catch(err=>{
+                console.log(err)
+            })
     },
     exitEditMode(){
         this.isEditMode = !this.isEditMode;
@@ -224,11 +243,11 @@ export default {
             }
 
             var remData = remDataJson.map(function (item) {
-                return [item['x'], item['y'], parseInt(item['SD']), item['stage'], item['LF_HF']];
+                return [item['x'], item['y'], Math.round(item['SD']), item['stage'], item['LF_HF']];
             });
 
             var nremData = nremDataJson.map(function (item) {
-                return [item['x'], item['y'], parseInt(item['SD']), item['stage'], item['LF_HF']];
+                return [item['x'], item['y'], Math.round(item['SD']), item['stage'], item['LF_HF']];
             });
 
             var callback = (args) => {
@@ -278,7 +297,7 @@ export default {
                         color: ['#1919ff', '#CCCCFF'] //From bigger to smaller value ->
                     },
                     seriesIndex : 0,
-                    calculable: true,
+                    calculable: false,
                     orient: 'horizontal',
                     left: 'center',
                     bottom: '30%',
@@ -291,7 +310,7 @@ export default {
                         color: ['#999999', '#eeeeee'] //From bigger to smaller value ->
                     },
                     seriesIndex : 1,
-                    calculable: true,
+                    calculable: false,
                     orient: 'horizontal',
                     left: 'center',
                     bottom: '24%',
@@ -343,15 +362,48 @@ export default {
               if(this.firstEnteredEditMode){
                 console.log("FIRST")
                 let remData = option.series[0].data
-            
-                for(const key in remData){
-                    this.clicked.push(remData[key])
-                    myChart.dispatchAction({
-                        type: 'highlight',
-                        seriesIndex: 0,
-                        dataIndex: key
-                    })
+                if(!this.dataReceived || this.clicked.length === 0){
+                    console.log("Data not received")
+                    for(const key in remData){
+                        this.clicked.push(remData[key])
+                        myChart.dispatchAction({
+                            type: 'highlight',
+                            seriesIndex: 0,
+                            dataIndex: key
+                        })
+                    }
+                } else {
+                    for(let i=0; i<this.clicked.length; i++){
+                        if (this.clicked[i][3] === 'rem'){
+                            let dataSeries = option.series[0].data;
+                            for(const key in dataSeries){
+                                if (JSON.stringify(dataSeries[key]) === JSON.stringify(this.clicked[i])){
+                                    myChart.dispatchAction({
+                                    type: 'highlight',
+                                    seriesIndex: 0,
+                                    dataIndex: key
+                                })
+
+                                } 
+                            }
+                        } else {
+                            let dataSeries = option.series[1].data;
+                            for(const key in dataSeries){
+                                if (JSON.stringify(dataSeries[key]) === JSON.stringify(this.clicked[i])){
+                                    myChart.dispatchAction({
+                                    type: 'highlight',
+                                    seriesIndex: 1,
+                                    dataIndex: key
+                                })
+
+                                } 
+                            }
+                        }
+                        
+                    }
+
                 }
+                
                 this.firstEnteredEditMode = !this.firstEnteredEditMode;
               } else {
                 if(JSON.stringify(this.clicked).includes(JSON.stringify(params.data))){

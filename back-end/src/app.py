@@ -126,35 +126,43 @@ def create_app(test_config=None):
         return patient_data
     
 
-    #TODO: adapt this to take the dataset directly from the DB
-    @app.route("/ssd/<int:patient_id>/<int:week>/<string:night_id>", methods=["GET", "POST"])
+    @app.route("/ssd/<int:patient_id>/<int:week>/<string:night_id>", methods=["GET"])
     def sleep_stage_detection(patient_id, week, night_id):
+        try:
+            print('database variable', file=sys.stderr)
+
+            values = get_ssd_values(DATABASE, patient_id, week, night_id)
+            return values
+        
+        except Exception as e:
+            print('Exception raised', file=sys.stderr)
+            print(e)
+            return f"{e}"
+
+    @app.route("/selected-sleep-phases/<int:patient_id>/<int:week>/<string:night_id>", methods=["GET", "POST"])
+    def selected_rem_phases(patient_id, week, night_id):
         if request.method == 'GET':
             try:
-                print('database variable', file=sys.stderr)
-
-                values = get_ssd_values(DATABASE, patient_id, week, night_id)
-                return values
+                print("try")
+                return get_selected_phases(DATABASE, patient_id, week, night_id), 200
             
             except Exception as e:
-                print('Exception raised', file=sys.stderr)
+                print('Exception raised')
                 print(e)
                 return f"{e}"
-            
+
         if request.method == 'POST':
-            #code for posting here
             """
                 payload:
                     {
                         'x': int,
                         'y': int,
-                        'stage': string
 
                     }
             """
             try:
                 updates = request.json
-                post_ssd_updates(DATABASE, updates)
+                post_selected_updates(DATABASE, patient_id, week, night_id, updates)
 
                 return "sleep_stage_detection table updated successfully", 200
 
@@ -164,6 +172,7 @@ def create_app(test_config=None):
                 print('Exception raised')
                 print(e)
                 return f"{e}"
+
                         
 
         

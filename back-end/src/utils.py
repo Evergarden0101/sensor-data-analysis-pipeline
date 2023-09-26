@@ -25,13 +25,21 @@ def get_json_format_from_query(columns, query_results, start_id, end_id):
         return values
 
 """Takes night_id and return day, hours, minutes and seconds values"""
+# TODO: adapt get_existing_patients function
 def get_patient_time_values(night_id):
+    try:
         day = night_id[:2]
         hours = night_id[2:4]
         minutes = night_id[4:6]
         seconds = night_id[6]
 
-        return day, hours, minutes, seconds
+    except IndexError:
+        day = night_id[:2]
+        hours = '0' + night_id[2]
+        minutes = night_id[3:5]
+        seconds = night_id[5]
+
+    return day, hours, minutes, seconds
 
 """Post patient recording in the database"""
 def post_patient_recording(DATABASE, patient_id, week, day, hours, minutes, seconds, patient_file, csvData):
@@ -137,19 +145,46 @@ def get_ssd_values(DATABASE, patient_id, week, night_id):
                 cur.execute(query, params)
 
         return values
-    
-def post_ssd_updates(DATABASE, updates):
+
+def post_selected_updates(DATABASE, patient_id, week, night_id, updates):
     with sql.connect(DATABASE) as con:
         print('connected to db', file=sys.stderr)
         cur = con.cursor()
 
         cur.execute("UPDATE sleep_stage_detection SET selected = 0")
-   
-        for update in updates:
-            params = (update["x"], update["y"])
 
-            query = "UPDATE sleep_stage_detection SET selected = 1 WHERE x=? AND y=?"
+        day, hours, minutes, seconds = get_patient_time_values(night_id)
+
+        print(cur.execute("SELECT selected FROM sleep_stage_detection where day=9").fetchall())
+
+        for update in updates:
+            params = (patient_id, week, day, hours, minutes, seconds, update["x"], update["y"])
+
+            query = "UPDATE sleep_stage_detection SET selected = 1 WHERE patient_id=? AND week=? AND day=? AND hours=? AND minutes=? AND seconds=? AND x=? AND y=?"
             cur.execute(query, params)
+
+
+def get_selected_phases(DATABASE, patient_id, week, night_id):
+    with sql.connect(DATABASE) as con:
+        cur = con.cursor()
+
+        print(patient_id, week, night_id)
+
+        day, hours, minutes, seconds = get_patient_time_values(night_id)
+
+        print(day, hours, minutes, seconds)
+
+        params = (patient_id, week, day, hours, minutes, seconds, 1)
+
+        query = ("SELECT x,y,ROUND(SD),stage, LF_HF FROM sleep_stage_detection WHERE patient_id=? AND week=? AND day=? AND hours=? AND minutes=? AND seconds=? AND selected=?")
+
+        selected = cur.execute(query, params).fetchall()
+            
+        result = [list(s) for s in selected]
+
+
+        return result
+        #return get_json_format_from_query(columns=columns, query_results=selected.fetchall(), start_id=0, end_id=1)
 
 
 """Get all the patients, weeks and night ids"""
