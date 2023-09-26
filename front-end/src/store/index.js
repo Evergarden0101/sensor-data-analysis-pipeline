@@ -22,6 +22,8 @@ const store = createStore({
       linePlotKey: 0,
       plotStart: 0,
       plotEnd: 0,
+      checkedMR: true,
+      checkedML: true,
     }
   },
   mutations: {
@@ -44,7 +46,13 @@ const store = createStore({
     setLabelRange(state, payload){
       state.plotStart = payload.plotStart;
       state.plotEnd = payload.plotEnd;
-    }
+    },
+    selectMR(state, payload){
+      state.checkedMR = payload;
+    },
+    selectML(state, payload){
+      state.checkedML = payload;
+    },
   },
   plugins: [vuexLocal.plugin],
 

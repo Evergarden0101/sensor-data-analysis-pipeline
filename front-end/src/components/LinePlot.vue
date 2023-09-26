@@ -42,8 +42,8 @@ export default {
     data () {
         return {
             data: null,
-            checkedMR: ref(true),
-            checkedML: ref(true),
+            checkedMR: this.$store.state.checkedMR,
+            checkedML: this.$store.state.checkedML,
             freq: 2000,
             key: Date.now(),
             activeName: 'left',
@@ -58,6 +58,8 @@ export default {
         this.Labels = this.loadAll();
         this.start = this.$store.state.plotStart;
         this.end = this.$store.state.plotEnd;
+        // this.checkedML = this.$store.state.checkedML;
+        // this.checkedMR = this.$store.state.checkedMR;
         this.data = dataset;
         if(this.data == null){
             this.loadLinePlotData(this.$store.state.patientId, this.$store.state.week, this.$store.state.nightId);
@@ -66,8 +68,8 @@ export default {
                 this.end = (this.data.length-1)/this.freq;
             }
             this.$store.commit('updataPoint',{startPoint:this.start, endPoint:Math.floor(this.end * 1000) / 1000})
-            this.drawLineplot('MR',this.start,this.end);
-            this.drawLineplot('ML',this.start,this.end);
+            if(this.checkedMR) this.drawLineplot('MR',this.start,this.end);
+            if(this.checkedML) this.drawLineplot('ML',this.start,this.end);
         }
         
     },
@@ -143,8 +145,8 @@ export default {
                         this.end = (this.data.length-1)/this.freq;
                     }
                     this.$store.commit('updataPoint',{startPoint:this.start, endPoint:Math.floor(this.end * 1000) / 1000})
-                    this.drawLineplot('MR',this.start,this.end);
-                    this.drawLineplot('ML',this.start,this.end);
+                    if(this.checkedMR) this.drawLineplot('MR',this.start,this.end);
+                    if(this.checkedML) this.drawLineplot('ML',this.start,this.end);
                     // var callback = (args) => {
                     //     return args.seriesName + "<br />" +args.marker  + args.value[4].toFixed(2) + '±' + args.value[2]
                     // }
@@ -158,6 +160,7 @@ export default {
             if(tab == false){
                 var ml = document.getElementById('mllineplot')
                 this.emptyGraph(ml);
+                this.$store.commit('selectML',false);
             } else if(tab == true){
                 var start = this.$store.state.startPoint;
                 var end = this.$store.state.endPoint;
@@ -166,12 +169,14 @@ export default {
                     end = this.end;
                 }
                 this.drawLineplot('ML', start, end);
+                this.$store.commit('selectML',true);
             }
         },
         rerenderRight(tab,event) {
             if(tab == false){
                 var mr = document.getElementById('mrlineplot')
                 this.emptyGraph(mr);
+                this.$store.commit('selectMR',false);
             } else if(tab == true){
                 var start = this.$store.state.startPoint;
                 var end = this.$store.state.endPoint;
@@ -180,6 +185,7 @@ export default {
                     end = this.end;
                 }
                 this.drawLineplot('MR', start, end);
+                this.$store.commit('selectMR',true);
             }
         },
         emptyGraph(e) {
