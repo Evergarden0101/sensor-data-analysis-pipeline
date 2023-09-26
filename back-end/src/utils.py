@@ -106,7 +106,7 @@ def retrieve_patient_recording(DATABASE, patient_id, week, day, range_min, SAMPL
 def insert_label(DATABASE, label):
     with sql.connect(DATABASE) as con:
         cur = con.cursor()
-        cur.execute(f"INSERT INTO labels (patient, location_begin, location_end, duration) VALUES {label}")
+        cur.execute(f"INSERT INTO confirmed_labels (patient_id, location_begin, location_end) VALUES {label}")
 
 
 def get_ssd_values(DATABASE, patient_id, week, night_id):

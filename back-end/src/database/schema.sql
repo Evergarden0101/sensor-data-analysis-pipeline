@@ -1,18 +1,40 @@
-DROP TABLE IF EXISTS labels;
+DROP TABLE IF EXISTS confirmed_labels;
+DROP TABLE IF EXISTS predicted_labels;
 DROP TABLE IF EXISTS patients_recordings;
 DROP TABLE IF EXISTS sleep_stage_detection;
 DROP TABLE IF EXISTS settings;
 DROP TABLE IF EXISTS sensors;
 
 
-CREATE TABLE labels (
+CREATE TABLE models (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  patient INTEGER NOT NULL,
-  location_begin INTEGER NOT NULL,
-  location_end INTEGER NOT NULL,
-  duration  REAL NOT NULL
+  patient_id INTEGER NOT NULL,
+  model_name TEXT,
+  model_path TEXT
 );
 
+
+CREATE TABLE confirmed_labels (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  patient_id INTEGER NOT NULL,
+  night_id INTEGER NOT NULL,
+  recorder TEXT,
+  location_begin INTEGER NOT NULL,
+  location_end INTEGER NOT NULL,
+  corrected BOOLEAN NOT NULL
+  -- duration  REAL NOT NULL
+);
+
+
+CREATE TABLE predicted_labels (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  patient_id INTEGER NOT NULL,
+  night_id INTEGER NOT NULL,
+  recorder TEXT,
+  location_begin INTEGER NOT NULL,
+  location_end INTEGER NOT NULL
+  -- duration  REAL NOT NULL
+);
 
 CREATE TABLE patients_recordings (
   id INTEGER PRIMARY KEY AUTOINCREMENT,

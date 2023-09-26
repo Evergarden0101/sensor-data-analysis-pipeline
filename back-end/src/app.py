@@ -112,16 +112,16 @@ def create_app(test_config=None):
     #TODO: possibly get labels from specific patient on a specific week?
     @app.route("/label-brux/", methods=["GET"], defaults={'patient_id': None})
     @app.route("/label-brux/<int:patient_id>", methods=["GET"])
-    def get_label_brux(patient_id):
+    def get_label_brux(patient_id, night_id):
         with sql.connect(DATABASE) as con:
             cur = con.cursor()
-            if patient_id != None:
-                patient_data = cur.execute(f"SELECT * FROM labels WHERE patient = {patient_id}").fetchall()
+            if patient_id != None and night_id != None:
+                patient_data = cur.execute(f"SELECT * FROM predicted_labels WHERE patient_id = {patient_id} AND night_id = {night_id}").fetchall()
 
                 if not patient_data:
                     return f"No labels found for patient {patient_id}.", 404
             else:
-                patient_data = cur.execute(f"SELECT * FROM labels").fetchall()
+                patient_data = cur.execute(f"SELECT * FROM predicted_labels").fetchall()
 
         return patient_data
     
