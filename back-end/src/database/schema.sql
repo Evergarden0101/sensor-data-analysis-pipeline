@@ -1,5 +1,6 @@
 DROP TABLE IF EXISTS confirmed_labels;
 DROP TABLE IF EXISTS predicted_labels;
+DROP TABLE IF EXISTS models;
 DROP TABLE IF EXISTS patients_recordings;
 DROP TABLE IF EXISTS sleep_stage_detection;
 DROP TABLE IF EXISTS settings;
