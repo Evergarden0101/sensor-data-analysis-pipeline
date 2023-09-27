@@ -25,19 +25,37 @@
     </el-row>
 
   <div v-if="!error" class="buttons-container">
-    <el-button @click="toggleEditMode" v-if="!isEditMode">Enter Edit Mode</el-button>
+    <el-button @click="toggleEditMode" v-if="!isEditMode">Select intervals of interest</el-button>
     <el-popconfirm
-    title="Do you want to the events detection phase with the currently selected values?"
+    title="Save the selected intervals of interest?"
     confirm-button-text="Yes"
     cancel-button-text="Select again"
     @confirm="toggleEditMode"
     @cancel="exitEditMode"
     width="350">
         <template #reference>
-            <el-button v-if="isEditMode">Exit Edit Mode</el-button>
+            <el-button v-if="isEditMode"> Save</el-button>
         </template>
     </el-popconfirm>
   </div>
+
+    <div v-if="selectedPosted">
+        <el-alert title="Selected intervals selected successfully." type="success" center show-icon /> 
+    </div>
+
+    <el-dialog v-model="selectedPosted" title="Continue with selected intervals?" width="30%" center align-center="true" draggable="true">
+        <span>
+            Do you want to continue to the Bruxism Page?
+        </span>
+        <template #footer>
+        <span class="dialog-footer">
+            <el-button @click="selectAgain">Select again</el-button>
+            <el-button type="primary" @click="continueToBruxismPage">
+                Yes
+            </el-button>
+        </span>
+        </template>
+  </el-dialog>
 
   <el-row>
         <el-col v-if="error" :span="24">
@@ -76,6 +94,8 @@ export default {
       error: false,
       clicked: [],
       firstEnteredEditMode: false,
+      selectedPosted: false,
+      noSelectedError: false
     }
   },
   async mounted() {
@@ -144,6 +164,17 @@ export default {
 
         
     },
+    selectAgain(){
+        this.$router.go();
+    },
+    continueToBruxismPage(){
+        if(this.selectedPosted){
+            this.$router.push('/bruxism/');
+        } else {
+            this.$router.go();
+            this.noSelectedError = true;
+        }
+    },
 
     toggleEditMode() {
       this.isEditMode = !this.isEditMode;
@@ -167,7 +198,8 @@ export default {
         axios.post(path, payload, {headers})
             .then((res) => {
                 this.clicked = [];
-                this.$router.push('/bruxism/');
+                this.selectedPosted = true;
+                //this.$router.push('/bruxism/');
 
             })
             .catch(err=>{

@@ -1,4 +1,7 @@
 <template>
+    <div v-if="settingsPosted">
+        <el-alert title="Settings saved successfully." type="success" center show-icon />
+    </div>    
     <div v-if="error">
         <el-dialog v-model="error" width="30%" center>
         <span>
@@ -193,6 +196,7 @@ export default {
             sensors: [],
             error: false,
             dbEntryExist: false,
+            settingsPosted: false,
             formNumber: ref(1),
             sensorsList: [
                 {
@@ -553,7 +557,9 @@ export default {
                 console.log("Success")
                 this.postSettings();
                 this.postSensors();
-                this.$router.go(-1);
+                this.formNumber = 1;
+                this.settingsPosted = true;
+
             }   
         }
     }
