@@ -53,7 +53,7 @@ export default {
             max: 10,
             error: false,
             remPhases: [],
-            loading: true,
+            loading: ref(true),
         }
     },
     async mounted() {
@@ -65,7 +65,7 @@ export default {
         this.data = dataset;
         if(this.data == null){
             await this.loadLinePlotData(this.$store.state.patientId, this.$store.state.week, this.$store.state.nightId);
-            this.loading = false;
+            this.loading = ref(false);
         }else{
             if(this.start == 0 && this.end == 0){
                 this.end = (this.data.length-1)/this.freq;
@@ -73,7 +73,7 @@ export default {
             this.$store.commit('updataPoint',{startPoint:this.start, endPoint:Math.floor(this.end * 1000) / 1000})
             if(this.checkedMR) await this.drawLineplot('MR',this.start,this.end);
             if(this.checkedML) await this.drawLineplot('ML',this.start,this.end);
-            this.loading = false;
+            this.loading = ref(false);
         }
 
     },
