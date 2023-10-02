@@ -64,18 +64,19 @@
         </el-card>
     </el-row>
     <el-row style="margin-top: 3em;">
-        <h5 style="display: block;margin: auto;">Change at least 1 label to rerun classifier</h5>
+        <h5 style="display: block;margin: auto;">Comfirm the above events to rerun classifier</h5>
     </el-row>
-    <el-row style="margin-top: 1em;">
-        <LabelButton :disabled="!rerun" :labels="Labels" color="#626aef" plain size="large"
+    <el-row style="margin-top: 2em;">
+        <LabelButton :labels="Labels" color="#626aef" plain size="large"
             style="display: block;margin: 0 auto"/>
 
         <!-- <el-button  plain size="large" :disabled="!rerun" style="display: block;margin: 0 auto;" 
         @click="load = true" :loading="load">
             Rerun Bruxism Classification
         </el-button> -->
-
-        <el-progress type="dashboard" :percentage="accuracy" width="80" stroke-width="4" :color="colors">
+    </el-row>
+    <el-row style="margin-top: 1em;">
+        <el-progress style="display: block;margin: 0 auto" type="dashboard" :percentage="accuracy" width="80" stroke-width="4" :color="colors" >
             <template #default="{ percentage }">
                 <h3 class="percentage-value">{{ percentage }}%</h3>
                 <h5 class="percentage-label">Accuracy</h5>
