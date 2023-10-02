@@ -3,7 +3,7 @@
     <!-- <el-col :span="2"> -->
         <!-- <select id="selectButton"></select> -->
     <el-row style="width: 100%;">
-        <h3 style="text-align: center;">Pick the labels from the plot.</h3>
+        <h3 style="text-align: center;">Select your interested range from the plot.</h3>
     </el-row>
     <!-- </el-col> -->
     <!-- <el-col :span="22"> -->
@@ -14,7 +14,7 @@
         <h4 style="margin-left: 40%;margin-bottom: 10px;">Sensor Signals for Right Masseter</h4>
     </el-row>
     <el-row style="margin-bottom: 40px;" v-show="checkedMR">
-        <div id="mrlineplot" ></div>
+        <div id="mrlineplot" v-loading="loading" element-loading-text="The line plots are loading...it might take a couple of minutes."></div>
     </el-row>
     <!-- </el-col> -->
     <el-row text-align="center" style="margin-bottom: 20px;width: 100%;">
@@ -24,7 +24,7 @@
         <h4 style="margin-left: 40%;margin-bottom: 10px;">Sensor Signals for Left Masseter</h4>
     </el-row>
     <el-row v-show="checkedML" style="margin-bottom: 30px;">
-        <div id="mllineplot" ></div>
+        <div id="mllineplot" v-loading="loading" element-loading-text="The line plots are loading...it might take a couple of minutes."></div>
     </el-row>
 
 </template>
@@ -52,10 +52,11 @@ export default {
             end: 0,
             max: 10,
             error: false,
-            remPhases: []
+            remPhases: [],
+            loading: true,
         }
     },
-    mounted() {
+    async mounted() {
         this.Labels = this.loadAll();
         this.start = this.$store.state.plotStart;
         this.end = this.$store.state.plotEnd;
@@ -63,14 +64,16 @@ export default {
         // this.checkedMR = this.$store.state.checkedMR;
         this.data = dataset;
         if(this.data == null){
-            this.loadLinePlotData(this.$store.state.patientId, this.$store.state.week, this.$store.state.nightId);
+            await this.loadLinePlotData(this.$store.state.patientId, this.$store.state.week, this.$store.state.nightId);
+            this.loading = false;
         }else{
             if(this.start == 0 && this.end == 0){
                 this.end = (this.data.length-1)/this.freq;
             }
             this.$store.commit('updataPoint',{startPoint:this.start, endPoint:Math.floor(this.end * 1000) / 1000})
-            if(this.checkedMR) this.drawLineplot('MR',this.start,this.end);
-            if(this.checkedML) this.drawLineplot('ML',this.start,this.end);
+            if(this.checkedMR) await this.drawLineplot('MR',this.start,this.end);
+            if(this.checkedML) await this.drawLineplot('ML',this.start,this.end);
+            this.loading = false;
         }
 
     },
