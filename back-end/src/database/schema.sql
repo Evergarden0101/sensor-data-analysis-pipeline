@@ -1,5 +1,6 @@
 DROP TABLE IF EXISTS confirmed_labels;
 DROP TABLE IF EXISTS predicted_labels;
+DROP TABLE IF EXISTS bite_records;
 DROP TABLE IF EXISTS models;
 DROP TABLE IF EXISTS patients_recordings;
 DROP TABLE IF EXISTS sleep_stage_detection;
@@ -10,18 +11,41 @@ DROP TABLE IF EXISTS sensors;
 CREATE TABLE models (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   patient_id INTEGER NOT NULL,
+  accuracy DECIMAL(6,3) NOT NULL,
   model_name TEXT,
   model_path TEXT
+);
+
+
+CREATE TABLE bite_records (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  patient_id INTEGER NOT NULL,
+  week INTEGER NOT NULL,
+  night_id INTEGER NOT NULL,
+  recorder TEXT,
+  bite_begin INTEGER NOT NULL,
+  bite_end INTEGER NOT NULL,
+  duration DECIMAL(7,3) NOT NULL,
+  peakMR DECIMAL(11,6),
+  peakML DECIMAL(11,6),
+  avgMR DECIMAL(11,6),
+  avgML DECIMAL(11,6)
 );
 
 
 CREATE TABLE confirmed_labels (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   patient_id INTEGER NOT NULL,
+  week INTEGER NOT NULL,
   night_id INTEGER NOT NULL,
   recorder TEXT,
-  location_begin INTEGER NOT NULL,
-  location_end INTEGER NOT NULL,
+  label_id INTEGER NOT NULL,
+  location_begin DECIMAL(11,3) NOT NULL,
+  location_end DECIMAL(11,3) NOT NULL,
+  peakMR DECIMAL(11,6),
+  peakML DECIMAL(11,6),
+  avgMR DECIMAL(11,6),
+  avgML DECIMAL(11,6),
   corrected BOOLEAN NOT NULL
   -- duration  REAL NOT NULL
 );
@@ -30,10 +54,16 @@ CREATE TABLE confirmed_labels (
 CREATE TABLE predicted_labels (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   patient_id INTEGER NOT NULL,
+  week INTEGER NOT NULL,
   night_id INTEGER NOT NULL,
   recorder TEXT,
-  location_begin INTEGER NOT NULL,
-  location_end INTEGER NOT NULL
+  label_id INTEGER NOT NULL,
+  location_begin DECIMAL(11,3) NOT NULL,
+  location_end DECIMAL(11,3) NOT NULL,
+  peakMR DECIMAL(11,6),
+  peakML DECIMAL(11,6),
+  avgMR DECIMAL(11,6),
+  avgML DECIMAL(11,6)
   -- duration  REAL NOT NULL
 );
 

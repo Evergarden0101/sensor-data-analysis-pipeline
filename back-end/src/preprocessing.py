@@ -10,6 +10,11 @@ from settings import *
 def open_brux_csv(patient_id, week, night_id):
     return pd.read_csv(DATA_PATH + f"p{patient_id}_w{week}/{night_id}cFnorm.csv")
 
+
+def open_brux_loc_csv(patient_id, week, night_id):
+    return pd.read_csv(DATA_PATH + f"p{patient_id}_w{week}/{night_id}clocation_Bites.csv")
+
+
 """Gets complete patient df and return only the specified column"""
 def get_column_data_from_df(df, column_name):
     return df[column_name]

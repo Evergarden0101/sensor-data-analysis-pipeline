@@ -1,6 +1,6 @@
 <template>
     <el-popover 
-        :width="500" placement="top-start"
+        :width="400" placement="top-start"
         popper-style="box-shadow: rgb(14 18 22 / 35%) 0px 10px 38px -10px, rgb(14 18 22 / 20%) 0px 10px 20px -15px; padding: 20px;"
         >
         <template #reference>
@@ -23,11 +23,17 @@
                     <div class="statistic-footer">
                         <div class="footer-item">
                             <span>than recorded</span>
-                            <span class="green">
-                            33%
-                            <el-icon>
-                                <CaretTop />
-                            </el-icon>
+                            <span class="green" v-if="this.compPeakMR > 0">
+                                {{this.compPeakMR}}%
+                                <el-icon>
+                                    <CaretTop />
+                                </el-icon>
+                            </span>
+                            <span class="red" v-if="this.compPeakMR < 0">
+                                {{this.compPeakMR}}%
+                                <el-icon>
+                                    <CaretBottom />
+                                </el-icon>
                             </span>
                         </div>
                     </div>
@@ -44,11 +50,17 @@
                     <div class="statistic-footer">
                         <div class="footer-item">
                             <span>than recorded</span>
-                            <span class="green">
-                            54%
-                            <el-icon>
-                                <CaretTop />
-                            </el-icon>
+                            <span class="green" v-if="this.compPeakML > 0">
+                                {{this.compPeakML}}%
+                                <el-icon>
+                                    <CaretTop />
+                                </el-icon>
+                            </span>
+                            <span class="red" v-if="this.compPeakML < 0">
+                                {{this.compPeakML}}%
+                                <el-icon>
+                                    <CaretBottom />
+                                </el-icon>
                             </span>
                         </div>
                     </div>
@@ -66,11 +78,17 @@
                     <div class="statistic-footer">
                         <div class="footer-item">
                             <span>than recorded</span>
-                            <span class="red">
-                            19%
-                            <el-icon>
-                                <CaretBottom />
-                            </el-icon>
+                            <span class="green" v-if="this.compAvgMR > 0">
+                                {{this.compAvgMR}}%
+                                <el-icon>
+                                    <CaretTop />
+                                </el-icon>
+                            </span>
+                            <span class="red" v-if="this.compAvgMR < 0">
+                                {{this.compAvgMR}}%
+                                <el-icon>
+                                    <CaretBottom />
+                                </el-icon>
                             </span>
                         </div>
                     </div>
@@ -87,11 +105,17 @@
                     <div class="statistic-footer">
                         <div class="footer-item">
                             <span>than recorded</span>
-                            <span class="green">
-                            23%
-                            <el-icon>
-                                <CaretTop />
-                            </el-icon>
+                            <span class="green" v-if="this.compAvgML > 0">
+                                {{this.compAvgML}}%
+                                <el-icon>
+                                    <CaretTop />
+                                </el-icon>
+                            </span>
+                            <span class="red" v-if="this.compAvgML < 0">
+                                {{this.compAvgML}}%
+                                <el-icon>
+                                    <CaretBottom />
+                                </el-icon>
                             </span>
                         </div>
                     </div>
@@ -113,6 +137,7 @@ import {
 <script>
 export default {
     name: 'LabelInfoCard',
+    props: ['labelId'],
     components: {
     },
     data () {
@@ -121,8 +146,46 @@ export default {
             peakML: 5.053,
             avgMR: 1.233,
             avgML: 1.722,
+            compPeakMR: -33,
+            compPeakML: 54,
+            compAvgMR: -19,
+            compAvgML: 23,
         }
     },
+    mounted (){
+        // this.getStatistics();
+        console.log(this.compAvgML)
+    },
+    methods: {
+        getStatistics(){
+            const path = `http://127.0.0.1:5000/label-statistics/${this.$stote.state.patientId}/${this.$stote.state.week}/${this.$stote.state.nightId}/${labelId}`
+            const headers = {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*',
+                    'Access-Control-Allow-Methods': 'GET',
+                    'Access-Control-Max-Age': "3600",
+                    'Access-Control-Allow-Credentials': "true",
+                    'Access-Control-Allow-Headers': 'Content-Type'
+            };
+
+            axios.get(path, {headers})
+            .then((res) => {
+                this.peakML = res.data.peakML;
+                this.peakMR = res.data.peakMR;
+                this.avgML = res.data.avgML;
+                this.avgMR = res.data.avgMR;
+                this.compPeakML = res.data.compPeakML;
+                this.compPeakMR = res.data.compPeakMR;
+                this.compAvgML = res.data.compAvgML;
+                this.compAvgMR = res.data.compAvgMR;
+            })
+            .catch(err=>{
+                console.log(err)
+                this.error = true;
+            })
+        }
+    }
 }
 </script>
 

@@ -25,7 +25,7 @@
                             <el-switch v-model="item.Confirm" :active-icon="CircleCheckFilled" :inactive-icon="CircleCloseFilled" 
                             style="margin-left: 1em;margin-right: 2em;--el-switch-on-color: #13ce66; --el-switch-off-color: #ff4949" size="small" 
                             active-text="Confirm Event" inactive-text="Discard Event" @change="rerun = true"/>
-                            <LabelInfoCard/>
+                            <LabelInfoCard :label-id="item.id"/>
                         </el-form>
                         
                     </el-col>
@@ -74,7 +74,15 @@
         @click="load = true" :loading="load">
             Rerun Bruxism Classification
         </el-button> -->
+
+        <el-progress type="dashboard" :percentage="accuracy" width="80" stroke-width="4" :color="colors">
+            <template #default="{ percentage }">
+                <h3 class="percentage-value">{{ percentage }}%</h3>
+                <h5 class="percentage-label">Accuracy</h5>
+            </template>
+        </el-progress>
     </el-row>
+    <div></div>
 </template>
 
 <script>
@@ -99,6 +107,14 @@ export default {
             dialogFormVisible: false,
             formLabelWidth: '100px',
             form:{'id':'','Start':0,'End':0},
+            colors : [
+                { color: '#f56c6c', percentage: 20 },
+                { color: '#e6a23c', percentage: 40 },
+                { color: '#5cb87a', percentage: 60 },
+                { color: '#1989fa', percentage: 80 },
+                { color: '#6f7ad3', percentage: 100 },
+            ],
+            accuracy: 80.23,
         }
     },
     computed: {

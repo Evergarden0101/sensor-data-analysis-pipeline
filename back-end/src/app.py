@@ -1,4 +1,4 @@
-from flask import Flask, request
+from flask import Flask, request, make_response
 import werkzeug
 import os
 import sqlite3 as sql
@@ -111,19 +111,29 @@ def create_app(test_config=None):
 
     #TODO: possibly get labels from specific patient on a specific week?
     @app.route("/label-brux/", methods=["GET"], defaults={'patient_id': None})
-    @app.route("/label-brux/<int:patient_id>", methods=["GET"])
-    def get_label_brux(patient_id, night_id):
-        with sql.connect(DATABASE) as con:
-            cur = con.cursor()
-            if patient_id != None and night_id != None:
-                patient_data = cur.execute(f"SELECT * FROM predicted_labels WHERE patient_id = {patient_id} AND night_id = {night_id}").fetchall()
+    @app.route("/label-brux/<int:patient_id>/<int:week>/<string:night_id>", methods=["GET"])
+    def get_label_brux(patient_id, week, night_id):
+        try:
+            run_prediction(DATABASE, patient_id, week, night_id)
+            params = (patient_id, week, night_id)
+            query = "SELECT * from predicted_labels WHERE (patient_id=? AND week=? AND night_id=?)"
 
-                if not patient_data:
-                    return f"No labels found for patient {patient_id}.", 404
-            else:
-                patient_data = cur.execute(f"SELECT * FROM predicted_labels").fetchall()
+            with sql.connect(DATABASE) as con:
+                print("DB connected")
+                cur = con.cursor()
+                predicted_labels = cur.execute(query, params)
+                columns = [description[0] for description in predicted_labels.description]
+                print(columns)
+                #df = get_patients_recordings_df(columns, patient_data.fetchall())
+                predicted_labels_json = get_json_format_from_query(columns=columns, query_results=predicted_labels.fetchall()) #, start_id=1, end_id=14)
+                
+            return predicted_labels_json, 200
 
-        return patient_data
+
+        except Exception as e:
+            print('Exception raised')
+            print(e)
+            return f"{e}", 500
     
 
     @app.route("/ssd/<int:patient_id>/<int:week>/<string:night_id>", methods=["GET"])
@@ -302,6 +312,52 @@ def create_app(test_config=None):
 
         except Exception as e:
             print('Exception raised')
+            print(e)
+            return f"{e}", 500
+
+
+
+    @app.route('/weekly-sum-img', methods=["GET"])
+    def get_weekly_sum_img():
+        try:
+            # img_path = '/home/hogan/Googlelogo.png'
+            # img_stream = return_img_stream(img_path)
+            # return render_template('BruxismPage.vue',
+            #                     img_stream=img_stream)
+            skuid = request.args.get('skuid')
+            print('skuid: ', skuid)
+            img_local_path =  DATA_PATH + f"{skuid}/summary.png"
+            print('img_local_path: ',img_local_path)
+            img_f = open(img_local_path, 'rb')
+            print(img_f)
+            res = make_response(img_f.read())   # 用flask提供的make_response 方法来自定义自己的response对象
+            res.headers['Content-Type'] = 'image/png'   # 设置response对象的请求头属性'Content-Type'为图片格式
+            img_f.close()
+            return res
+        except Exception as e:
+            print('Exception raised in getting weekly summary image')
+            print(e)
+            return f"{e}", 500
+
+
+    @app.route('/label-statistics/<int:patient_id>/<int:week>/<string:night_id>/<int:labelId>', methods=["GET"])
+    def get_label_statistics(patient_id, week, night_id, labelId):
+        try:
+            params = (patient_id, week, night_id)
+            query = "SELECT * from bite_records WHERE (patient_id=? AND week=? AND night_id=?)"
+
+            with sql.connect(DATABASE) as con:
+                print("DB connected")
+                cur = con.cursor()
+                bite_records = cur.execute(query, params)
+                columns = [description[0] for description in bite_records.description]
+                print(columns)
+                #df = get_patients_recordings_df(columns, patient_data.fetchall())
+                bite_records_json = get_json_format_from_query(columns=columns, query_results=bite_records.fetchall()) #, start_id=1, end_id=14)
+                
+            return bite_records_json, 200
+        except Exception as e:
+            print('Exception raised in getting label statistics')
             print(e)
             return f"{e}", 500
 

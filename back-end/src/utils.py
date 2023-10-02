@@ -106,7 +106,32 @@ def retrieve_patient_recording(DATABASE, patient_id, week, day, range_min, SAMPL
 def insert_label(DATABASE, label):
     with sql.connect(DATABASE) as con:
         cur = con.cursor()
-        cur.execute(f"INSERT INTO confirmed_labels (patient_id, location_begin, location_end) VALUES {label}")
+        cur.execute(f"INSERT INTO confirmed_labels (patient_id, week, night_id, recorder, location_begin, location_end, corrected) VALUES {label}")
+
+def run_prediction(DATABASE, patient_id, week, night_id):
+    try:
+        with sql.connect(DATABASE) as con:
+            cur = con.cursor()
+            cur.execute(f"SELECT * FROM confirmed_labels WHERE patient_id={patient_id} AND week={week} AND night_id={night_id}")
+            labels = cur.fetchall()
+
+            if labels:
+                return labels
+            else:
+                return "No labels for this patient"
+    except Exception as e:
+            print('Exception raised in run_prediction function')
+            print(e)
+            return f"{e}", 500
+
+
+def return_img_stream(img_path):
+    import base64
+    img_stream = ''
+    with open(img_path, 'rb') as img_f:
+        img_stream = img_f.read()
+        img_stream = base64.b64encode(img_stream).decode()
+    return img_stream
 
 
 def get_ssd_values(DATABASE, patient_id, week, night_id):
