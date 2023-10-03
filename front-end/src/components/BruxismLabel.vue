@@ -1,7 +1,7 @@
 <template>
     <el-row>
         <el-card class="box-card" style="border: solid 1px;border-radius: 10px; width: 100%; margin-left: auto;margin-right: auto;">
-            <h3 align="center" style="margin-bottom: 30px;">Events Predictions</h3>
+            <h3 align="center" style="margin-bottom: 30px;margin-top:10px">Events Predictions</h3>
             <!-- <el-row v-for="(item,index) in [Labels[currentPage - 1]]" :key="index" > -->
             <el-row v-for="(item,index) in activeLabel" :key="index">
                     <el-col :span="3"><el-button text="plain" type="" bg @click="locateLabel(item)" style="border-radius: 8px;"><el-link>{{ item.id }}</el-link></el-button></el-col>
@@ -63,7 +63,7 @@
             </el-row>
         </el-card>
     </el-row>
-    <el-row style="margin-top: 3em;">
+    <el-row style="margin-top: 1em;">
         <h5 style="display: block;margin: auto;">Comfirm the above events to rerun classifier</h5>
     </el-row>
     <el-row style="margin-top: 2em;">
