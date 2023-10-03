@@ -1,6 +1,6 @@
 <template>
     <el-popover 
-        :width="400" placement="top-start"
+        :width="440" placement="top-start"
         popper-style="box-shadow: rgb(14 18 22 / 35%) 0px 10px 38px -10px, rgb(14 18 22 / 20%) 0px 10px 20px -15px; padding: 20px;"
         >
         <template #reference>
@@ -16,8 +16,9 @@
                     <el-statistic :value="peakMR" precision="3">
                         <template #title>
                             <div style="display: inline-flex; align-items: center;font-weight: bold;font-size: 15px;">
-                                Peak MR Signal
+                                Peak MR Signal <h5>&nbsp(mV)</h5>
                             </div>
+                            
                         </template>
                     </el-statistic>
                     <div class="statistic-footer">
@@ -43,7 +44,7 @@
                     <el-statistic :value="peakML" precision="3">
                         <template #title>
                             <div style="display: inline-flex; align-items: center;font-weight: bold;font-size: 15px;">
-                                Peak ML Signal
+                                Peak ML Signal<h5>&nbsp(mV)</h5>
                             </div>
                         </template>
                     </el-statistic>
@@ -71,7 +72,7 @@
                     <el-statistic :value="avgMR" precision="3">
                         <template #title>
                             <div style="display: inline-flex; align-items: center;font-weight: bold;font-size: 15px;">
-                                Average MR Signal
+                                Average MR Signal<h5>&nbsp(mV)</h5>
                             </div>
                         </template>
                     </el-statistic>
@@ -98,7 +99,7 @@
                     <el-statistic :value="avgML" precision="3">
                         <template #title>
                             <div style="display: inline-flex; align-items: center;font-weight: bold;font-size: 15px;">
-                                Average ML Signal
+                                Average ML Signal<h5>&nbsp(mV)</h5>
                             </div>
                         </template>
                     </el-statistic>
