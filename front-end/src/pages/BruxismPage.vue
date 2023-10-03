@@ -73,8 +73,12 @@ export default {
         return {
             weekSummaryVisible: false,
             isShow: true,
-            imgsrc: require("@/assets/summary.png"),
+            // imgsrc: require("@/assets/summary.png"),
+            imgsrc: '',
          }
+    },
+    mounted(){
+        this.imgsrc= "http://127.0.0.1:5000/weekly-sum-img?skuid=p" + this.$store.state.patientId+'_w'+this.$store.state.week;
     },
     methods:{
         rerender(){
