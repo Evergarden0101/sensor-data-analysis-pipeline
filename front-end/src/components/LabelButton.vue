@@ -15,7 +15,7 @@ export default{
     methods:  {
         postLabel(){
             this.load = true;
-            const path = 'http://localhost:5000/label-brux';
+            const path = 'http://127.0.0.1:5000/label-brux';
             const payload = [];
 
             for(var i=0; i<this.labels.length; i++){
