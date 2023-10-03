@@ -114,12 +114,12 @@
                 </el-form-item>
 
                 <div v-if="generalInfoForm.studyType=='sleep' && generalInfoForm.activityType=='bruxism'">
-                    <el-form-item label="REM" required="true">
-                        <el-input-number v-model="samplingRateForm.REMSampling" :min="120" :max="1000" />
+                    <el-form-item label="Selected ranges" required="true">
+                        <el-input-number v-model="samplingRateForm.SelectedSampling" :min="120" :max="1000" />
                     </el-form-item>
 
-                    <el-form-item label="NREM" required="true">
-                        <el-input-number v-model="samplingRateForm.NREMSampling" :min="120" :max="256" />
+                    <el-form-item label="Non selected ranges" required="true">
+                        <el-input-number v-model="samplingRateForm.NonSelectedSampling" :min="120" :max="256" />
                     </el-form-item>
                 </div>
             </el-form>
@@ -232,8 +232,8 @@ export default {
 
             samplingRateForm: reactive({
                 originalSampling: ref(2000),
-                REMSampling: ref(1000),
-                NREMSampling: ref(256),
+                SelectedSampling: ref(1000),
+                NonSelectedSampling: ref(256),
             }),
 
             datasetInfoForm: reactive({
@@ -319,8 +319,8 @@ export default {
             this.generalInfoForm.studyType = this.settings.study_type;
             this.generalInfoForm.activityType = this.settings.activity;
             this.samplingRateForm.originalSampling = this.settings.original_sampling;
-            this.samplingRateForm.REMSampling = this.settings.REM_sampling;
-            this.samplingRateForm.NREMSampling = this.settings.NREM_sampling;
+            this.samplingRateForm.SelectedSampling = this.settings.selected_sampling;
+            this.samplingRateForm.NonSelectedSampling = this.settings.non_selected_sampling;
             this.samplingRateForm.fileFormat = this.settings.dataset_format;
 
             if(this.settings.normalized == 1){
@@ -407,8 +407,8 @@ export default {
                 "studyType": this.generalInfoForm.studyType,
                 "activityType": this.generalInfoForm.activityType,
                 "originalSampling": this.samplingRateForm.originalSampling,
-                "REMSampling": this.samplingRateForm.REMSampling,
-                "NREMSampling": this.samplingRateForm.NREMSampling,
+                "SelectedSampling": this.samplingRateForm.SelectedSampling,
+                "NonSelectedSampling": this.samplingRateForm.NonSelectedSampling,
                 "fileFormat": this.datasetInfoForm.fileFormat,
                 "filtered": this.datasetInfoForm.filtered,
                 "normalized": this.datasetInfoForm.normalized
@@ -422,9 +422,11 @@ export default {
             axios.post(path, payload, {headers})
             .then((res) => {
                 console.log(res);
+                this.settingsPosted = true;
             })
             .catch(err=>{
                 console.log(err)
+                this.settingsPosted = false;
             })
         },
         postSensors(){
@@ -458,6 +460,7 @@ export default {
             })
             .catch(err=>{
                 console.log(err)
+                this.settingsPosted = false;
             })
         },
         setError(){
@@ -558,8 +561,6 @@ export default {
                 this.postSettings();
                 this.postSensors();
                 this.formNumber = 1;
-                this.settingsPosted = true;
-
             }   
         }
     }

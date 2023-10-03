@@ -404,9 +404,16 @@ export default {
                             dataIndex: key
                         })
                     }
+                    myChart.dispatchAction({
+                        type: 'highlight',
+                        seriesIndex: params.seriesIndex,
+                        dataIndex: params.dataIndex
+                    })
                 } else {
                     for(let i=0; i<this.clicked.length; i++){
                         if (this.clicked[i][3] === 'rem'){
+                            console.log("CLICKED REM FIRST ENTERED")
+
                             let dataSeries = option.series[0].data;
                             for(const key in dataSeries){
                                 if (JSON.stringify(dataSeries[key]) === JSON.stringify(this.clicked[i])){
@@ -419,6 +426,7 @@ export default {
                                 } 
                             }
                         } else {
+                            console.log("CLICKED NREM FIRST ENTERED")
                             let dataSeries = option.series[1].data;
                             for(const key in dataSeries){
                                 if (JSON.stringify(dataSeries[key]) === JSON.stringify(this.clicked[i])){
@@ -441,6 +449,8 @@ export default {
                 if(JSON.stringify(this.clicked).includes(JSON.stringify(params.data))){
                     console.log("includes")
                     this.clicked = this.clicked.filter(item => !this.arrayEquals(item, params.data))
+                    console.log(params.seriesIndex)
+                    console.log(params.dataIndex)
                     myChart.dispatchAction({
                         type: 'downplay',
                         seriesIndex: params.seriesIndex,
@@ -458,6 +468,7 @@ export default {
                 }
 
               }
+              /*
             
               if (this.isEditMode) {
                 if (params.seriesIndex === 0) { // If the clicked series is 'rem'
@@ -474,6 +485,7 @@ export default {
                   let tileClicked = params.data;
                 }
               }
+              */
             });
 
               if (option && typeof option === "object") {

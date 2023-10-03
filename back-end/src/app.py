@@ -10,9 +10,9 @@ from utils import *
 import sys
 import pandas as pd
 from settings import *
-from scipy import stats
 import os
-import re
+from datetime import datetime
+
 
 """Example of possible structure for posting the label data"""
 def create_app(test_config=None):
@@ -140,7 +140,7 @@ def create_app(test_config=None):
             return f"{e}"
 
     @app.route("/selected-sleep-phases/<int:patient_id>/<int:week>/<string:night_id>", methods=["GET", "POST"])
-    def selected_rem_phases(patient_id, week, night_id):
+    def selected_phases(patient_id, week, night_id):
         if request.method == 'GET':
             try:
                 print("try")
@@ -162,6 +162,7 @@ def create_app(test_config=None):
             """
             try:
                 updates = request.json
+                print(night_id)
                 post_selected_updates(DATABASE, patient_id, week, night_id, updates)
 
                 return "sleep_stage_detection table updated successfully", 200
@@ -238,7 +239,7 @@ def create_app(test_config=None):
                     cur = con.cursor()
                     cur.execute("DELETE FROM settings")
                     params = tuple(settings.values())
-                    query = "INSERT  INTO settings (study_type, activity, original_sampling, REM_sampling, NREM_sampling, dataset_format, filtered, normalized) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+                    query = "INSERT  INTO settings (study_type, activity, original_sampling, selected_sampling, non_selected_sampling, dataset_format, filtered, normalized) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
                     cur.execute(query, params)
 
                 return "Inserted settings into DB", 200
@@ -285,15 +286,14 @@ def create_app(test_config=None):
     @app.route("/lineplot-data/<int:patient_id>/<int:week>/<string:night_id>", methods=["GET"])
     def get_lineplot_data(patient_id, week, night_id):
         try:
-            df = open_brux_csv(patient_id, week, night_id)
+            df = open_brux_csv(patient_id, week, night_id, columns=['MR', 'ML'])
 
             mr = df["MR"].values.tolist()
             ml = df["ML"].values.tolist()
-            su = df["SU"].values.tolist()
 
-            rem_ranges =  get_rem_intervals(patient_id, week, night_id, DATABASE)
+            selected_ranges =  get_selected_intervals(patient_id, week, night_id, DATABASE)
 
-            sampling_ranges = get_sampling_ranges(DATABASE, mr, ml, su, rem_ranges)
+            sampling_ranges = get_sampling_ranges(DATABASE, mr, ml, selected_ranges)
 
             resampled_ranges = get_resampled_ranges(DATABASE, sampling_ranges)
 

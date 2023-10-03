@@ -4,11 +4,14 @@ import neurokit2 as nk
 import numpy as np
 from settings import *
 
-
 # FUNCTIONS
 """Gets patient_id, week and night_id and return a pandas df"""
-def open_brux_csv(patient_id, week, night_id):
-    return pd.read_csv(DATA_PATH + f"p{patient_id}_w{week}/{night_id}cFnorm.csv")
+def open_brux_csv(patient_id, week, night_id, columns=[]):
+    if columns:
+        return pd.read_csv(DATA_PATH + f"p{patient_id}_w{week}/{night_id}cFnorm.csv", usecols=columns)
+    else:
+        return pd.read_csv(DATA_PATH + f"p{patient_id}_w{week}/{night_id}cFnorm.csv")
+
 
 """Gets complete patient df and return only the specified column"""
 def get_column_data_from_df(df, column_name):

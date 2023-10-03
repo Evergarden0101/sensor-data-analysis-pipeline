@@ -56,8 +56,8 @@ CREATE TABLE settings (
   study_type TEXT NOT NULL,
   activity TEXT NOT NULL,
   original_sampling INTEGER NOT NULL,
-  REM_sampling INTEGER NOT NULL,
-  NREM_sampling INTEGER NOT NULL,
+  selected_sampling INTEGER NOT NULL,
+  non_selected_sampling INTEGER NOT NULL,
   dataset_format TEXT NOT NULL,
   filtered BOOLEAN NOT NULL,
   normalized BOOLEAN NOT NULL
