@@ -99,14 +99,7 @@ export default {
                     'Start': 15.634,
                     'End': 19.127,
                     // 'Dur': 3.4875,
-                    'Confirm': true,
-                },
-                {
-                  'id': 'Label 4',
-                  'Start': 70.634,
-                  'End': 81.127,
-                  // 'Dur': 3.4875,
-                  'Confirm': true,
+                    'Confirm': false,
                 }
             ]
         },
