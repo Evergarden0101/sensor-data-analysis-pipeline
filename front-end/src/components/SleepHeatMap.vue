@@ -1,13 +1,6 @@
 <template>
     <h2 align="center">Patient: {{ this.$store.state.patientId }}, Week: {{ this.$store.state.week }}, Night id: {{ this.$store.state.nightId }}</h2>
     <h3 align="center">Threshold Filtering</h3>
-    <p align="center">Every row represents a sleep cycle (90 minutes).</p>
-    <p align="center">The color bars represent the level of uncertainity.
-        <el-tooltip placement="top" effect="light">
-            <template #content>The level of uncertainity is derived from the Standard deviation of the LF/HF measure of the Heart Rate Variability (HRV) analyis. <br /> The ranges to classify the different sleep stages were taken from the following study: <br /><a href="https://www.frontiersin.org/articles/10.3389/fphys.2017.01100/full">Herzig, David, et al. "Reproducibility of heart rate variability is parameter and sleep stage dependent." Frontiers in physiology 8 (2018): 1100.</a> </template>
-            <el-button size="small" circle ><el-icon><InfoFilled /></el-icon></el-button>
-        </el-tooltip>
-    </p>
 
     <el-row style="margin-top: 3%;">
         <el-col :span="7" :offset="5">
@@ -25,11 +18,11 @@
     </el-row>
 
   <div v-if="!error" class="buttons-container">
-    <el-button @click="toggleEditMode" v-if="!isEditMode">Select intervals of interest</el-button>
+    <el-button @click="toggleEditMode" v-if="!isEditMode">Edit intervals of interest</el-button>
     <el-popconfirm
     title="Save the selected intervals of interest?"
     confirm-button-text="Yes"
-    cancel-button-text="Select again"
+    cancel-button-text="No"
     @confirm="toggleEditMode"
     @cancel="exitEditMode"
     width="350">
@@ -49,7 +42,7 @@
         </span>
         <template #footer>
         <span class="dialog-footer">
-            <el-button @click="selectAgain">Select again</el-button>
+            <el-button @click="selectAgain">No</el-button>
             <el-button type="primary" @click="continueToBruxismPage">
                 Yes
             </el-button>
@@ -57,7 +50,7 @@
         </template>
   </el-dialog>
 
-  <el-row>
+  <el-row :align="middle">
         <el-col v-if="error" :span="24">
             <el-result
                 icon="error"
@@ -71,8 +64,41 @@
                 </template>
             </el-result>
         </el-col>
-        <el-col v-if="!error" :span="24" v-loading="loading" element-loading-text="The dataset is loading...it might take a couple of minutes.">
+        <el-col v-if="!error" :span="19" v-loading="loading" element-loading-text="The dataset is loading...it might take a couple of minutes.">
             <div id="chart-container" style="position: relative; height: 80vh; overflow: hidden;"></div>
+        </el-col>
+        <el-col :span="5" >
+            <el-card>
+                <template #header>
+                <div class="card-header">
+                    <span><b>Legend</b></span>
+                    <p>Every row represents a sleep cycle of 90 minutes (1.5 hour)</p>
+
+                </div>
+                </template>
+                <p>
+                    <div class="rem-box" style="margin-top: 3%; display: inline-block; margin-right: 4%; color:white; text-align: center; vertical-align: middle;">REM</div>REM interval (5 min)
+                </p>
+                <p>
+                    <div class="nrem-box" style="margin-top: 3%; display: inline-block; margin-right: 4%; vertical-align: middle;" />NREM interval (5 min)
+                </p>
+                <p>
+                    <div class="rem-visualmap" style="margin-top: 3%; display: inline-block; margin-right: 4%; color:white; text-align: center; vertical-align: middle;" />REM intervals uncertainity (SD) <el-tooltip placement="top" effect="light">
+            <template #content>The level of uncertainity is derived from the Standard deviation of the LF/HF measure of the Heart Rate Variability (HRV) analyis. <br /> The ranges to classify the different sleep stages were taken from the following study: <br /><a href="https://www.frontiersin.org/articles/10.3389/fphys.2017.01100/full">Herzig, David, et al. "Reproducibility of heart rate variability is parameter and sleep stage dependent." Frontiers in physiology 8 (2018): 1100.</a> </template>
+            <el-button size="small" circle ><el-icon><InfoFilled /></el-icon></el-button>
+        </el-tooltip>
+                </p>
+                <p>
+                    <div class="nrem-visualmap" style="margin-top: 3%; display: inline-block; margin-right: 4%; color:white; text-align: center; vertical-align: middle;" />NREM intervals uncertainity (SD) <el-tooltip placement="top" effect="light">
+            <template #content>The level of uncertainity is derived from the Standard deviation of the LF/HF measure of the Heart Rate Variability (HRV) analyis. <br /> The ranges to classify the different sleep stages were taken from the following study: <br /><a href="https://www.frontiersin.org/articles/10.3389/fphys.2017.01100/full">Herzig, David, et al. "Reproducibility of heart rate variability is parameter and sleep stage dependent." Frontiers in physiology 8 (2018): 1100.</a> </template>
+            <el-button size="small" circle ><el-icon><InfoFilled /></el-icon></el-button>
+        </el-tooltip>
+                </p>
+                <p>
+                    <div class="dashed-box" style="margin-top: 3%; display: inline-block; margin-right: 4%; vertical-align: middle;" />Selected intervals in default mode
+                </p>
+                <p><div class="box" style="margin-top: 3%; display: inline-block; margin-right: 4%; vertical-align: middle;"/>Selected intervals in edit mode</p>
+            </el-card>    
         </el-col>
     </el-row>
 </template>
@@ -99,9 +125,8 @@ export default {
     }
   },
   async mounted() {
+    await this.getCurrentlySelected();
     this.drawTreatHeatMap(this.$store.state.patientId, this.$store.state.week, this.$store.state.nightId);
-
-    await this.getCurrentlySelected()
   },
   methods: {
     open() {
@@ -302,7 +327,7 @@ export default {
                     },
                     position: 'right',
                     type: 'category',
-                    name: 'minutes',
+                    name: 'min',
                     data: minutes,
                     splitArea: {
                         show: true
@@ -315,7 +340,7 @@ export default {
                     },
                     type: 'category',
                     data: hours,
-                    name: 'hours',
+                    name: 'h',
                     splitArea: {
                         show: true
                     }
@@ -324,6 +349,7 @@ export default {
                     min: this.getMinSD(remDataJson, nremDataJson, "SD"),
                     max: this.getMaxSD(remDataJson, nremDataJson, "SD"),
                     text: ["high", "low"],
+                    formatter: 'Level of uncertainity: {value}',
                     dimension: 2,
                     inRange : {
                         color: ['#1919ff', '#CCCCFF'] //From bigger to smaller value ->
@@ -337,6 +363,7 @@ export default {
                     min: this.getMinSD(nremDataJson, remDataJson, "SD"),
                     max: this.getMaxSD(nremDataJson, remDataJson, "SD"),
                     text: ["high", "low"],
+                    formatter: 'Level of uncertainity: {value}',
                     dimension: 2,
                     inRange : {
                         color: ['#999999', '#eeeeee'] //From bigger to smaller value ->
@@ -346,6 +373,14 @@ export default {
                     orient: 'horizontal',
                     left: 'center',
                     bottom: '24%',
+                }, {
+                    dimension: 2,
+                    seriesIndex : 2,
+                    calculable: false,
+                    show: false,
+                    inRange: {
+                        color: []
+                    }
                 }],
                 series: [{
                     name: '<b>LF/HF ratio ± Standard Deviation (SD)</b>',
@@ -383,6 +418,16 @@ export default {
                             borderWidth: 3
                         }
                     }
+                }, {
+                    name: '<b>LF/HF ratio ± Standard Deviation (SD)</b>',
+                    type: 'heatmap',
+                    data: this.clicked,
+                    itemStyle: {
+                        borderColor: 'black',
+                        borderType: 'dashed',
+                        borderWidth: 2
+                    }
+                
                 }]
             };
 
@@ -390,7 +435,7 @@ export default {
             myChart.on('click', (params) => {
               console.log('Tile clicked:', params);
             
-
+            if(this.isEditMode){
               if(this.firstEnteredEditMode){
                 console.log("FIRST")
                 let remData = option.series[0].data
@@ -468,6 +513,7 @@ export default {
                 }
 
               }
+            }
               /*
             
               if (this.isEditMode) {
@@ -513,5 +559,47 @@ export default {
   transform: translateX(-50%);
   display: flex;
   gap: 10px;
+}
+
+.dashed-box {
+    width:50px;
+    height:40px;
+    border-style:dashed; border-width:3px;
+    position: relative; 
+}
+.box {
+    width:50px;
+    height:40px;
+    border-style: solid; border-width:3px;
+    position: relative; 
+}
+
+.rem-box {
+    width:50px;
+    height:40px;
+    background-color: #1919ff;
+    position: relative; 
+    line-height: 40px;
+}
+
+.nrem-box {
+    width:50px;
+    height:40px;
+    background-color: grey;
+    position: relative;
+}
+
+.rem-visualmap {
+    border-radius: 6px;
+    background-image: linear-gradient(to right, #1919ff, #CCCCFF);
+    width: 60px;
+    height: 20px;
+}
+
+.nrem-visualmap {
+    border-radius: 6px;
+    background-image: linear-gradient(to right, #999999, #eeeeee);
+    width: 60px;
+    height: 20px;
 }
 </style>
