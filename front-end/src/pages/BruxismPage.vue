@@ -27,7 +27,7 @@
     <el-row style="margin-top: 2em;margin-bottom: 2em;height: 30px;overflow: visible; ">
         <el-col :span="3" :offset="20" style="margin-top: -150px;height: 130px;">
             <div class="affix-container">
-                <el-affix target=".affix-container" :offset="20">
+                <el-affix target=".affix-container" :offset="10">
                     <p style="display: block;margin:0 auto 50px auto;text-align: center;">Weekly Summary</p>
                     <el-button @click="rerender" style="width: 200px;padding: 0;border: 0;">
                         <el-image :src="imgsrc" :fit="contain" width="200px" @click="rerender"/>
@@ -42,7 +42,7 @@
 
     <el-row>
         <el-col :span="11" style="padding-left: 1.5em;">
-            <el-affix :offset="20">
+            <el-affix :offset="10">
                 <BruxismLabel/>
             </el-affix>
         </el-col>

@@ -54,6 +54,8 @@ export default {
             error: false,
             remPhases: [],
             loading: ref(true),
+            plotHeight: 0,
+            plotWidth: 0,
         }
     },
     async mounted() {
@@ -99,14 +101,7 @@ export default {
                     'Start': 15.634,
                     'End': 19.127,
                     // 'Dur': 3.4875,
-                    'Confirm': true,
-                },
-                {
-                  'id': 'Label 4',
-                  'Start': 70.634,
-                  'End': 81.127,
-                  // 'Dur': 3.4875,
-                  'Confirm': true,
+                    'Confirm': false,
                 }
             ]
         },
@@ -237,8 +232,8 @@ export default {
         drawLabel(channel, start, end){
             console.log('labels')
             var margin = {top: 10, right: 100, bottom: 40, left: 40};
-            var height = document.body.clientHeight/4 - margin.top - margin.bottom;
-            var width = document.body.clientWidth/2 - margin.left - margin.right;
+            var height = this.plotHeight;
+            var width = this.plotWidth;
             var x = d3.scaleLinear()
                 // .domain(d3.extent(data, function(d) { return d.year; }))
                 .domain([start, end])
@@ -278,9 +273,18 @@ export default {
             var csv = this.csvToJson(this.data)
 
             // set the dimensions and margins of the graph
-            var margin = {top: 10, right: 100, bottom: 40, left: 40},
-                width = document.body.clientWidth/2 - margin.left - margin.right,
-                height = document.body.clientHeight/4 - margin.top - margin.bottom;
+            var margin = {top: 10, right: 100, bottom: 40, left: 40};
+            if(this.plotHeight == 0){
+                this.plotHeight = document.body.clientHeight/4 - margin.top - margin.bottom;
+                if(this.plotHeight < 300){
+                    this.plotHeight = 300;
+                }
+            }
+            if(this.plotWidth == 0){
+                this.plotWidth = document.body.clientWidth/2 - margin.left - margin.right;
+            }
+            var height = this.plotHeight;
+            var width = this.plotWidth;
 
             // append the svg object to the body of the page
             if(channel == 'MR'){
