@@ -1,36 +1,39 @@
 <template>
     <el-row>
-        <el-card class="box-card" style="border: solid 1px;border-radius: 10px; width: 100%; margin-left: auto;margin-right: auto;">
-            <h3 align="center" style="margin-bottom: 30px;margin-top:10px">Events Predictions</h3>
+        <el-card class="box-card" style="border: solid 1px;border-radius: 10px; width: 100%; margin-left: auto;margin-right: auto; padding:0">
+            <h3 align="center" style="margin-bottom: 20px;margin-top:-5px">Events Predictions</h3>
             <!-- <el-row v-for="(item,index) in [Labels[currentPage - 1]]" :key="index" > -->
-            <el-row v-for="(item,index) in activeLabel" :key="index">
-                    <el-col :span="3"><el-button text="plain" type="" bg @click="locateLabel(item)" style="border-radius: 8px;"><el-link>{{ item.id }}</el-link></el-button></el-col>
-                    <el-col :span="21">
-                        <el-form :inline="true" :model="Labels" class="demo-form-inline">
-                            <el-form-item label="Start:" style="margin-left: 1em;">
-                                <el-input-number v-model="item.Start" :placeholder="item.Start" style="width: 65px;" 
-                                :controls="false" :disabled="!item.Confirm" @change="rerun = true"/>
-                                <el-text size="large" style="margin-left: 0.3em;">s</el-text>
-                            </el-form-item>
-                            <el-form-item label="End:" style="margin-left: 1em;">
-                                <el-input-number v-model="item.End" :placeholder="item.End" style="width: 65px;" 
-                                :controls="false" :disabled="!item.Confirm" @change="rerun = true"/>
-                                <el-text size="large" style="margin-left: 0.3em;">s</el-text>
-                            </el-form-item>
-                            <el-form-item label="Duration:" style="margin-left: 1em;">
-                                <el-input-number v-model="item.Dur" :placeholder="item.Dur" style="width: 65px;" 
-                                :disabled="true" :controls="false" />
-                                <el-text size="large" style="margin-left: 0.3em;">s</el-text>
-                            </el-form-item>
-                            <el-switch v-model="item.Confirm" :active-icon="CircleCheckFilled" :inactive-icon="CircleCloseFilled" 
-                            style="margin-left: 1em;margin-right: 2em;--el-switch-on-color: #13ce66; --el-switch-off-color: #ff4949" size="small" 
-                            active-text="Confirm Event" inactive-text="Discard Event" @change="rerun = true"/>
-                            <LabelInfoCard :label-id="item.id"/>
-                        </el-form>
-                        
-                    </el-col>
-                    <el-divider />
-            </el-row>
+            <div style="overflow: auto; max-height: 400px" v-infinite-scroll="loadLabel" infinite-scroll-disabled="disabled">
+                <el-row v-for="(item,index) in activeLabel.slice(0,count)" :key="index">
+                        <el-col :span="3"><el-button text="plain" type="" bg @click="locateLabel(item)" style="border-radius: 8px;"><el-link>{{ item.id }}</el-link></el-button></el-col>
+                        <el-col :span="21">
+                            <el-form :inline="true" :model="Labels" class="demo-form-inline">
+                                <el-form-item label="Start:" style="margin-left: 1em;">
+                                    <el-input-number v-model="item.Start" :placeholder="item.Start" style="width: 65px;" 
+                                    :controls="false" :disabled="!item.Confirm" @change="rerun = true"/>
+                                    <el-text size="large" style="margin-left: 0.3em;">s</el-text>
+                                </el-form-item>
+                                <el-form-item label="End:" style="margin-left: 1em;">
+                                    <el-input-number v-model="item.End" :placeholder="item.End" style="width: 65px;" 
+                                    :controls="false" :disabled="!item.Confirm" @change="rerun = true"/>
+                                    <el-text size="large" style="margin-left: 0.3em;">s</el-text>
+                                </el-form-item>
+                                <el-form-item label="Duration:" style="margin-left: 1em;">
+                                    <el-input-number v-model="item.Dur" :placeholder="item.Dur" style="width: 65px;" 
+                                    :disabled="true" :controls="false" />
+                                    <el-text size="large" style="margin-left: 0.3em;">s</el-text>
+                                </el-form-item>
+                                <el-switch v-model="item.Confirm" :active-icon="CircleCheckFilled" :inactive-icon="CircleCloseFilled" 
+                                style="margin-left: 1em;margin-right: 2em;--el-switch-on-color: #13ce66; --el-switch-off-color: #ff4949" size="small" 
+                                active-text="Confirm Event" inactive-text="Discard Event" @change="rerun = true"/>
+                                <LabelInfoCard :label-id="item.id"/>
+                            </el-form>
+                        </el-col>
+                        <el-divider style="margin-top: 0px;margin-bottom:15px"/>
+                </el-row>
+                <el-text class="mx-1" type="warning" style="text-align:center;display:block;margin:auto" v-if="loadingLabel">Loading...</el-text>
+                <el-text class="mx-1" type="warning" style="text-align:center;display:block;margin:auto" v-if="noMoreLabel">End of Events</el-text>
+            </div>
             <!-- <el-row>
                 <el-pagination v-model:current-page="currentPage" :page-size="1"
                 layout="prev, pager, next, jumper" :total="labelNum" style="display: flex;margin: auto;"
@@ -66,7 +69,7 @@
     <el-row style="margin-top: 1em;">
         <h5 style="display: block;margin: auto;">Comfirm the above events to rerun classifier</h5>
     </el-row>
-    <el-row style="margin-top: 2em;">
+    <el-row style="margin-top: 1em;">
         <LabelButton :labels="Labels" color="#626aef" plain size="large"
             style="display: block;margin: 0 auto"/>
 
@@ -75,13 +78,35 @@
             Rerun Bruxism Classification
         </el-button> -->
     </el-row>
-    <el-row style="margin-top: 1em;">
-        <el-progress style="display: block;margin: 0 auto" type="dashboard" :percentage="accuracy" width="80" stroke-width="4" :color="colors" >
-            <template #default="{ percentage }">
-                <h3 class="percentage-value">{{ percentage }}%</h3>
-                <h5 class="percentage-label">Accuracy</h5>
-            </template>
-        </el-progress>
+    <el-row style="margin-top: 2em;">
+        <el-col :offset="4" :span="8">
+            <el-row>
+                <el-progress style="display:block;margin: 0 auto" type="dashboard" :percentage="studyAccuracy" width="80" stroke-width="4" :color="colors" >
+                    <template #default="{ percentage }">
+                        <h3 class="percentage-value">{{ percentage }}%</h3>
+                        <h5 class="percentage-label">Accuracy</h5>
+                    </template>
+                </el-progress>
+            </el-row>
+            <el-row style="text-align:center">
+                <h5 style="display:block; margin: 5px auto">Model Performance for whole Study</h5>
+            </el-row>
+        </el-col>
+
+        <el-col :span="8">
+            <el-row>
+                <el-progress style="display:block; margin: 0 auto" type="dashboard" :percentage="patientAccuracy" width="80" stroke-width="4" :color="colors" >
+                    <template #default="{ percentage }">
+                        <h3 class="percentage-value">{{ percentage }}%</h3>
+                        <h5 class="percentage-label">Accuracy</h5>
+                    </template>
+                </el-progress>
+            </el-row>
+
+            <el-row style="text-align:center">
+                <h5 style="display:block; margin: 5px auto">Model Performance for Patient {{ this.$store.state.patientId }}</h5>
+            </el-row>
+        </el-col>
     </el-row>
     <div></div>
 </template>
@@ -105,6 +130,8 @@ export default {
             currentPage: 1,
             rerun: false,
             load:false,
+            loadingLabel: false,
+            count: 3,
             dialogFormVisible: false,
             formLabelWidth: '100px',
             form:{'id':'','Start':0,'End':0},
@@ -115,12 +142,19 @@ export default {
                 { color: '#1989fa', percentage: 80 },
                 { color: '#6f7ad3', percentage: 100 },
             ],
-            accuracy: 80.23,
+            studyAccuracy: 80.23,
+            patientAccuracy: 80.23,
         }
     },
     computed: {
         activeLabel() {
             return this.Labels.filter((item) => item.Start<this.$store.state.endPoint && item.End>this.$store.state.startPoint)
+        },
+        noMoreLabel () {
+            return this.count >= this.activeLabel.length
+        },
+        disabled () {
+            return this.loading || this.noMoreLabel
         }
     },
     methods: {
@@ -146,6 +180,13 @@ export default {
         handleCurrentChange(page){
             this.currentPage = page;
             console.log(`current page: ${this.currentPage}`)
+        },
+        loadLabel() {
+            this.loadingLabel = true
+            setTimeout(() => {
+                this.count += 2
+                this.loadingLabel = false
+            }, 2000)
         },
         loadAll() {
             return [
