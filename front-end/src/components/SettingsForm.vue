@@ -109,16 +109,16 @@
     <div v-if="formNumber === 3">
         <p><b>Sampling rates</b></p>
             <el-form :model="samplingRateForm">
-                <el-form-item label="Original" required="true">
+                <el-form-item label="Original (Hz)" required="true">
                         <el-input-number v-model="samplingRateForm.originalSampling" :min="120" :max="2000" />
                 </el-form-item>
 
                 <div v-if="generalInfoForm.studyType=='sleep' && generalInfoForm.activityType=='bruxism'">
-                    <el-form-item label="Selected ranges" required="true">
+                    <el-form-item label="Selected ranges (Hz)" required="true">
                         <el-input-number v-model="samplingRateForm.SelectedSampling" :min="120" :max="1000" />
                     </el-form-item>
 
-                    <el-form-item label="Non selected ranges" required="true">
+                    <el-form-item label="Non selected ranges (Hz)" required="true">
                         <el-input-number v-model="samplingRateForm.NonSelectedSampling" :min="120" :max="256" />
                     </el-form-item>
                 </div>
