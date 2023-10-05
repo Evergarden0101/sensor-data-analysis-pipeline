@@ -1,37 +1,32 @@
 <template>
-    <h2 align="center">Patient: {{ this.$store.state.patientId }}, Week: {{ this.$store.state.week }}, Night id: {{ this.$store.state.nightId }}</h2>
-    <h3 align="center">Threshold Filtering</h3>
-
-    <el-row style="margin-top: 3%;">
-        <el-col :span="7" :offset="5">
+    <div style="margin-top: 12%; text-align: center;">
+        <div style="display: inline-block;">
             <router-link :to="'/patient-data/'">
                 <el-button type="primary" plain><el-icon class="el-icon--left"><ArrowLeft /></el-icon> Patient Information</el-button>
             </router-link>
-        </el-col>
-        <el-col :span="7" :offset="5">
+        </div>
+        <div v-if="!error" style="display: inline-block; padding-left:700px; padding-right: 700px;">
+            <el-button @click="toggleEditMode" v-if="!isEditMode">Edit intervals of interest</el-button>
+            <el-popconfirm
+            title="Save the selected intervals of interest?"
+            confirm-button-text="Yes"
+            cancel-button-text="No"
+            @confirm="toggleEditMode"
+            @cancel="exitEditMode"
+            width="350">
+                <template #reference>
+                    <el-button v-if="isEditMode"> Save</el-button>
+                </template>
+            </el-popconfirm>
+        </div>
+        <div style="display: inline-block;">
             <router-link :to="'/bruxism/'">
-                <el-button v-if="!error" type="primary" plain>
+                <el-button v-if="!error && !isEditMode" type="primary" plain>
                     Events Detection<el-icon class="el-icon--right"><ArrowRight /></el-icon>
                 </el-button>
             </router-link>
-        </el-col>
-    </el-row>
-
-  <div v-if="!error" class="buttons-container">
-    <el-button @click="toggleEditMode" v-if="!isEditMode">Edit intervals of interest</el-button>
-    <el-popconfirm
-    title="Save the selected intervals of interest?"
-    confirm-button-text="Yes"
-    cancel-button-text="No"
-    @confirm="toggleEditMode"
-    @cancel="exitEditMode"
-    width="350">
-        <template #reference>
-            <el-button v-if="isEditMode"> Save</el-button>
-        </template>
-    </el-popconfirm>
-  </div>
-
+        </div>
+    </div>
     <div v-if="selectedPosted">
         <el-alert title="Selected intervals selected successfully." type="success" center show-icon /> 
     </div>
@@ -64,41 +59,8 @@
                 </template>
             </el-result>
         </el-col>
-        <el-col v-if="!error" :span="19" v-loading="loading" element-loading-text="The dataset is loading...it might take a couple of minutes.">
+        <el-col v-if="!error" :span="24" v-loading="loading" element-loading-text="The dataset is loading...it might take a couple of minutes.">
             <div id="chart-container" style="position: relative; height: 80vh; overflow: hidden;"></div>
-        </el-col>
-        <el-col :span="5" >
-            <el-card>
-                <template #header>
-                <div class="card-header">
-                    <span><b>Legend</b></span>
-                    <p>Every row represents a sleep cycle of 90 minutes (1.5 hour)</p>
-
-                </div>
-                </template>
-                <p>
-                    <div class="rem-box" style="margin-top: 3%; display: inline-block; margin-right: 4%; color:white; text-align: center; vertical-align: middle;">REM</div>REM interval (5 min)
-                </p>
-                <p>
-                    <div class="nrem-box" style="margin-top: 3%; display: inline-block; margin-right: 4%; vertical-align: middle;" />NREM interval (5 min)
-                </p>
-                <p>
-                    <div class="rem-visualmap" style="margin-top: 3%; display: inline-block; margin-right: 4%; color:white; text-align: center; vertical-align: middle;" />REM intervals uncertainity (SD) <el-tooltip placement="top" effect="light">
-            <template #content>The level of uncertainity is derived from the Standard deviation of the LF/HF measure of the Heart Rate Variability (HRV) analyis. <br /> The ranges to classify the different sleep stages were taken from the following study: <br /><a href="https://www.frontiersin.org/articles/10.3389/fphys.2017.01100/full">Herzig, David, et al. "Reproducibility of heart rate variability is parameter and sleep stage dependent." Frontiers in physiology 8 (2018): 1100.</a> </template>
-            <el-button size="small" circle ><el-icon><InfoFilled /></el-icon></el-button>
-        </el-tooltip>
-                </p>
-                <p>
-                    <div class="nrem-visualmap" style="margin-top: 3%; display: inline-block; margin-right: 4%; color:white; text-align: center; vertical-align: middle;" />NREM intervals uncertainity (SD) <el-tooltip placement="top" effect="light">
-            <template #content>The level of uncertainity is derived from the Standard deviation of the LF/HF measure of the Heart Rate Variability (HRV) analyis. <br /> The ranges to classify the different sleep stages were taken from the following study: <br /><a href="https://www.frontiersin.org/articles/10.3389/fphys.2017.01100/full">Herzig, David, et al. "Reproducibility of heart rate variability is parameter and sleep stage dependent." Frontiers in physiology 8 (2018): 1100.</a> </template>
-            <el-button size="small" circle ><el-icon><InfoFilled /></el-icon></el-button>
-        </el-tooltip>
-                </p>
-                <p>
-                    <div class="dashed-box" style="margin-top: 3%; display: inline-block; margin-right: 4%; vertical-align: middle;" />Selected intervals in default mode
-                </p>
-                <p><div class="box" style="margin-top: 3%; display: inline-block; margin-right: 4%; vertical-align: middle;"/>Selected intervals in edit mode</p>
-            </el-card>    
         </el-col>
     </el-row>
 </template>
@@ -108,6 +70,7 @@ import * as echarts from 'echarts';
 import axios from 'axios';
 import { ref } from 'vue';
 import { ElMessage } from 'element-plus';
+import SleepHeatMapLegend from './SleepHeatMapLegend.vue';
 
 export default {
   name: 'SleepHeatMap',
@@ -123,6 +86,9 @@ export default {
       selectedPosted: false,
       noSelectedError: false
     }
+  },
+  components: {
+    SleepHeatMapLegend
   },
   async mounted() {
     await this.getCurrentlySelected();
@@ -389,11 +355,11 @@ export default {
                     label: {
                         show: true,
                         formatter: (param) => {
-                            if (param.data[3]  === 'rem'){
+                            if (JSON.stringify(this.clicked).includes(JSON.stringify(param.data))){
+                                return 'REM *'
+
+                            } else {
                                 return 'REM'
-                            }
-                            else{
-                                return ''
                             }
 
                         }
@@ -410,6 +376,17 @@ export default {
                     name: '<b>LF/HF ratio ± Standard Deviation (SD)</b>',
                     type: 'heatmap',
                     data: nremData,
+                    label: {
+                        show: true,
+                        formatter: (param) => {
+                            if (JSON.stringify(this.clicked).includes(JSON.stringify(param.data))){
+                                return '*'
+
+                            } else {
+                                return ''
+                            }
+                        }
+                    },
                     emphasis: {
                         itemStyle: {
                             shadowBlur: 10,
@@ -514,24 +491,6 @@ export default {
 
               }
             }
-              /*
-            
-              if (this.isEditMode) {
-                if (params.seriesIndex === 0) { // If the clicked series is 'rem'
-
-                    console.log("CLICKED REM")
-                  // Remove from 'rem' dataset
-                  let tileClicked = params.data;
-
-                  console.log(params.data)
-
-                } else if (params.seriesIndex === 1) { // If the clicked series is 'nrem'
-                  // Remove from 'nrem' dataset
-                  console.log("CLICKED NREM")
-                  let tileClicked = params.data;
-                }
-              }
-              */
             });
 
               if (option && typeof option === "object") {
@@ -559,47 +518,5 @@ export default {
   transform: translateX(-50%);
   display: flex;
   gap: 10px;
-}
-
-.dashed-box {
-    width:50px;
-    height:40px;
-    border-style:dashed; border-width:3px;
-    position: relative; 
-}
-.box {
-    width:50px;
-    height:40px;
-    border-style: solid; border-width:3px;
-    position: relative; 
-}
-
-.rem-box {
-    width:50px;
-    height:40px;
-    background-color: #1919ff;
-    position: relative; 
-    line-height: 40px;
-}
-
-.nrem-box {
-    width:50px;
-    height:40px;
-    background-color: grey;
-    position: relative;
-}
-
-.rem-visualmap {
-    border-radius: 6px;
-    background-image: linear-gradient(to right, #1919ff, #CCCCFF);
-    width: 60px;
-    height: 20px;
-}
-
-.nrem-visualmap {
-    border-radius: 6px;
-    background-image: linear-gradient(to right, #999999, #eeeeee);
-    width: 60px;
-    height: 20px;
 }
 </style>
