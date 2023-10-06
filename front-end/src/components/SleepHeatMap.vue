@@ -1,11 +1,11 @@
 <template>
-    <div style="margin-top: 12%; text-align: center;">
+    <div style="text-align: center;">
         <div style="display: inline-block;">
             <router-link :to="'/patient-data/'">
                 <el-button type="primary" plain><el-icon class="el-icon--left"><ArrowLeft /></el-icon> Patient Information</el-button>
             </router-link>
         </div>
-        <div v-if="!error" style="display: inline-block; padding-left:700px; padding-right: 700px;">
+        <div v-if="!error" style="display: inline-block; padding-left: 12%; padding-right: 12%;">
             <el-button @click="toggleEditMode" v-if="!isEditMode">Edit intervals of interest</el-button>
             <el-popconfirm
             title="Save the selected intervals of interest?"
@@ -21,7 +21,7 @@
         </div>
         <div style="display: inline-block;">
             <router-link :to="'/bruxism/'">
-                <el-button v-if="!error && !isEditMode" type="primary" plain>
+                <el-button v-if="!error" type="primary" plain :disabled="isEditMode">
                     Events Detection<el-icon class="el-icon--right"><ArrowRight /></el-icon>
                 </el-button>
             </router-link>

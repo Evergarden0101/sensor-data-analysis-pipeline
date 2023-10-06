@@ -3,7 +3,7 @@
 <div class="common-layout">
     <el-container>
       <el-container>
-        <el-header>
+        <el-header style="margin-bottom: 22%;">
             <h1 style="text-align: center;">This is the Sleep Stage Detection page!</h1>
             <el-row style="margin-top: 2%;">
                 <el-col :span="14" :offset="6">
@@ -11,8 +11,6 @@
                 </el-col>
                 
             </el-row>
-            
-
             <h2 align="center" style="margin-top: 3%;">Patient: {{ this.$store.state.patientId }}, Week: {{ this.$store.state.week }}, Night id: {{ this.$store.state.nightId }}</h2>
             <h3 align="center">Threshold Filtering</h3>
         </el-header>
