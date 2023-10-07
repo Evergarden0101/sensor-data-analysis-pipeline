@@ -106,7 +106,7 @@ def retrieve_patient_recording(DATABASE, patient_id, week, day, range_min, SAMPL
 def insert_label(DATABASE, label):
     with sql.connect(DATABASE) as con:
         cur = con.cursor()
-        cur.execute(f"INSERT INTO confirmed_labels (patient_id, week, night_id, recorder, location_begin, location_end, corrected) VALUES {label}")
+        cur.execute(f"INSERT INTO confirmed_labels (patient_id, week, night_id, label_id, location_begin, location_end, corrected) VALUES {label['patient_id'],label['week'],label['night_id'],label['label_id'],label['location_begin'],label['location_end'],label['corrected']}")
 
 def run_prediction(DATABASE, patient_id, week, night_id):
     try:
