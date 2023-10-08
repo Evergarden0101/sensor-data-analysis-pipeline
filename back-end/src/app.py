@@ -324,10 +324,11 @@ def create_app(test_config=None):
             # img_stream = return_img_stream(img_path)
             # return render_template('BruxismPage.vue',
             #                     img_stream=img_stream)
-            skuid = request.args.get('skuid')
-            print('skuid: ', skuid)
-            img_local_path =  DATA_PATH + f"{skuid}/summary.png"
+            patient_id = request.args.get('p')
+            week = request.args.get('w')
+            img_local_path =  DATA_PATH +"p"+str(patient_id)+"_w"+str(week)+ f"/summary.png"
             print('img_local_path: ',img_local_path)
+            generate_weekly_sum_img(DATABASE, img_local_path)
             img_f = open(img_local_path, 'rb')
             print(img_f)
             res = make_response(img_f.read())   # 用flask提供的make_response 方法来自定义自己的response对象

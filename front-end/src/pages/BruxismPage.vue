@@ -28,7 +28,7 @@
         <el-col :span="3" :offset="20" style="margin-top: -150px;height: 130px;">
             <div class="affix-container">
                 <el-affix target=".affix-container" :offset="10">
-                    <p style="display: block;margin:0 auto 50px auto;text-align: center;">Weekly Summary</p>
+                    <p style="display: block;margin:0 auto 60px auto;text-align: center;">Weekly Summary</p>
                     <el-button @click="rerender" style="width: 200px;padding: 0;border: 0;">
                         <el-image :src="imgsrc" :fit="contain" width="200px" @click="rerender"/>
                     </el-button>
@@ -78,7 +78,7 @@ export default {
          }
     },
     mounted(){
-        this.imgsrc= "http://127.0.0.1:5000/weekly-sum-img?skuid=p" + this.$store.state.patientId+'_w'+this.$store.state.week;
+        this.imgsrc= "http://127.0.0.1:5000/weekly-sum-img?p=" + this.$store.state.patientId+'&w='+this.$store.state.week;
     },
     methods:{
         rerender(){
