@@ -116,6 +116,7 @@ import { CircleCheckFilled, CircleCloseFilled } from '@element-plus/icons-vue'
 import LabelButton from '@/components/LabelButton.vue'
 import LabelInfoCard from '@/components/LabelInfoCard.vue'
 import { computed } from "vue"
+import axios from 'axios';
 
 export default {
     name: 'BruxismLabel',
@@ -169,6 +170,8 @@ export default {
         },
         submitNewLable(){
             this.form.id = (this.labelNum + 1);
+            this.form.Location_begin = this.form.Start * this.$store.state.samplingRate;
+            this.form.Location_end = this.form.End * this.$store.state.samplingRate;
             // this.form.Dur = computed(()=>{  return this.form.End - this.form.Start;})
             this.Labels.push(this.form);
             this.Labels[this.labelNum].Confirm = true;
@@ -192,15 +195,48 @@ export default {
             setTimeout(() => {
                 this.count += 2
                 this.loadingLabel = false
-            }, 2000)
+            }, 200)
         },
         computeDur(){
             this.labelNum = 0;
+            let samplingRate = this.$store.state.samplingRate;
             for (let label in this.Labels){
                 // console.log(this.Labels[label])
+                // this.Labels[label].Start = Math.floor(this.Labels[label].Location_begin / samplingRate * 1000) / 1000;
+                // this.Labels[label].End = Math.floor(this.Labels[label].Location_end / samplingRate * 1000) / 1000;
                 this.Labels[label].Dur = computed(()=>{  return this.Labels[label].End - this.Labels[label].Start  })
+                this.Labels[label].Confirm = true
                 this.labelNum ++;
             }
+        },
+        loadPredLabels(){
+            const path = `http://127.0.0.1:5000/label-brux/${this.$store.state.patientId}/${this.$store.state.week}/${this.$store.state.nightId}`
+            const headers = {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*',
+                    'Access-Control-Allow-Methods': 'GET',
+                    'Access-Control-Max-Age': "3600",
+                    'Access-Control-Allow-Credentials': "true",
+                    'Access-Control-Allow-Headers': 'Content-Type'
+            };
+
+            axios.get(path, {headers})
+                .then((res) => {
+                    console.log("Data received");
+                    // this.loading = ref(false);
+                    console.log(res.data[0])
+                    this.Labels = res.data;
+                    this.$nextTick(() => {
+                        this.computeDur();
+                        this.$store.commit('saveLabels',JSON.stringify(this.Labels));
+                    })
+                    // return res.data;
+                })
+                .catch(err=>{
+                    console.log(err)
+                })
+            
         },
         loadAll() {
             return [
@@ -232,6 +268,7 @@ export default {
         this.Labels = this.loadAll();
         this.computeDur();
         this.$store.commit('saveLabels',JSON.stringify(this.Labels));
+        // await this.loadPredLabels();
         //   this.submit = computed(()=>{return localStorage.getItem('submit')});
         //   this.rerun = computed(()=>{return localStorage.getItem('rerun')});
     },
