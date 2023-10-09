@@ -58,7 +58,7 @@ export default {
             plotWidth: 0,
         }
     },
-    async mounted() {
+    mounted() {
         // await this.loadAllPred();
         this.predLabels = JSON.parse(this.$store.state.labels);
         this.start = this.$store.state.plotStart;
@@ -67,16 +67,17 @@ export default {
         // this.checkedMR = this.$store.state.checkedMR;
         this.data = dataset;
         if(this.data == null){
-            await this.loadLinePlotData(this.$store.state.patientId, this.$store.state.week, this.$store.state.nightId);
+            this.loadLinePlotData(this.$store.state.patientId, this.$store.state.week, this.$store.state.nightId);
             this.loading = ref(false);
         }else{
             if(this.start == 0 && this.end == 0){
                 this.end = (this.data.length-1)/this.freq;
             }
             this.$store.commit('updataPoint',{startPoint:this.start, endPoint:Math.floor(this.end * 1000) / 1000})
-            if(this.checkedMR) await this.drawLineplot('MR',this.start,this.end);
-            if(this.checkedML) await this.drawLineplot('ML',this.start,this.end);
             this.loading = ref(false);
+            if(this.checkedMR) this.drawLineplot('MR',this.start,this.end);
+            if(this.checkedML) this.drawLineplot('ML',this.start,this.end);
+            console.log('finish')
         }
 
     },
@@ -243,6 +244,9 @@ export default {
 
             var line = d3.select("#"+channel);
             console.log(this.predLabels)
+            if(this.predLabels == null || this.predLabels.length == 0){
+                return;
+            }
             var rects = line
                             .selectAll("rect")
                             .data(this.predLabels)

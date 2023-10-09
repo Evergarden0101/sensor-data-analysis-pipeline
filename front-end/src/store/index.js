@@ -24,8 +24,9 @@ const store = createStore({
       plotEnd: 0,
       checkedMR: true,
       checkedML: true,
-      labels: [],
+      labels: null,
       samplingRate: 2000,
+      bruxLabelKey: 0,
     }
   },
   mutations: {
@@ -60,7 +61,13 @@ const store = createStore({
     },
     updateSamplingRate(state, payload){
       state.samplingRate = payload;
-    }
+    },
+    updateBruxLabelKey(state){
+      state.bruxLabelKey++;
+    },
+    clearLabels(state){
+      state.labels = null;
+    },
   },
   plugins: [vuexLocal.plugin],
 
