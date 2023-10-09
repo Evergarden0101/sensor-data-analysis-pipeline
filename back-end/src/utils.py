@@ -104,7 +104,14 @@ def retrieve_patient_recording(DATABASE, patient_id, week, day, range_min, SAMPL
             else:
                 print('DOES NOT EXIST', file=sys.stderr)
                 return f"There is no data for patient with id {patient_id} on day {day} of week {week}", 404
-            
+
+
+"""Delete predicted label for a specific patient in the Database"""
+def remove_pred_label(DATABASE, label):
+    with sql.connect(DATABASE) as con:
+        cur = con.cursor()
+        cur.execute(f"DELETE FROM Predicted_labels WHERE patient_id={label.patient_id} AND week={label.week} AND night_id={label.night_id} AND label_id={label.label_id}")
+
 
 """Insert label for a specific patient in the Database"""
 def insert_label(DATABASE, label):
@@ -112,17 +119,40 @@ def insert_label(DATABASE, label):
         cur = con.cursor()
         cur.execute(f"INSERT INTO confirmed_labels (patient_id, week, night_id, label_id, location_begin, location_end, corrected) VALUES {label['patient_id'],label['week'],label['night_id'],label['label_id'],label['location_begin'],label['location_end'],label['corrected']}")
 
+"""TODO: Run Prediction"""
+def predict_events(model, patient_id, week, night_id):
+    print("Not implemented yet")
+
+
+"""TODO: check predictions"""
 def run_prediction(DATABASE, patient_id, week, night_id):
     try:
         with sql.connect(DATABASE) as con:
             cur = con.cursor()
-            cur.execute(f"SELECT * FROM confirmed_labels WHERE patient_id={patient_id} AND week={week} AND night_id={night_id}")
+            cur.execute(f"SELECT * FROM predicted_labels WHERE patient_id={patient_id} AND week={week} AND night_id={night_id}")
             labels = cur.fetchall()
-
+            print(labels)
             if labels:
-                return labels
+                print("Labels already exist")
+                return
+                
+            cur.execute(f"SELECT * FROM models WHERE patient_id={patient_id}")
+            model = cur.fetchall()
+            if model:
+                print("Model already exist")
+                predict_events(model[0],patient_id, week, night_id)
             else:
-                return "No labels for this patient"
+                print("Model does not exist")
+                loc_file = DATA_PATH + f"p{patient_id}_w{week}/{night_id}clocation_Bites.csv"
+                loc = pd.read_csv(loc_file)
+                print(loc)
+                for i,row in loc.iterrows():
+
+                    params = (patient_id, week, night_id, i+1, row['Location Begin'],row['Location end'])
+                    query = "INSERT INTO predicted_labels (patient_id, week, night_id, label_id, location_begin, location_end) VALUES (?, ?, ?, ?, ?, ?)"
+                
+                    cur.execute(query, params)
+                    print(f"{i} out of {loc.index[-1]}")
     except Exception as e:
             print('Exception raised in run_prediction function')
             print(e)
@@ -560,15 +590,17 @@ def annotate_heatmap(im, data=None, valfmt="{x:.2f}",
 
 
 """Generate weekly summary image"""
+"""TODO: get len and data"""
 def generate_weekly_sum_img(DATABASE, img_local_path):
     len = 74155516
     print(len)
-    original_sampling = get_original_sampling(DATABASE)
+    try:
+        original_sampling = get_original_sampling(DATABASE)
+    except Exception as e:
+        original_sampling = 2000
     cycles = int(np.ceil(len / original_sampling / 60 / 60 / 1.5))
     stages = list(range(1, cycles + 1))
     days = list(range(1, 8))
-    print(stages)
-    print(days)
     data = np.array([[1,0,0,0,0,0,0],
                 [2,1,0,3,3,0,2],
                 [1,3,0,0,0,1,0],
@@ -585,3 +617,4 @@ def generate_weekly_sum_img(DATABASE, img_local_path):
     # ax.set_title("Weekly Events Detected for Patient")
     fig.tight_layout()
     plt.savefig(img_local_path)
+    print("Image saved")
