@@ -414,7 +414,7 @@ export default {
                 "normalized": this.datasetInfoForm.normalized
             };
 
-            this.$store.commit('updateSamplingRate', originalSampling);
+            this.$store.commit('updateSamplingRate', this.samplingRateForm.originalSampling);
 
             const headers = { 
                 'Accept': 'application/json',

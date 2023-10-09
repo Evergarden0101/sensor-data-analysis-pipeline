@@ -155,7 +155,7 @@ export default {
     },
     mounted (){
         // this.getStatistics();
-        console.log(this.compAvgML)
+        // console.log(this.compAvgML)
     },
     methods: {
         getStatistics(){

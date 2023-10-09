@@ -145,6 +145,7 @@ export default {
             ],
             studyAccuracy: 80.23,
             patientAccuracy: 80.23,
+            // activeLabel: [],
         }
     },
     computed: {
@@ -183,13 +184,13 @@ export default {
             this.dialogFormVisible = false;
             this.$store.commit('updateLinePlotKey');
         },
-        handleSizeChange(val){
-            console.log(`${val} items per page`)
-        },
-        handleCurrentChange(page){
-            this.currentPage = page;
-            console.log(`current page: ${this.currentPage}`)
-        },
+        // handleSizeChange(val){
+        //     console.log(`${val} items per page`)
+        // },
+        // handleCurrentChange(page){
+        //     this.currentPage = page;
+        //     console.log(`current page: ${this.currentPage}`)
+        // },
         loadLabel() {
             this.loadingLabel = true
             setTimeout(() => {
@@ -202,8 +203,8 @@ export default {
             let samplingRate = this.$store.state.samplingRate;
             for (let label in this.Labels){
                 // console.log(this.Labels[label])
-                // this.Labels[label].Start = Math.floor(this.Labels[label].Location_begin / samplingRate * 1000) / 1000;
-                // this.Labels[label].End = Math.floor(this.Labels[label].Location_end / samplingRate * 1000) / 1000;
+                this.Labels[label].Start = Math.floor(this.Labels[label].location_begin / samplingRate * 1000) / 1000;
+                this.Labels[label].End = Math.floor(this.Labels[label].location_end / samplingRate * 1000) / 1000;
                 this.Labels[label].Dur = computed(()=>{  return this.Labels[label].End - this.Labels[label].Start  })
                 this.Labels[label].Confirm = true
                 this.labelNum ++;
@@ -225,12 +226,14 @@ export default {
                 .then((res) => {
                     console.log("Data received");
                     // this.loading = ref(false);
-                    console.log(res.data[0])
                     this.Labels = res.data;
-                    this.$nextTick(() => {
+                    // this.$nextTick(() => {
                         this.computeDur();
                         this.$store.commit('saveLabels',JSON.stringify(this.Labels));
-                    })
+                    // })
+
+                    this.$store.commit('updateBruxLabelKey');
+                    this.$store.commit('updateLinePlotKey');
                     // return res.data;
                 })
                 .catch(err=>{
@@ -265,9 +268,17 @@ export default {
         },
     },
     beforeMount() {
-        this.Labels = this.loadAll();
-        this.computeDur();
-        this.$store.commit('saveLabels',JSON.stringify(this.Labels));
+        if(this.$store.state.labels){
+            console.log("Labels already loaded")
+            this.Labels = JSON.parse(this.$store.state.labels);
+            // this.computeDur();
+            // console.log('active label', this.activeLabel)
+            // this.$store.commit('clearLabels');
+
+        }else{
+            console.log("Labels not loaded")
+            this.loadPredLabels();
+        }
         // await this.loadPredLabels();
         //   this.submit = computed(()=>{return localStorage.getItem('submit')});
         //   this.rerun = computed(()=>{return localStorage.getItem('rerun')});
