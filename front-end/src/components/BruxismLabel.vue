@@ -5,7 +5,7 @@
             <!-- <el-row v-for="(item,index) in [Labels[currentPage - 1]]" :key="index" > -->
             <div style="overflow: auto; max-height: 400px" v-infinite-scroll="loadLabel" infinite-scroll-disabled="disabled">
                 <el-row v-for="(item,index) in activeLabel.slice(0,count)" :key="index">
-                        <el-col :span="3"><el-button text="plain" type="" bg @click="locateLabel(item)" style="border-radius: 8px;"><el-link>{{ item.id }}</el-link></el-button></el-col>
+                        <el-col :span="3"><el-button text="plain" type="" bg @click="locateLabel(item)" style="border-radius: 8px;"><el-link>Label {{ item.id }}</el-link></el-button></el-col>
                         <el-col :span="21">
                             <el-form :inline="true" :model="Labels" class="demo-form-inline">
                                 <el-form-item label="Start:" style="margin-left: 1em;">
@@ -134,7 +134,7 @@ export default {
             count: 3,
             dialogFormVisible: false,
             formLabelWidth: '100px',
-            form:{'id':'','Start':0,'End':0},
+            form:{'id':'','Start':0,'End':0,'Dur':0},
             colors : [
                 { color: '#f56c6c', percentage: 20 },
                 { color: '#e6a23c', percentage: 40 },
@@ -168,11 +168,17 @@ export default {
             this.dialogFormVisible = true;
         },
         submitNewLable(){
-            this.form.id = 'Label ' + (this.labelNum + 1);
+            this.form.id = (this.labelNum + 1);
+            // this.form.Dur = computed(()=>{  return this.form.End - this.form.Start;})
             this.Labels.push(this.form);
-            this.labelNum ++;
-            this.form = {'id':'','Start':0,'End':0};
+            this.Labels[this.labelNum].Confirm = true;
+            this.computeDur();
+            // this.Labels[this.labelNum].Dur = computed(()=>{  return this.Labels[this.labelNum].End - this.Labels[this.labelNum].Start  })
+            // this.labelNum ++;
+            this.$store.commit('saveLabels',JSON.stringify(this.Labels));
+            this.form = {'id':'','Start':0,'End':0,'Dur':0};
             this.dialogFormVisible = false;
+            this.$store.commit('updateLinePlotKey');
         },
         handleSizeChange(val){
             console.log(`${val} items per page`)
@@ -188,24 +194,32 @@ export default {
                 this.loadingLabel = false
             }, 2000)
         },
+        computeDur(){
+            this.labelNum = 0;
+            for (let label in this.Labels){
+                // console.log(this.Labels[label])
+                this.Labels[label].Dur = computed(()=>{  return this.Labels[label].End - this.Labels[label].Start  })
+                this.labelNum ++;
+            }
+        },
         loadAll() {
             return [
                 {
-                    'id': 'Label 1',
+                    'id': 1,
                     'Start': 5.952,
                     'End': 8.432,
                     // 'Dur': 2.48,
                     'Confirm': true,
                 },
                 {
-                    'id': 'Label 2',
+                    'id': 2,
                     'Start': 9.868,
                     'End': 13.020,
                     // 'Dur': 3.162,
                     'Confirm': true,
                 },
                 {
-                    'id': 'Label 3',
+                    'id': 3,
                     'Start': 15.634,
                     'End': 19.127,
                     // 'Dur': 3.4875,
@@ -216,11 +230,8 @@ export default {
     },
     beforeMount() {
         this.Labels = this.loadAll();
-        for (let label in this.Labels){
-            // console.log(this.Labels[label])
-            this.Labels[label].Dur = computed(()=>{  return this.Labels[label].End - this.Labels[label].Start  })
-            this.labelNum ++;
-        }
+        this.computeDur();
+        this.$store.commit('saveLabels',JSON.stringify(this.Labels));
         //   this.submit = computed(()=>{return localStorage.getItem('submit')});
         //   this.rerun = computed(()=>{return localStorage.getItem('rerun')});
     },

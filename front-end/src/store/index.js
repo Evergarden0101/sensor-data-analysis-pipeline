@@ -24,6 +24,7 @@ const store = createStore({
       plotEnd: 0,
       checkedMR: true,
       checkedML: true,
+      labels: [],
     }
   },
   mutations: {
@@ -52,6 +53,9 @@ const store = createStore({
     },
     selectML(state, payload){
       state.checkedML = payload;
+    },
+    saveLabels(state, payload){
+      state.labels = payload;
     },
   },
   plugins: [vuexLocal.plugin],

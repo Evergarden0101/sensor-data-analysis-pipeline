@@ -23,6 +23,7 @@ CREATE TABLE bite_records (
   week INTEGER NOT NULL,
   night_id INTEGER NOT NULL,
   recorder TEXT,
+  label_id INTEGER NOT NULL,
   bite_begin INTEGER NOT NULL,
   bite_end INTEGER NOT NULL,
   duration DECIMAL(7,3) NOT NULL,

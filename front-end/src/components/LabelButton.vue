@@ -20,10 +20,13 @@ export default{
 
             for(var i=0; i<this.labels.length; i++){
                 payload.push({
-                    "patient": 123,
+                    "patient_id": this.$store.state.patientId,
+                    "week":this.$store.state.week,
+                    "night_id":this.$store.state.nightId,
+                    "label_id": this.labels[i]['id'],
                     "location_begin": this.labels[i]['Start'],
                     "location_end": this.labels[i]['End'],
-                    "duration": this.labels[i]['End'] - this.labels[i]['Start'] 
+                    "corrected": true,
                 })
             };
 
@@ -35,10 +38,11 @@ export default{
             axios.post(path, payload, {headers})
             .then((res) => {
                 console.log(res);
-                this.load = false;
+                // this.load = false;
             })
             .catch(err=>{
                 console.log(err)
+                this.load = false;
             })
         }
     },

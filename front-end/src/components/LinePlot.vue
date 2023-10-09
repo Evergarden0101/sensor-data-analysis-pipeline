@@ -47,7 +47,7 @@ export default {
             freq: 2000,
             key: Date.now(),
             activeName: 'left',
-            Labels: [],
+            predLabels: [],
             start: 0,
             end: 0,
             max: 10,
@@ -59,7 +59,8 @@ export default {
         }
     },
     async mounted() {
-        this.Labels = this.loadAll();
+        // await this.loadAllPred();
+        this.predLabels = JSON.parse(this.$store.state.labels);
         this.start = this.$store.state.plotStart;
         this.end = this.$store.state.plotEnd;
         // this.checkedML = this.$store.state.checkedML;
@@ -80,30 +81,33 @@ export default {
 
     },
     methods: {
-        loadAll() {
-            return [
-                {
-                    'id': 'Label 1',
-                    'Start': 5.952,
-                    'End': 8.432,
-                    // 'Dur': 2.48,
-                    'Confirm': true,
-                },
-                {
-                    'id': 'Label 2',
-                    'Start': 9.868,
-                    'End': 13.020,
-                    // 'Dur': 3.162,
-                    'Confirm': true,
-                },
-                {
-                    'id': 'Label 3',
-                    'Start': 15.634,
-                    'End': 19.127,
-                    // 'Dur': 3.4875,
-                    'Confirm': false,
-                }
-            ]
+        loadAllPred() {
+            const path = `http://127.0.0.1:5000/label-brux/${this.$store.state.patientId}/${this.$store.state.week}/${this.$store.state.nightId}`
+            const headers = {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*',
+                    'Access-Control-Allow-Methods': 'GET',
+                    'Access-Control-Max-Age': "3600",
+                    'Access-Control-Allow-Credentials': "true",
+                    'Access-Control-Allow-Headers': 'Content-Type'
+            };
+
+            axios.get(path, {headers})
+                .then((res) => {
+                    console.log("Data received");
+                    // this.loading = ref(false);
+                    console.log(res.data[0])
+                    this.predLabels = res.data;
+                    this.drawLabel('MR',this.start,this.end);
+                    this.drawLabel('ML',this.start,this.end);
+                    // return res.data;
+
+                })
+                .catch(err=>{
+                    console.log(err)
+                })
+            
         },
         loadLinePlotData(patient_id, week, night_id){
             const path = `http://127.0.0.1:5000/lineplot-data/${patient_id}/${week}/${night_id}`
@@ -202,8 +206,6 @@ export default {
             return json2CSV;
         },
         csvToJson(csv) {
-
-            console.log(csv)
             const lines = csv;
             const delimeter = ',';
 
@@ -240,9 +242,10 @@ export default {
                 .range([ 0, width ]);
 
             var line = d3.select("#"+channel);
+            console.log(this.predLabels)
             var rects = line
                             .selectAll("rect")
-                            .data(this.Labels)
+                            .data(this.predLabels)
                             .enter()
                             .append("rect")
                             // .datum(this.Labels)

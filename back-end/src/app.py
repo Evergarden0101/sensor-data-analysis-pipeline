@@ -104,7 +104,7 @@ def create_app(test_config=None):
             for label in labels:
                 if label["location_begin"] > label["location_end"]:
                     return "Start time cannot be greater than end time!", 400
-                insert_label(DATABASE, tuple(label.values()))
+                insert_label(DATABASE, label)
             return "Successfuly inserted into Database", 200
         except Exception as e:
             return f"{e}", 400
@@ -324,10 +324,11 @@ def create_app(test_config=None):
             # img_stream = return_img_stream(img_path)
             # return render_template('BruxismPage.vue',
             #                     img_stream=img_stream)
-            skuid = request.args.get('skuid')
-            print('skuid: ', skuid)
-            img_local_path =  DATA_PATH + f"{skuid}/summary.png"
+            patient_id = request.args.get('p')
+            week = request.args.get('w')
+            img_local_path =  DATA_PATH +"p"+str(patient_id)+"_w"+str(week)+ f"/summary.png"
             print('img_local_path: ',img_local_path)
+            generate_weekly_sum_img(DATABASE, img_local_path)
             img_f = open(img_local_path, 'rb')
             print(img_f)
             res = make_response(img_f.read())   # 用flask提供的make_response 方法来自定义自己的response对象
@@ -343,8 +344,8 @@ def create_app(test_config=None):
     @app.route('/label-statistics/<int:patient_id>/<int:week>/<string:night_id>/<int:labelId>', methods=["GET"])
     def get_label_statistics(patient_id, week, night_id, labelId):
         try:
-            params = (patient_id, week, night_id)
-            query = "SELECT * from bite_records WHERE (patient_id=? AND week=? AND night_id=?)"
+            params = (patient_id, week, night_id, labelId)
+            query = "SELECT * from bite_records WHERE (patient_id=? AND week=? AND night_id=? AND labelId=?)"
 
             with sql.connect(DATABASE) as con:
                 print("DB connected")
