@@ -25,6 +25,7 @@ const store = createStore({
       checkedMR: true,
       checkedML: true,
       labels: [],
+      samplingRate: 2000,
     }
   },
   mutations: {
@@ -57,6 +58,9 @@ const store = createStore({
     saveLabels(state, payload){
       state.labels = payload;
     },
+    updateSamplingRate(state, payload){
+      state.samplingRate = payload;
+    }
   },
   plugins: [vuexLocal.plugin],
 
