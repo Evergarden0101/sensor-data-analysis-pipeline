@@ -67,6 +67,10 @@
         </el-card>
     </el-row>
     <el-row style="margin-top: 1em;">
+        <el-button @click="confirmLabel" type="primary" plain size="large"
+            style="display: block;margin: 0 auto">Comfirm Events</el-button>
+    </el-row>
+    <el-row style="margin-top: 1em;">
         <h5 style="display: block;margin: auto;">Comfirm the above events to rerun classifier</h5>
     </el-row>
     <el-row style="margin-top: 1em;">
@@ -143,8 +147,8 @@ export default {
                 { color: '#1989fa', percentage: 80 },
                 { color: '#6f7ad3', percentage: 100 },
             ],
-            studyAccuracy: 80.23,
-            patientAccuracy: 80.23,
+            studyAccuracy: this.$store.state.studyAccuracy,
+            patientAccuracy: this.$store.state.patientAccuracy,
             // activeLabel: [],
         }
     },
@@ -160,6 +164,47 @@ export default {
         }
     },
     methods: {
+        confirmLabel(){
+            const path = 'http://127.0.0.1:5000/label-brux';
+            const payload = [];
+
+            for(var i=0; i<this.Labels.length; i++){
+                payload.push({
+                    "patient_id": this.$store.state.patientId,
+                    "week":this.$store.state.week,
+                    "night_id":this.$store.state.nightId,
+                    "label_id": this.Labels[i]['label_id'],
+                    "location_begin": this.Labels[i]['Start'],
+                    "location_end": this.Labels[i]['End'],
+                    "corrected": true,
+                })
+            };
+
+            const headers = { 
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            };
+
+            axios.post(path, payload, {headers})
+            .then((res) => {
+                this.$message({
+                    showClose: true,
+                    message: 'The above events have been confirmed.',
+                    type: 'success'
+                });
+
+                console.log(res);
+                // this.$store.commit('clearLabels');
+                // this.load = false;
+                this.$store.commit('updateStudyAccuracy', '--');
+                this.$store.commit('updatePatientAccuracy', '--');
+                // this.$store.commit('updateBruxLabelKey')
+            })
+            .catch(err=>{
+                console.log(err)
+                // this.load = false;
+            })
+        },
         locateLabel(item){
             this.$store.commit('updateLinePlotKey');
             this.$store.commit('setLabelRange',{plotStart:item.Start, plotEnd:item.End});
