@@ -38,6 +38,7 @@ export default{
             axios.post(path, payload, {headers})
             .then((res) => {
                 console.log(res);
+                this.$store.commit('clearLabels');
                 // this.load = false;
             })
             .catch(err=>{
