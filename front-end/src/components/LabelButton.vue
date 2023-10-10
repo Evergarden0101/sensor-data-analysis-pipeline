@@ -23,7 +23,7 @@ export default{
                     "patient_id": this.$store.state.patientId,
                     "week":this.$store.state.week,
                     "night_id":this.$store.state.nightId,
-                    "label_id": this.labels[i]['id'],
+                    "label_id": this.labels[i]['label_id'],
                     "location_begin": this.labels[i]['Start'],
                     "location_end": this.labels[i]['End'],
                     "corrected": true,
@@ -42,7 +42,7 @@ export default{
             })
             .catch(err=>{
                 console.log(err)
-                this.load = false;
+                // this.load = false;
             })
         }
     },
