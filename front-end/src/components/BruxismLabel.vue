@@ -5,7 +5,7 @@
             <!-- <el-row v-for="(item,index) in [Labels[currentPage - 1]]" :key="index" > -->
             <div style="overflow: auto; max-height: 400px" v-infinite-scroll="loadLabel" infinite-scroll-disabled="disabled">
                 <el-row v-for="(item,index) in activeLabel.slice(0,count)" :key="index">
-                        <el-col :span="3"><el-button text="plain" type="" bg @click="locateLabel(item)" style="border-radius: 8px;"><el-link>Label {{ item.id }}</el-link></el-button></el-col>
+                        <el-col :span="3"><el-button text="plain" type="" bg @click="locateLabel(item)" style="border-radius: 8px;"><el-link>Label {{ item.label_id }}</el-link></el-button></el-col>
                         <el-col :span="21">
                             <el-form :inline="true" :model="Labels" class="demo-form-inline">
                                 <el-form-item label="Start:" style="margin-left: 1em;">
@@ -26,7 +26,7 @@
                                 <el-switch v-model="item.Confirm" :active-icon="CircleCheckFilled" :inactive-icon="CircleCloseFilled" 
                                 style="margin-left: 1em;margin-right: 2em;--el-switch-on-color: #13ce66; --el-switch-off-color: #ff4949" size="small" 
                                 active-text="Confirm Event" inactive-text="Discard Event" @change="rerun = true"/>
-                                <LabelInfoCard :label-id="item.id"/>
+                                <LabelInfoCard :label-id="item.label_id"/>
                             </el-form>
                         </el-col>
                         <el-divider style="margin-top: 0px;margin-bottom:15px"/>
@@ -135,7 +135,7 @@ export default {
             count: 3,
             dialogFormVisible: false,
             formLabelWidth: '100px',
-            form:{'id':'','Start':0,'End':0,'Dur':0},
+            form:{'label_id':'','Start':0,'End':0,'Dur':0},
             colors : [
                 { color: '#f56c6c', percentage: 20 },
                 { color: '#e6a23c', percentage: 40 },
@@ -170,7 +170,7 @@ export default {
             this.dialogFormVisible = true;
         },
         submitNewLable(){
-            this.form.id = (this.labelNum + 1);
+            this.form.label_id = (this.labelNum + 1);
             this.form.Location_begin = this.form.Start * this.$store.state.samplingRate;
             this.form.Location_end = this.form.End * this.$store.state.samplingRate;
             // this.form.Dur = computed(()=>{  return this.form.End - this.form.Start;})
@@ -180,7 +180,7 @@ export default {
             // this.Labels[this.labelNum].Dur = computed(()=>{  return this.Labels[this.labelNum].End - this.Labels[this.labelNum].Start  })
             // this.labelNum ++;
             this.$store.commit('saveLabels',JSON.stringify(this.Labels));
-            this.form = {'id':'','Start':0,'End':0,'Dur':0};
+            this.form = {'label_id':'','Start':0,'End':0,'Dur':0};
             this.dialogFormVisible = false;
             this.$store.commit('updateLinePlotKey');
         },
@@ -244,21 +244,21 @@ export default {
         loadAll() {
             return [
                 {
-                    'id': 1,
+                    'label_id': 1,
                     'Start': 5.952,
                     'End': 8.432,
                     // 'Dur': 2.48,
                     'Confirm': true,
                 },
                 {
-                    'id': 2,
+                    'label_id': 2,
                     'Start': 9.868,
                     'End': 13.020,
                     // 'Dur': 3.162,
                     'Confirm': true,
                 },
                 {
-                    'id': 3,
+                    'label_id': 3,
                     'Start': 15.634,
                     'End': 19.127,
                     // 'Dur': 3.4875,
