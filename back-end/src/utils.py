@@ -110,7 +110,7 @@ def retrieve_patient_recording(DATABASE, patient_id, week, day, range_min, SAMPL
 def remove_pred_label(DATABASE, label):
     with sql.connect(DATABASE) as con:
         cur = con.cursor()
-        cur.execute(f"DELETE FROM Predicted_labels WHERE patient_id={label.patient_id} AND week={label.week} AND night_id={label.night_id} AND label_id={label.label_id}")
+        cur.execute(f"DELETE FROM Predicted_labels WHERE patient_id={label['patient_id']} AND week={label['week']} AND night_id={label['night_id']} AND label_id={label['label_id']}")
 
 
 """Insert label for a specific patient in the Database"""

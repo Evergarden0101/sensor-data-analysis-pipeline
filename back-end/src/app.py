@@ -108,6 +108,7 @@ def create_app(test_config=None):
                 insert_label(DATABASE, label)
             return "Successfuly inserted into Database", 200
         except Exception as e:
+            print('Exception raised', e)
             return f"{e}", 400
 
     #TODO: possibly get labels from specific patient on a specific week?
