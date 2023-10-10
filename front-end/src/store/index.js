@@ -27,6 +27,8 @@ const store = createStore({
       labels: null,
       samplingRate: 2000,
       bruxLabelKey: 0,
+      studyAccuracy: '--',
+      patientAccuracy: '--',
     }
   },
   mutations: {
@@ -67,6 +69,12 @@ const store = createStore({
     },
     clearLabels(state){
       state.labels = null;
+    },
+    updateStudyAccuracy(state, payload){
+      state.studyAccuracy = payload;
+    },
+    updatePatientAccuracy(state, payload){
+      state.patientAccuracy = payload;
     },
   },
   plugins: [vuexLocal.plugin],
