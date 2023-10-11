@@ -210,6 +210,25 @@ def get_selected_phases(DATABASE, patient_id, week, night_id):
         return result
         #return get_json_format_from_query(columns=columns, query_results=selected.fetchall(), start_id=0, end_id=1)
 
+def get_standard_selected_phases(DATABASE, patient_id, week, night_id):
+    print("standard selected phases")
+    SDNNmin = get_herzig_ranges()['SSDNRem']['min']
+    SDNNmax = get_herzig_ranges()['SSDNRem']['max']
+    with sql.connect(DATABASE) as con:
+        cur = con.cursor()
+
+        day, hours, minutes, seconds = get_patient_time_values(night_id)
+
+        params = (patient_id, week, day, hours, minutes, seconds, 'rem', SDNNmin, SDNNmax)
+
+        query = ("SELECT x,y,ROUND(SD),stage, LF_HF FROM sleep_stage_detection WHERE patient_id=? AND week=? AND day=? AND hours=? AND minutes=? AND seconds=? AND stage=? AND (SD BETWEEN ? AND ?)")
+
+        selected = cur.execute(query, params).fetchall()
+            
+        result = [list(s) for s in selected]
+
+
+        return result
 
 """Get all the patients, weeks and night ids"""
 def get_existing_patients_data():
@@ -356,6 +375,23 @@ def get_selected_intervals(patient_id, week, night_id, DATABASE):
         columns = [description[0] for description in result.description]
 
         return get_json_format_from_query(columns=columns, query_results=result.fetchall(), start_id=0, end_id=1)
+
+
+"""Retrieve REM intervals from DB""" 
+def get_rem_intervals(patient_id, week, night_id, DATABASE):
+    with sql.connect(DATABASE) as con:
+        cur = con.cursor()
+
+        day, hours, minutes, seconds = get_patient_time_values(night_id)
+
+        params = ('rem', patient_id, week, day, hours, minutes, seconds)
+        query = "SELECT start_id, end_id FROM sleep_stage_detection WHERE stage=? AND patient_id=? AND week=? AND day=? AND hours=? AND minutes=? and seconds=?"
+
+        result = cur.execute(query, params)
+        columns = [description[0] for description in result.description]
+
+        return get_json_format_from_query(columns=columns, query_results=result.fetchall(), start_id=0, end_id=1)
+
     
 
 """Get the ranges for the resampling of the dataset"""

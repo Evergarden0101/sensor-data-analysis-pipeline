@@ -153,8 +153,13 @@ def create_app(test_config=None):
     def selected_phases(patient_id, week, night_id):
         if request.method == 'GET':
             try:
-                print("try")
-                return get_selected_phases(DATABASE, patient_id, week, night_id), 200
+                selected = get_selected_phases(DATABASE, patient_id, week, night_id)
+
+                if len(selected) > 0:
+                    return selected, 200
+                
+                else:
+                    return get_standard_selected_phases(DATABASE, patient_id, week, night_id), 200
             
             except Exception as e:
                 print('Exception raised')
@@ -301,9 +306,14 @@ def create_app(test_config=None):
             mr = df["MR"].values.tolist()
             ml = df["ML"].values.tolist()
 
-            selected_ranges =  get_selected_intervals(patient_id, week, night_id, DATABASE)
+            ranges =  get_selected_intervals(patient_id, week, night_id, DATABASE)
 
-            sampling_ranges = get_sampling_ranges(DATABASE, mr, ml, selected_ranges)
+            if len(ranges) == 0:
+                print("No selected intervals, select REM intervals instead.")
+                ranges = get_rem_intervals(patient_id, week, night_id, DATABASE)
+
+
+            sampling_ranges = get_sampling_ranges(DATABASE, mr, ml, ranges)
 
             resampled_ranges = get_resampled_ranges(DATABASE, sampling_ranges)
 

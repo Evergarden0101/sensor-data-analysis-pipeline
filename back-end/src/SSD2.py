@@ -16,7 +16,8 @@ from preprocessing import *
 def get_herzig_ranges():
     return {
         'nrem': {'min': 0.31, 'median': (2.02-0.31)/2 , 'max': 2.02},
-        'rem' : {'min': 1.30, 'median': 2.02 , 'max': 3.22}
+        'rem' : {'min': 1.30, 'median': 2.02 , 'max': 3.22},
+        'SSDNRem': {'min': 82.6, 'median': 105.5, 'max': 134.7}
     }
 
 
@@ -68,8 +69,12 @@ def get_HRV_features(patient_id, week, night_id,  SAMPLING_RATE):
     print(f"dfshape: {df.shape}")
     ecg = df["ECG"]
 
+    # Filter the data with ranges specified from Barbara
+    filter_ecg = nk.signal_filter(ecg, sampling_rate=SAMPLING_RATE, lowcut=0.5, highcut=150)
+
     # clean ecg signal
-    ecg_cleaned = nk.ecg_clean(ecg, sampling_rate=SAMPLING_RATE, method="pantompkins1985")
+    ecg_cleaned = nk.ecg_clean(filter_ecg, sampling_rate=SAMPLING_RATE, method="pantompkins1985")
+
     # find r peaks
     rpeaks, info = nk.ecg_peaks(ecg_cleaned, sampling_rate=SAMPLING_RATE)
 

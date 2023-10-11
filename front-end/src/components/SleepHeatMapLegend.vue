@@ -4,6 +4,7 @@
         <div class="card-header">
             <span><b>Legend</b></span>
             <p>Every row represents a sleep cycle of 90 minutes (1.5 hour)</p>
+            <p>Median and interquartile SD of REM phases from Herzig study: 105.5 (82.6, 134.7)  </p>
 
         </div>
     </template>
