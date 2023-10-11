@@ -18,3 +18,5 @@ build/
 
 # data folder
 data/
+
+src/settings.py
