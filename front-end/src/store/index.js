@@ -1,10 +1,12 @@
 import { createStore } from 'vuex';
 import VuexPersistence from 'vuex-persist';
 import localForage from 'localforage';
+import {clone} from 'pouchdb-utils';
 
 const vuexLocal = new VuexPersistence({
   storage: localForage,
-  asyncStorage: true
+  asyncStorage: true,
+  reducer: (state) => clone(state),
 });
 
 // 创建一个新的 store 实例

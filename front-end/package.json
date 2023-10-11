@@ -22,6 +22,7 @@
     "mitt": "^3.0.0",
     "papaparse": "^5.4.1",
     "plotly.js": "^2.25.1",
+    "pouchdb-utils": "^8.0.1",
     "vue": "^3.3.4",
     "vue-router": "^4.2.5",
     "vuex": "^4.0.2",
