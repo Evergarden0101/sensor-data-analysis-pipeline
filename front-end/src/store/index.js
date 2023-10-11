@@ -26,7 +26,11 @@ const store = createStore({
       plotEnd: 0,
       checkedMR: true,
       checkedML: true,
-      labels: [],
+      labels: null,
+      samplingRate: 2000,
+      bruxLabelKey: 0,
+      studyAccuracy: '--',
+      patientAccuracy: '--',
     }
   },
   mutations: {
@@ -58,6 +62,21 @@ const store = createStore({
     },
     saveLabels(state, payload){
       state.labels = payload;
+    },
+    updateSamplingRate(state, payload){
+      state.samplingRate = payload;
+    },
+    updateBruxLabelKey(state){
+      state.bruxLabelKey++;
+    },
+    clearLabels(state){
+      state.labels = null;
+    },
+    updateStudyAccuracy(state, payload){
+      state.studyAccuracy = payload;
+    },
+    updatePatientAccuracy(state, payload){
+      state.patientAccuracy = payload;
     },
   },
   plugins: [vuexLocal.plugin],

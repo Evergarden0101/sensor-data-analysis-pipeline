@@ -104,9 +104,11 @@ def create_app(test_config=None):
             for label in labels:
                 if label["location_begin"] > label["location_end"]:
                     return "Start time cannot be greater than end time!", 400
+                remove_pred_label(DATABASE, label)
                 insert_label(DATABASE, label)
             return "Successfuly inserted into Database", 200
         except Exception as e:
+            print('Exception raised', e)
             return f"{e}", 400
 
     #TODO: possibly get labels from specific patient on a specific week?
@@ -125,7 +127,7 @@ def create_app(test_config=None):
                 columns = [description[0] for description in predicted_labels.description]
                 print(columns)
                 #df = get_patients_recordings_df(columns, patient_data.fetchall())
-                predicted_labels_json = get_json_format_from_query(columns=columns, query_results=predicted_labels.fetchall()) #, start_id=1, end_id=14)
+                predicted_labels_json = get_json_format_from_query(columns=columns, query_results=predicted_labels.fetchall(), start_id=1, end_id=10)
                 
             return predicted_labels_json, 200
 

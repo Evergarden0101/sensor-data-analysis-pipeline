@@ -5,7 +5,7 @@
             <!-- <el-row v-for="(item,index) in [Labels[currentPage - 1]]" :key="index" > -->
             <div style="overflow: auto; max-height: 400px" v-infinite-scroll="loadLabel" infinite-scroll-disabled="disabled">
                 <el-row v-for="(item,index) in activeLabel.slice(0,count)" :key="index">
-                        <el-col :span="3"><el-button text="plain" type="" bg @click="locateLabel(item)" style="border-radius: 8px;"><el-link>Label {{ item.id }}</el-link></el-button></el-col>
+                        <el-col :span="3"><el-button text="plain" type="" bg @click="locateLabel(item)" style="border-radius: 8px;"><el-link>Label {{ item.label_id }}</el-link></el-button></el-col>
                         <el-col :span="21">
                             <el-form :inline="true" :model="Labels" class="demo-form-inline">
                                 <el-form-item label="Start:" style="margin-left: 1em;">
@@ -26,7 +26,7 @@
                                 <el-switch v-model="item.Confirm" :active-icon="CircleCheckFilled" :inactive-icon="CircleCloseFilled" 
                                 style="margin-left: 1em;margin-right: 2em;--el-switch-on-color: #13ce66; --el-switch-off-color: #ff4949" size="small" 
                                 active-text="Confirm Event" inactive-text="Discard Event" @change="rerun = true"/>
-                                <LabelInfoCard :label-id="item.id"/>
+                                <LabelInfoCard :label-id="item.label_id"/>
                             </el-form>
                         </el-col>
                         <el-divider style="margin-top: 0px;margin-bottom:15px"/>
@@ -65,6 +65,10 @@
                 </el-dialog>
             </el-row>
         </el-card>
+    </el-row>
+    <el-row style="margin-top: 1em;">
+        <el-button @click="confirmLabel" type="primary" plain size="large"
+            style="display: block;margin: 0 auto">Comfirm Events</el-button>
     </el-row>
     <el-row style="margin-top: 1em;">
         <h5 style="display: block;margin: auto;">Comfirm the above events to rerun classifier</h5>
@@ -116,6 +120,7 @@ import { CircleCheckFilled, CircleCloseFilled } from '@element-plus/icons-vue'
 import LabelButton from '@/components/LabelButton.vue'
 import LabelInfoCard from '@/components/LabelInfoCard.vue'
 import { computed } from "vue"
+import axios from 'axios';
 
 export default {
     name: 'BruxismLabel',
@@ -134,7 +139,7 @@ export default {
             count: 3,
             dialogFormVisible: false,
             formLabelWidth: '100px',
-            form:{'id':'','Start':0,'End':0,'Dur':0},
+            form:{'label_id':'','Start':0,'End':0,'Dur':0},
             colors : [
                 { color: '#f56c6c', percentage: 20 },
                 { color: '#e6a23c', percentage: 40 },
@@ -142,8 +147,9 @@ export default {
                 { color: '#1989fa', percentage: 80 },
                 { color: '#6f7ad3', percentage: 100 },
             ],
-            studyAccuracy: 80.23,
-            patientAccuracy: 80.23,
+            studyAccuracy: this.$store.state.studyAccuracy,
+            patientAccuracy: this.$store.state.patientAccuracy,
+            // activeLabel: [],
         }
     },
     computed: {
@@ -158,6 +164,47 @@ export default {
         }
     },
     methods: {
+        confirmLabel(){
+            const path = 'http://127.0.0.1:5000/label-brux';
+            const payload = [];
+
+            for(var i=0; i<this.Labels.length; i++){
+                payload.push({
+                    "patient_id": this.$store.state.patientId,
+                    "week":this.$store.state.week,
+                    "night_id":this.$store.state.nightId,
+                    "label_id": this.Labels[i]['label_id'],
+                    "location_begin": this.Labels[i]['Start'],
+                    "location_end": this.Labels[i]['End'],
+                    "corrected": true,
+                })
+            };
+
+            const headers = { 
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            };
+
+            axios.post(path, payload, {headers})
+            .then((res) => {
+                this.$message({
+                    showClose: true,
+                    message: 'The above events have been confirmed.',
+                    type: 'success'
+                });
+
+                console.log(res);
+                // this.$store.commit('clearLabels');
+                // this.load = false;
+                this.$store.commit('updateStudyAccuracy', '--');
+                this.$store.commit('updatePatientAccuracy', '--');
+                // this.$store.commit('updateBruxLabelKey')
+            })
+            .catch(err=>{
+                console.log(err)
+                // this.load = false;
+            })
+        },
         locateLabel(item){
             this.$store.commit('updateLinePlotKey');
             this.$store.commit('setLabelRange',{plotStart:item.Start, plotEnd:item.End});
@@ -168,7 +215,9 @@ export default {
             this.dialogFormVisible = true;
         },
         submitNewLable(){
-            this.form.id = (this.labelNum + 1);
+            this.form.label_id = (this.labelNum + 1);
+            this.form.Location_begin = this.form.Start * this.$store.state.samplingRate;
+            this.form.Location_end = this.form.End * this.$store.state.samplingRate;
             // this.form.Dur = computed(()=>{  return this.form.End - this.form.Start;})
             this.Labels.push(this.form);
             this.Labels[this.labelNum].Confirm = true;
@@ -176,50 +225,85 @@ export default {
             // this.Labels[this.labelNum].Dur = computed(()=>{  return this.Labels[this.labelNum].End - this.Labels[this.labelNum].Start  })
             // this.labelNum ++;
             this.$store.commit('saveLabels',JSON.stringify(this.Labels));
-            this.form = {'id':'','Start':0,'End':0,'Dur':0};
+            this.form = {'label_id':'','Start':0,'End':0,'Dur':0};
             this.dialogFormVisible = false;
             this.$store.commit('updateLinePlotKey');
         },
-        handleSizeChange(val){
-            console.log(`${val} items per page`)
-        },
-        handleCurrentChange(page){
-            this.currentPage = page;
-            console.log(`current page: ${this.currentPage}`)
-        },
+        // handleSizeChange(val){
+        //     console.log(`${val} items per page`)
+        // },
+        // handleCurrentChange(page){
+        //     this.currentPage = page;
+        //     console.log(`current page: ${this.currentPage}`)
+        // },
         loadLabel() {
             this.loadingLabel = true
             setTimeout(() => {
                 this.count += 2
                 this.loadingLabel = false
-            }, 2000)
+            }, 200)
         },
         computeDur(){
             this.labelNum = 0;
+            let samplingRate = this.$store.state.samplingRate;
             for (let label in this.Labels){
                 // console.log(this.Labels[label])
+                this.Labels[label].Start = Math.floor(this.Labels[label].location_begin / samplingRate * 1000) / 1000;
+                this.Labels[label].End = Math.floor(this.Labels[label].location_end / samplingRate * 1000) / 1000;
                 this.Labels[label].Dur = computed(()=>{  return this.Labels[label].End - this.Labels[label].Start  })
+                this.Labels[label].Confirm = true
                 this.labelNum ++;
             }
+        },
+        loadPredLabels(){
+            const path = `http://127.0.0.1:5000/label-brux/${this.$store.state.patientId}/${this.$store.state.week}/${this.$store.state.nightId}`
+            const headers = {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*',
+                    'Access-Control-Allow-Methods': 'GET',
+                    'Access-Control-Max-Age': "3600",
+                    'Access-Control-Allow-Credentials': "true",
+                    'Access-Control-Allow-Headers': 'Content-Type'
+            };
+
+            axios.get(path, {headers})
+                .then((res) => {
+                    console.log("Data received");
+                    // this.loading = ref(false);
+                    this.Labels = res.data;
+                    // this.$nextTick(() => {
+                        this.computeDur();
+                        this.$store.commit('saveLabels',JSON.stringify(this.Labels));
+                    // })
+
+                    this.$store.commit('updateBruxLabelKey');
+                    this.$store.commit('updateLinePlotKey');
+                    // return res.data;
+                })
+                .catch(err=>{
+                    console.log(err)
+                })
+            
         },
         loadAll() {
             return [
                 {
-                    'id': 1,
+                    'label_id': 1,
                     'Start': 5.952,
                     'End': 8.432,
                     // 'Dur': 2.48,
                     'Confirm': true,
                 },
                 {
-                    'id': 2,
+                    'label_id': 2,
                     'Start': 9.868,
                     'End': 13.020,
                     // 'Dur': 3.162,
                     'Confirm': true,
                 },
                 {
-                    'id': 3,
+                    'label_id': 3,
                     'Start': 15.634,
                     'End': 19.127,
                     // 'Dur': 3.4875,
@@ -229,9 +313,18 @@ export default {
         },
     },
     beforeMount() {
-        this.Labels = this.loadAll();
-        this.computeDur();
-        this.$store.commit('saveLabels',JSON.stringify(this.Labels));
+        if(this.$store.state.labels){
+            console.log("Labels already loaded")
+            this.Labels = JSON.parse(this.$store.state.labels);
+            // this.computeDur();
+            // console.log('active label', this.activeLabel)
+            // this.$store.commit('clearLabels');
+
+        }else{
+            console.log("Labels not loaded")
+            this.loadPredLabels();
+        }
+        // await this.loadPredLabels();
         //   this.submit = computed(()=>{return localStorage.getItem('submit')});
         //   this.rerun = computed(()=>{return localStorage.getItem('rerun')});
     },

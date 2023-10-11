@@ -43,7 +43,7 @@
     <el-row>
         <el-col :span="11" style="padding-left: 1.5em;">
             <el-affix :offset="10">
-                <BruxismLabel/>
+                <BruxismLabel :key="this.$store.state.bruxLabelKey"></BruxismLabel>
             </el-affix>
         </el-col>
         <el-col :span="11" :offset="1">
