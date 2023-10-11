@@ -37,8 +37,8 @@
                     </el-select>
                 </el-form-item>
                 <el-form-item>
-                    <router-link :to="'/sleep/'">
-                        <el-button type="primary">Go to sleep stage classification</el-button>
+                    <router-link :to="'/filtering/'">
+                        <el-button type="primary">Go to Filtering</el-button>
                     </router-link> 
                 </el-form-item>
             </el-form>
