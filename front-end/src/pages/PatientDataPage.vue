@@ -55,13 +55,13 @@ export default {
     }
     },
     methods: {
-        loadAll() {
+        async loadAll() {
             const path = 'http://localhost:5000/existing-patients-recordings/';
             const headers = { 
                 'Accept': 'application/json',
                 'Content-Type': 'application/json'
             };
-            axios.get(path, {headers})
+            await axios.get(path, {headers})
             .then((res) => {
                 this.tableData = res.data;
             })
@@ -74,15 +74,15 @@ export default {
             console.log("Double clicked");
         },
         choosePatient(index){
-            console.log(this.tableData[index])
+            console.log(this.tableData[index]);
             this.$store.commit('updatePatientSeletion', this.tableData[index]);
             console.log(this.$store.state);
-            this.$router.push('/sleep');
+            this.$router.push('/filtering');
 
         }
     },
-    beforeMount(){
-        this.loadAll()
+    async beforeMount(){
+        await this.loadAll()
     }
 
 };
