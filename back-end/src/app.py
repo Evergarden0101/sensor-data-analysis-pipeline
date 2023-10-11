@@ -310,11 +310,6 @@ def create_app(test_config=None):
 
             ranges =  get_selected_intervals(patient_id, week, night_id, DATABASE)
 
-            if len(ranges) == 0:
-                print("No selected intervals, select REM intervals instead.")
-                ranges = get_rem_intervals(patient_id, week, night_id, DATABASE)
-
-
             sampling_ranges = get_sampling_ranges(DATABASE, mr, ml, ranges)
 
             resampled_ranges = get_resampled_ranges(DATABASE, sampling_ranges)
