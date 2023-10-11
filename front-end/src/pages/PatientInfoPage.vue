@@ -59,7 +59,7 @@
                             </el-collapse-item>
                         </el-collapse>
                     </el-col>
-                    <router-link :to="'/sleep/'">
+                    <router-link :to="'/filtering/'">
                         <el-button type="primary" plain @click="onSubmit" style="display: block;margin: 30px auto 0 auto;">Confirm</el-button>  
                     </router-link>
                 
@@ -73,7 +73,7 @@
                     <el-row>
                             <DataSetInfo style="margin-top: 20px;"/>
                     </el-row>
-                    <router-link :to="'/sleep/'">
+                    <router-link :to="'/filtering/'">
                         <el-button type="primary" plain @click="onSubmit" style="display: block;margin: 10px auto 0 auto;">Confirm</el-button>  
                     </router-link>
                 </el-tab-pane>
@@ -85,8 +85,8 @@
     <!-- <div class="hp-icons-container"> -->
         <!--
         <el-row style="margin-top: 50px;">
-            <router-link :to="'/sleep/'" style="margin-right: 20px;">
-                <el-button>Sleep Stage Classification</el-button>  
+            <router-link :to="'/filtering/'" style="margin-right: 20px;">
+                <el-button>Filtering</el-button>  
             </router-link>
         </el-row>
         -->

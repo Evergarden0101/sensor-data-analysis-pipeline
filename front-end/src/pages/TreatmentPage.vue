@@ -11,8 +11,8 @@
     </el-row>
     <el-row style="margin-top: 3%;">
         <el-col :span="18" :offset="6">
-            <router-link :to="'/bruxism/'">
-                <el-button type="primary" plain><el-icon class="el-icon--left"><ArrowLeft /></el-icon> Events Detection</el-button>
+            <router-link :to="'/events-classification/'">
+                <el-button type="primary" plain><el-icon class="el-icon--left"><ArrowLeft /></el-icon> Events Classification</el-button>
             </router-link>
         </el-col>
     </el-row>

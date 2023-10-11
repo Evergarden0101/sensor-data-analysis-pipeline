@@ -7,9 +7,9 @@ import App from './App.vue'
 import './main.css';
 import * as VueRouter from 'vue-router'
 import HomePage from './pages/HomePage.vue';
-import SleepPage from './pages/SleepPage.vue';
+import FilteringPage from './pages/FilteringPage.vue';
 import TreatmentPage from './pages/TreatmentPage.vue';
-import BruxismPage from './pages/BruxismPage.vue';
+import EventsClassificationPage from './pages/EventsClassificationPage.vue';
 import PatientInfoPage from './pages/PatientInfoPage.vue';
 import SelectPatientPage from './pages/SelectPatientPage.vue'
 import PatientDataPage from './pages/PatientDataPage.vue';
@@ -22,16 +22,16 @@ const router = VueRouter.createRouter({
          path: '/',
          component: HomePage,
      }, {
-         path: '/sleep',
-         component: SleepPage,
-         name: 'SleepPage',
+         path: '/filtering',
+         component: FilteringPage,
+         name: 'FilteringPage',
          props: true
      }, {
          path: '/treatment',
          component: TreatmentPage,
      },{
-         path: '/bruxism',
-         component: BruxismPage,
+         path: '/events-classification',
+         component: EventsClassificationPage,
      },{
          path: '/patient',
          component: PatientInfoPage,

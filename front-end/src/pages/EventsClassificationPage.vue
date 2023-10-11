@@ -1,7 +1,7 @@
 <template>
     <el-row style="margin-bottom: 2%;">
         <el-col>
-            <h1 style="text-align: center;">This is the Events Detection page!</h1>
+            <h1 style="text-align: center;">This is the Events Classification page!</h1>
         </el-col>
     </el-row>
     <el-row>
@@ -12,8 +12,8 @@
     <h2 align="center">Patient: {{ this.$store.state.patientId }}, Week: {{ this.$store.state.week }}, Night id: {{ this.$store.state.nightId }}</h2>
     <el-row style="margin-top: 3%;">
         <el-col :span="7" :offset="5">
-            <router-link :to="'/sleep/'">
-                <el-button type="primary" plain><el-icon class="el-icon--left"><ArrowLeft /></el-icon> Sleep Stage Detection</el-button>
+            <router-link :to="'/filtering/'">
+                <el-button type="primary" plain><el-icon class="el-icon--left"><ArrowLeft /></el-icon> Filtering</el-button>
             </router-link>
         </el-col>
         <el-col :span="7" :offset="5">
@@ -62,7 +62,7 @@ import TreatHeatMap from '../components/TreatHeatMap.vue'
 import BruxismLabel from '@/components/BruxismLabel.vue';
 
 export default {
-    name: 'BruxismPage',
+    name: 'EventsClassificationPage',
     components: {
         Stepper,
         LinePlot,

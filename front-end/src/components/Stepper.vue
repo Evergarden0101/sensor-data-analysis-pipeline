@@ -1,10 +1,9 @@
 <template>
     <el-steps :active=step finish-status="process">
         <el-step title="Patient Information" description="Provide the patient information" />
-        <!--<el-step title="Select patient" description="Select the desired patient and the desired day" />-->
-        <el-step title="Sleep Stage Detection" description="Label sleep stages based on HRV analysis" />
-        <el-step title="Events Classification Dashboard" description="Check for specific events in the data and label them" />
-        <el-step title="Events Monitoring" description="Compare patients data in different days and weeks" />
+        <el-step title="Filtering" description="Filter out undesired intervals" />
+        <el-step title="Events Classification" description="Check for specific events in the data to label" />
+        <el-step title="Events Monitoring" description="Compare patients data between different months, weeks and days" />
     </el-steps>
 </template>
 
