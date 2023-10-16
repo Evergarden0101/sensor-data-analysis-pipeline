@@ -5,6 +5,15 @@ from SSD2 import *
 import sys, os, re
 import matplotlib.pyplot as plt
 import numpy as np
+import xgboost as xgb
+import seaborn as sns
+import pandas as pd
+from sklearn.preprocessing import StandardScaler
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import GridSearchCV, learning_curve, train_test_split, StratifiedKFold, RandomizedSearchCV, LeaveOneOut, cross_val_score
+from sklearn.tree import DecisionTreeClassifier as DTC
+from sklearn import tree
+from sklearn.metrics import accuracy_score, confusion_matrix
 import matplotlib
 matplotlib.use('agg')
 
@@ -654,3 +663,10 @@ def generate_weekly_sum_img(DATABASE, img_local_path):
     fig.tight_layout()
     plt.savefig(img_local_path)
     print("Image saved")
+    
+    
+"""Generate night prediction image"""
+def generate_night_pred_img(DATABASE, night_path, night):
+    data = pd.read_csv(night_path+night+'cFnorm.csv')
+    loc = pd.read_csv(night_path+night+'clocation_Bites.csv')
+    

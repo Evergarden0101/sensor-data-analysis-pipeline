@@ -69,7 +69,7 @@ export default {
             },
             yAxis: {
                 type: 'category',
-                name: 'Sleep Stages',
+                name: 'Sleep Cycles',
                 rotate: 30,
                 data: stages,
                 splitArea: {

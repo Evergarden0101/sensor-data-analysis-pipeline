@@ -323,7 +323,6 @@ def create_app(test_config=None):
             return f"{e}", 500
 
 
-
     @app.route('/weekly-sum-img', methods=["GET"])
     def get_weekly_sum_img():
         try:
@@ -344,6 +343,33 @@ def create_app(test_config=None):
             return res
         except Exception as e:
             print('Exception raised in getting weekly summary image')
+            print(e)
+            return f"{e}", 500
+
+
+    @app.route('/night-pred-img', methods=["GET"])
+    def get_night_pred_img():
+        try:
+            # img_path = '/home/hogan/Googlelogo.png'
+            # img_stream = return_img_stream(img_path)
+            # return render_template('BruxismPage.vue',
+            #                     img_stream=img_stream)
+            patient_id = request.args.get('p')
+            week = request.args.get('w')
+            night = request.args.get('n')
+            night_path = DATA_PATH+'p'+str(patient_id)+'_w'+str(week)+f'/'
+            print('night_path: ',night_path)
+            img_local_path =  night_path+str(night)+f'.png'
+            print('img_local_path: ',img_local_path)
+            # generate_night_pred_img(DATABASE, night_path, night)
+            img_f = open(img_local_path, 'rb')
+            print(img_f)
+            res = make_response(img_f.read())   # 用flask提供的make_response 方法来自定义自己的response对象
+            res.headers['Content-Type'] = 'image/png'   # 设置response对象的请求头属性'Content-Type'为图片格式
+            img_f.close()
+            return res
+        except Exception as e:
+            print('Exception raised in getting night prediction image')
             print(e)
             return f"{e}", 500
 
