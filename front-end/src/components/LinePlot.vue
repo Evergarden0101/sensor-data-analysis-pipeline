@@ -2,30 +2,46 @@
     <!-- Initialize a select button -->
     <!-- <el-col :span="2"> -->
         <!-- <select id="selectButton"></select> -->
-    <el-row style="width: 100%;">
-        <h3 style="text-align: center;">Select your interested range from the plot.</h3>
+    <el-card :body-style="{ padding: '5px' }" shadow="always" style="border-radius: 10px">
+        <h4 align="center">Signals and Predicted Events for Whole Night</h4>
+        <el-image :src="imgsrc" :fit="fill" :zoom-rate="1.2" :max-scale="7" :min-scale="0.2" :preview-src-list="[imgsrc]"/>
+    </el-card>
+    <el-row style="text-align: center;width: 100%;">
+        <h3 align="center" style="text-align: center;">Select your interested range from the plot.</h3>
     </el-row>
     <!-- </el-col> -->
     <!-- <el-col :span="22"> -->
-    <el-row text-align="center" style="margin-bottom: 20px;width: 100%;">
-        <el-checkbox v-model="checkedMR" label="Use Right Masseter for Classification" border @change="rerenderRight"/>
+    <el-row text-align="center" style="width: 100%;">
+        <el-checkbox v-model="checkedMR" label="Show Right Masseter Signals" border @change="rerenderRight"/>
     </el-row>
-    <el-row v-show="checkedMR" style="width: 100%;">
-        <h4 style="margin-left: 40%;margin-bottom: 10px;">Sensor Signals for Right Masseter</h4>
+    <el-row v-show="checkedMR" style="text-align: center;width: 100%;margin-bottom:0">
+        <h4 align="center" style="margin-bottom:0">Sensor Signals for Right Masseter</h4>
     </el-row>
-    <el-row style="margin-bottom: 40px;" v-show="checkedMR">
-        <div id="mrlineplot" v-loading="loading" element-loading-text="The line plots are loading...it might take a couple of minutes."></div>
-    </el-row>
+    <el-carousel v-show="checkedMR" style="margin-bottom: 40px;" indicator-position="outside" :autoplay="false" trigger="click" arrow="always" :height="this.carouselheight" @change="getNewCycle" ref="rightCarousel">
+        <el-carousel-item v-for="item in this.cycleNum" :key="item">
+            <h5 align="center" style="margin-bottom: 10px;">Sleep Cycle {{ item }}/{{ this.cycleNum }}</h5>
+            <el-row>
+                <div :id="'mrlineplot' + item" v-loading="loading" element-loading-text="The line plots are loading..."></div>
+            </el-row>
+        </el-carousel-item>
+    </el-carousel>
+    
     <!-- </el-col> -->
-    <el-row text-align="center" style="margin-bottom: 20px;width: 100%;">
-        <el-checkbox v-model="checkedML" label="Use Left Masseter for Classification" border @change="rerenderLeft"/>
+    <el-row text-align="center" style="width: 100%;">
+        <el-checkbox v-model="checkedML" label="Show Left Masseter Signals" border @change="rerenderLeft"/>
     </el-row>
-    <el-row v-show="checkedML" style="width: 100%;">
-        <h4 style="margin-left: 40%;margin-bottom: 10px;">Sensor Signals for Left Masseter</h4>
+    <el-row v-show="checkedML" style="text-align: center;width: 100%;margin-bottom:0">
+        <h4 align="center" style="margin-bottom:0">Sensor Signals for Left Masseter</h4>
     </el-row>
-    <el-row v-show="checkedML" style="margin-bottom: 30px;">
-        <div id="mllineplot" v-loading="loading" element-loading-text="The line plots are loading...it might take a couple of minutes."></div>
-    </el-row>
+    <el-carousel v-show="checkedML" style="margin-bottom: 40px;" indicator-position="outside" :autoplay="false" trigger="click" arrow="always" :height="this.carouselheight" @change="getNewCycle" ref="leftCarousel">
+        <el-carousel-item v-for="item in this.cycleNum" :key="item">
+            <h5 align="center" style="margin-bottom: 10px;">Sleep Cycle {{ item }}/{{ this.cycleNum }}</h5>
+            <el-row>
+                <div :id="'mllineplot' + item" v-loading="loading" element-loading-text="The line plots are loading..."></div>
+            </el-row>
+        </el-carousel-item>
+    </el-carousel>
+    
 
 </template>
 
@@ -56,7 +72,26 @@ export default {
             loading: ref(true),
             plotHeight: 0,
             plotWidth: 0,
+            value:[0,1],
+            margin : {top: 10, right: 130, bottom: 40, left: 70},
+            carouselheight: '400px',
+            cycleNum: 7,
+            cycleIdx: 1,
+            imgsrc: '',
         }
+    },
+    beforeMount() {
+        // set the dimensions and margins of the graph
+        if(this.plotHeight == 0){
+            this.plotHeight = document.body.clientHeight/4 - this.margin.top - this.margin.bottom;
+            if(this.plotHeight < 300){
+                this.plotHeight = 300;
+            }
+        }
+        if(this.plotWidth == 0){
+            this.plotWidth = document.body.clientWidth/2 - this.margin.left - this.margin.right;
+        }
+        this.carouselheight = this.plotHeight + 100 + 'px';
     },
     mounted() {
         // await this.loadAllPred();
@@ -65,6 +100,7 @@ export default {
         this.end = this.$store.state.plotEnd;
         // this.checkedML = this.$store.state.checkedML;
         // this.checkedMR = this.$store.state.checkedMR;
+        this.imgsrc= "http://127.0.0.1:5000/night-pred-img?p=" + this.$store.state.patientId+'&w='+this.$store.state.week+'&n='+this.$store.state.nightId;
         this.data = dataset;
         if(this.data == null){
             this.loadLinePlotData(this.$store.state.patientId, this.$store.state.week, this.$store.state.nightId);
@@ -82,6 +118,23 @@ export default {
 
     },
     methods: {
+        getNewCycle(cur, prev){
+            this.loading = ref(true);
+            this.$refs.rightCarousel.setActiveItem(cur);
+            this.$refs.leftCarousel.setActiveItem(cur);
+
+            var id = 'mrlineplot'+this.cycleIdx;
+            var mr = document.getElementById(id);
+            this.emptyGraph(mr);
+            id = 'mllineplot'+this.cycleIdx;
+            var ml = document.getElementById(id);
+            this.emptyGraph(ml);
+
+            this.cycleIdx = cur+1;
+            this.rerenderRight(this.checkedMR);
+            this.rerenderLeft(this.checkedML);
+            this.loading = ref(false);
+        },
         loadAllPred() {
             const path = `http://127.0.0.1:5000/label-brux/${this.$store.state.patientId}/${this.$store.state.week}/${this.$store.state.nightId}`
             const headers = {
@@ -146,9 +199,9 @@ export default {
                     this.error = true;
                 })
         },
-        rerenderLeft(tab,event) {
+        rerenderLeft(tab) {
             if(tab == false){
-                var ml = document.getElementById('mllineplot')
+                var ml = document.getElementById('mllineplot'+this.cycleIdx)
                 this.emptyGraph(ml);
                 this.$store.commit('selectML',false);
             } else if(tab == true){
@@ -162,9 +215,9 @@ export default {
                 this.$store.commit('selectML',true);
             }
         },
-        rerenderRight(tab,event) {
+        rerenderRight(tab) {
             if(tab == false){
-                var mr = document.getElementById('mrlineplot')
+                var mr = document.getElementById('mrlineplot'+this.cycleIdx)
                 this.emptyGraph(mr);
                 this.$store.commit('selectMR',false);
             } else if(tab == true){
@@ -234,7 +287,6 @@ export default {
         },
         drawLabel(channel, start, end){
             console.log('labels')
-            var margin = {top: 10, right: 100, bottom: 40, left: 40};
             var height = this.plotHeight;
             var width = this.plotWidth;
             var x = d3.scaleLinear()
@@ -279,37 +331,27 @@ export default {
 
             var csv = this.csvToJson(this.data)
 
-            // set the dimensions and margins of the graph
-            var margin = {top: 10, right: 100, bottom: 40, left: 40};
-            if(this.plotHeight == 0){
-                this.plotHeight = document.body.clientHeight/4 - margin.top - margin.bottom;
-                if(this.plotHeight < 300){
-                    this.plotHeight = 300;
-                }
-            }
-            if(this.plotWidth == 0){
-                this.plotWidth = document.body.clientWidth/2 - margin.left - margin.right;
-            }
+            
             var height = this.plotHeight;
             var width = this.plotWidth;
 
             // append the svg object to the body of the page
             if(channel == 'MR'){
-                var svg = d3.select("#mrlineplot")
+                var svg = d3.select("#mrlineplot"+this.cycleIdx)
                 .append("svg")
-                    .attr("width", width + margin.left + margin.right)
-                    .attr("height", height + margin.top + margin.bottom)
+                    .attr("width", width + this.margin.left + this.margin.right)
+                    .attr("height", height + this.margin.top + this.margin.bottom)
                 .append("g")
                     .attr("transform",
-                        "translate(" + margin.left + "," + margin.top + ")");
+                        "translate(" + this.margin.left + "," + this.margin.top + ")");
             } else if(channel == 'ML'){
-                var svg = d3.select("#mllineplot")
+                var svg = d3.select("#mllineplot"+this.cycleIdx)
                 .append("svg")
-                    .attr("width", width + margin.left + margin.right)
-                    .attr("height", height + margin.top + margin.bottom)
+                    .attr("width", width + this.margin.left + this.margin.right)
+                    .attr("height", height + this.margin.top + this.margin.bottom)
                 .append("g")
                     .attr("transform",
-                        "translate(" + margin.left + "," + margin.top + ")");
+                        "translate(" + this.margin.left + "," + this.margin.top + ")");
             }
 
 
