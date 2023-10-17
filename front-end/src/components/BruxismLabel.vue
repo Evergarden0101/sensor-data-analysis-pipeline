@@ -116,7 +116,6 @@
 </template>
 
 <script>
-import { CircleCheckFilled, CircleCloseFilled } from '@element-plus/icons-vue'
 import LabelButton from '@/components/LabelButton.vue'
 import LabelInfoCard from '@/components/LabelInfoCard.vue'
 import { computed } from "vue"

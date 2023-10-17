@@ -94,7 +94,7 @@ export default {
 <style scoped>
 .affix-container {
   text-align: right;
-  height: 300px;
+  height: 150px;
   border-radius: 4px;
   z-index: 9999;
   /* background: var(--el-color-primary-light-9); */
