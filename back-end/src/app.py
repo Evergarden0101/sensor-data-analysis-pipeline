@@ -46,7 +46,7 @@ def create_app(test_config=None):
     def upload_patient_recording(patient_id, week, night_id):
         try:
             day, hours, minutes, seconds = get_patient_time_values(night_id)
-            patient_file = DATA_PATH + f"p{patient_id}_w{week}/{night_id}cFnorm.csv"
+            patient_file = get_data_path(DATABASE) + f"p{patient_id}_w{week}/{night_id}cFnorm.csv"
             df = pd.read_csv(patient_file)
             # For the moment the data is automatically resampled when uploaded in DB for efficiency reasons
             # TODO: adapt in the future
@@ -161,7 +161,15 @@ def create_app(test_config=None):
                     return selected, 200
                 
                 else:
-                    return get_standard_selected_phases(DATABASE, patient_id, week, night_id), 200
+                    standard_selected = get_standard_selected_phases(DATABASE, patient_id, week, night_id)
+                    updates = []
+                    for s in standard_selected:
+                        print(s)
+                        updates.append({'x': s[0], 'y': s[1]})
+
+                    post_selected_updates(DATABASE, patient_id, week, night_id, updates)
+
+                    return standard_selected, 200
             
             except Exception as e:
                 print('Exception raised')
@@ -232,7 +240,7 @@ def create_app(test_config=None):
     @app.route("/existing-patients-recordings/", methods=["GET"])
     def get_existing_patients_datasets():
         try:
-            existing_patients_recordings = get_existing_patients_data()
+            existing_patients_recordings = get_existing_patients_data(DATABASE)
 
             return existing_patients_recordings, 200
         
@@ -256,7 +264,7 @@ def create_app(test_config=None):
                     cur = con.cursor()
                     cur.execute("DELETE FROM settings")
                     params = tuple(settings.values())
-                    query = "INSERT  INTO settings (study_type, activity, original_sampling, selected_sampling, non_selected_sampling, dataset_format, filtered, normalized) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+                    query = "INSERT  INTO settings (study_type, activity, original_sampling, selected_sampling, non_selected_sampling, dataset_format, filtered, normalized, data_path) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
                     cur.execute(query, params)
 
                 return "Inserted settings into DB", 200
@@ -300,10 +308,46 @@ def create_app(test_config=None):
                 return f"{e}", 500
 
  
-    @app.route("/lineplot-data/<int:patient_id>/<int:week>/<string:night_id>", methods=["GET"])
+    @app.route("/sleep-cycle/<int:patient_id>/<int:week>/<string:night_id>/<int:sleep_cycle>/", methods=["GET"])
+    def get_sleep_cycle_data(patient_id, week, night_id, sleep_cycle):
+
+        # Amount of data points in a sleep cycle
+        chunk_size = 2000*60*90
+
+        df =  pd.read_csv(get_data_path(DATABASE) + f"p{patient_id}_w{week}/{night_id}cFnorm.csv", usecols=['MR', 'ML'], chunksize=chunk_size)
+
+        chunks = []
+        max_chunk = 0
+        for chunk in df:
+            max_chunk+=1
+            chunks.append(chunk)
+
+        if sleep_cycle > max_chunk:
+            return f"Sleep cycle nr {sleep_cycle} does not exist for patient {patient_id} on week {week} and night id {night_id}", 400
+        
+        else:
+            df = chunks[sleep_cycle-1]
+
+            start_id = df.index.start
+            end_id = df.index.stop
+
+            mr = df["MR"]
+            ml = df["ML"]
+
+            ranges = get_sleep_cycle_selected_intervals(patient_id, week, night_id, DATABASE, start_id, end_id)
+
+            sampling_ranges = get_sleep_cycle_sampling_ranges(DATABASE, mr, ml, ranges, start_id, end_id)
+            resampled_ranges = get_resampled_ranges(DATABASE, sampling_ranges)
+
+
+            return resampled_ranges, 200
+
+
+
+    @app.route("/lineplot-data/<int:patient_id>/<int:week>/<string:night_id>/", methods=["GET"])
     def get_lineplot_data(patient_id, week, night_id):
         try:
-            df = open_brux_csv(patient_id, week, night_id, columns=['MR', 'ML'])
+            df = open_brux_csv(DATABASE, patient_id, week, night_id, columns=['MR', 'ML'])
 
             mr = df["MR"].values.tolist()
             ml = df["ML"].values.tolist()
@@ -333,7 +377,7 @@ def create_app(test_config=None):
             #                     img_stream=img_stream)
             patient_id = request.args.get('p')
             week = request.args.get('w')
-            img_local_path =  DATA_PATH +"p"+str(patient_id)+"_w"+str(week)+ f"/summary.png"
+            img_local_path =  get_data_path(DATABASE) +"p"+str(patient_id)+"_w"+str(week)+ f"/summary.png"
             print('img_local_path: ',img_local_path)
             generate_weekly_sum_img(DATABASE, img_local_path)
             img_f = open(img_local_path, 'rb')

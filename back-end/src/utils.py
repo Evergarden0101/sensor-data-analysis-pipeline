@@ -143,7 +143,7 @@ def run_prediction(DATABASE, patient_id, week, night_id):
                 predict_events(model[0],patient_id, week, night_id)
             else:
                 print("Model does not exist")
-                loc_file = DATA_PATH + f"p{patient_id}_w{week}/{night_id}clocation_Bites.csv"
+                loc_file = get_data_path(DATABASE) + f"p{patient_id}_w{week}/{night_id}clocation_Bites.csv"
                 loc = pd.read_csv(loc_file)
                 print(loc)
                 for i,row in loc.iterrows():
@@ -192,7 +192,7 @@ def get_ssd_values(DATABASE, patient_id, week, night_id):
         else:
             print('DOES NOT EXIST', file=sys.stderr)
             print(patient_id, week, night_id)
-            values = get_HRV_features(patient_id, week, night_id, 2000)
+            values = get_HRV_features(DATABASE, patient_id, week, night_id, 2000)
 
             for value in values:
                 params = (patient_id, week, day, hours, minutes, seconds, value['start_id'], value['end_id'], value['LF_HF'], value['SD'], value['stage'], value['y'], value['x'], 0)
@@ -212,8 +212,6 @@ def post_selected_updates(DATABASE, patient_id, week, night_id, updates):
         query = "UPDATE sleep_stage_detection SET selected = 0 WHERE patient_id=? AND week=? AND day=? AND hours=? AND minutes=? AND seconds=?"
 
         cur.execute(query, params)
-
-
 
         for update in updates:
             params = (patient_id, week, day, hours, minutes, seconds, update["x"], update["y"])
@@ -261,15 +259,15 @@ def get_standard_selected_phases(DATABASE, patient_id, week, night_id):
         return result
 
 """Get all the patients, weeks and night ids"""
-def get_existing_patients_data():
+def get_existing_patients_data(DATABASE):
     existing_patients_recordings = []
 
-    for folder in os.listdir(DATA_PATH):
-        if not os.path.isdir(DATA_PATH + folder):
+    for folder in os.listdir(get_data_path(DATABASE)):
+        if not os.path.isdir(get_data_path(DATABASE) + folder):
             continue
         patient_id = re.search('p(.*?)_', folder).group(1)
 
-        patient_week_folder = DATA_PATH + folder
+        patient_week_folder = get_data_path(DATABASE) + folder
 
         csv_files = [f for f in os.listdir(patient_week_folder) if f.endswith(".csv")]
 
@@ -367,6 +365,16 @@ def get_is_normalized(DATABASE):
 
     return normalized
 
+"""Returns data path stored in db"""
+def get_data_path(DATABASE):
+    with sql.connect(DATABASE) as con:
+        cur = con.cursor()
+
+        data_path = cur.execute("SELECT data_path FROM settings WHERE id=1").fetchone()[0]
+
+    return data_path
+
+
 """Returns settings stored in db as list of json"""
 def get_settings(DATABASE):
     with sql.connect(DATABASE) as con:
@@ -376,7 +384,7 @@ def get_settings(DATABASE):
         columns = [description[0] for description in settings.description]
 
 
-        return get_json_format_from_query(columns, settings.fetchall(), 1, 8)[0]
+        return get_json_format_from_query(columns, settings.fetchall(), 1, 9)[0]
     
 
 """Returns sensors stored in db as list of json"""
@@ -389,7 +397,20 @@ def get_sensors(DATABASE):
 
         return get_json_format_from_query(columns, sensors.fetchall(), 1, 2)
 
+"""Retrieve selected intervals from DB""" 
+def get_sleep_cycle_selected_intervals(patient_id, week, night_id, DATABASE, start_id, end_id):
+    with sql.connect(DATABASE) as con:
+        cur = con.cursor()
 
+        day, hours, minutes, seconds = get_patient_time_values(night_id)
+
+        params = (1, patient_id, week, day, hours, minutes, seconds, start_id, end_id)
+        query = "SELECT start_id, end_id FROM sleep_stage_detection WHERE selected=? AND patient_id=? AND week=? AND day=? AND hours=? AND minutes=? and seconds=? and start_id>=? and end_id<=?"
+
+        result = cur.execute(query, params)
+        columns = [description[0] for description in result.description]
+
+        return get_json_format_from_query(columns=columns, query_results=result.fetchall(), start_id=0, end_id=1)
 
 """Retrieve selected intervals from DB""" 
 def get_selected_intervals(patient_id, week, night_id, DATABASE):
@@ -423,6 +444,79 @@ def get_rem_intervals(patient_id, week, night_id, DATABASE):
         return get_json_format_from_query(columns=columns, query_results=result.fetchall(), start_id=0, end_id=1)
 
     
+
+def get_sleep_cycle_sampling_ranges(DATABASE, mr, ml, ranges, start_id, end_id):
+    if len(mr) == len(ml):
+        final_ds = []
+        ranges_nr = len(ranges)
+        tmp = start_id
+
+        for idx, range in enumerate(ranges):
+            # Corner case: start
+            if range["start_id"] == start_id:
+                mr_start = mr.loc[range["start_id"]: range["end_id"]-1]
+                ml_start = ml.loc[range["start_id"]: range["end_id"]-1]
+
+                print(mr_start)
+
+                final_ds.append({
+                    "start_id": range["start_id"],
+                    "end_id": range["end_id"],
+                    "target_sampling_rate": get_selected_sampling(DATABASE),
+                    "mr_array": mr_start.values.tolist(),
+                    "ml_array": ml_start.values.tolist()
+
+                })
+                tmp = range["end_id"]
+
+            else:
+                # non selected ranges
+                if tmp != range["start_id"]:
+                    mr_ns = mr.loc[tmp: range["start_id"]-1]
+                    ml_ns = ml.loc[tmp: range["start_id"]-1]
+
+                    final_ds.append({
+                        "start_id": tmp,
+                        "end_id": range["start_id"],
+                        "target_sampling_rate":  get_non_selected_sampling(DATABASE),
+                        "mr_array": mr_ns.values.tolist(),
+                        "ml_array": ml_ns.values.tolist(),
+                    })
+
+
+                # selected ranges
+                mr_s = mr.loc[range["start_id"]: range["end_id"]-1]
+                ml_s = ml.loc[range["start_id"]: range["end_id"]-1]
+
+                final_ds.append({
+                    "start_id": range["start_id"],
+                    "end_id": range["end_id"],
+                    "target_sampling_rate": get_selected_sampling(DATABASE),
+                    "mr_array": mr_s.values.tolist(),
+                    "ml_array": ml_s.values.tolist()
+                })
+                tmp = range["end_id"]
+
+                # Corner case: end
+                if idx == ranges_nr-1:
+                    print("corner case")
+                    if range["end_id"] != end_id:
+                        mr_end = mr.loc[tmp: end_id-1]
+                        ml_end = ml.loc[tmp: end_id-1]
+
+                        final_ds.append({
+                        "start_id": tmp,
+                        "end_id": end_id,
+                        "target_sampling_rate":  get_non_selected_sampling(DATABASE),
+                        "mr_array": mr_end.values.tolist(),
+                        "ml_array": ml_end.values.tolist()
+                    })
+        return final_ds
+
+    else:
+        return "MR and ML should have the same length."
+    
+
 
 """Get the ranges for the resampling of the dataset"""
 def get_sampling_ranges(DATABASE, mr, ml, ranges):
