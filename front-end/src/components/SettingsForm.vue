@@ -119,7 +119,7 @@
                     </el-form-item>
 
                     <el-form-item label="Non selected ranges (Hz)" required="true">
-                        <el-input-number v-model="samplingRateForm.NonSelectedSampling" :min="120" :max="256" />
+                        <el-input-number v-model="samplingRateForm.NonSelectedSampling" :min="100" :max="256" />
                     </el-form-item>
                 </div>
             </el-form>
@@ -160,6 +160,11 @@
                     active-text="Yes"
                     inactive-text="No">
                 </el-switch>
+            </el-form-item>
+
+            <p><i>Data path</i></p>
+            <el-form-item label="Full data path">
+                <el-input v-model="datasetInfoForm.dataPath" placeholder="Please input the full data path" style="width:400px" /> 
             </el-form-item>
             
             <p><i>Channel names on .csv file</i></p>
@@ -240,7 +245,8 @@ export default {
                 filtered: true,
                 normalized: true,
                 fileFormat: ref('csv'),
-                channelsNames: ref({})
+                channelsNames: ref({}),
+                dataPath : ref('')
             }),
             studyTypes: [
                 {
@@ -322,6 +328,7 @@ export default {
             this.samplingRateForm.SelectedSampling = this.settings.selected_sampling;
             this.samplingRateForm.NonSelectedSampling = this.settings.non_selected_sampling;
             this.samplingRateForm.fileFormat = this.settings.dataset_format;
+            this.datasetInfoForm.dataPath = this.settings.data_path;
 
             if(this.settings.normalized == 1){
                 this.datasetInfoForm.normalized = true;
@@ -411,7 +418,8 @@ export default {
                 "NonSelectedSampling": this.samplingRateForm.NonSelectedSampling,
                 "fileFormat": this.datasetInfoForm.fileFormat,
                 "filtered": this.datasetInfoForm.filtered,
-                "normalized": this.datasetInfoForm.normalized
+                "normalized": this.datasetInfoForm.normalized,
+                "dataPath": this.datasetInfoForm.dataPath
             };
 
             this.$store.commit('updateSamplingRate', this.samplingRateForm.originalSampling);

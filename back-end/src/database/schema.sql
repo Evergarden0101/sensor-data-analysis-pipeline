@@ -112,7 +112,8 @@ CREATE TABLE settings (
   non_selected_sampling INTEGER NOT NULL,
   dataset_format TEXT NOT NULL,
   filtered BOOLEAN NOT NULL,
-  normalized BOOLEAN NOT NULL
+  normalized BOOLEAN NOT NULL,
+  data_path TEXT NOT NULL
 );
 
 CREATE TABLE sensors (

@@ -79,7 +79,7 @@ def get_ako_ranges():
 - SAMPLING_RATE: desired sampling rate (default: 1000)
 """
 
-def get_HRV_features(patient_id, week, night_id,  SAMPLING_RATE):
+def get_HRV_features(DATABASE, patient_id, week, night_id,  SAMPLING_RATE):
     start = 0
     print(f"start: {start}")
     # Number of data points in 5 minutes
@@ -92,7 +92,7 @@ def get_HRV_features(patient_id, week, night_id,  SAMPLING_RATE):
     x=0
 
     # Open right CSV file and get ECG data
-    df = open_brux_csv(patient_id, week, night_id)
+    df = open_brux_csv(DATABASE, patient_id, week, night_id)
     print(f"dfshape: {df.shape}")
     ecg = df["ECG"]
     ecg_array = ecg.values.tolist()
