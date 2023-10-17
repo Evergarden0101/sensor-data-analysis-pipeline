@@ -19,10 +19,10 @@
 
     <el-row style="margin-top: 3%;">
         <el-col :span="7" :offset="4">
-            <div id="currentPatientHeatMap" style="position: relative; height: 47vh; width: 30vh"></div>
+            <div id="currentPatientHeatMap" style="position: relative; height: 70vh; width: 55vh"></div>
         </el-col>
         <el-col :span="2">
-            Metrics
+            Metrics with legend
         </el-col>
         <el-col :span="9">
             <el-row>
@@ -40,7 +40,7 @@
             </el-row>
             <el-row>
                 <el-col>
-                    <div id="currentPatientGlobalHeatMap" style="position: relative; height: 55vh; width: 50vh"></div>
+                    <div id="currentPatientGlobalHeatMap" style="position: relative; height: 80vh; width: 68vh"></div>
                 </el-col>
             </el-row>
         </el-col>
@@ -61,7 +61,7 @@
             </el-card>
         </el-col>
         <el-col :span="8" :offset="4">
-            <div id="cohortHeatMap" style="position: relative; height: 47vh; width: 30vh"></div>
+            <div id="cohortHeatMap" style="position: relative; height: 80vh; width: 65vh"></div>
         </el-col>
         <el-col :span="2">
             Metrics
