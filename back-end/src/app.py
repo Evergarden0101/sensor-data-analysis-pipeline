@@ -10,7 +10,7 @@ from utils import *
 import sys
 import pandas as pd
 from settings import *
-import os
+import os, math
 from datetime import datetime
 
 
@@ -366,6 +366,83 @@ def create_app(test_config=None):
             print(e)
             return f"{e}", 500
 
+    """
+    label: 
+        {
+            "location_begin": int
+            "location_end": int
+        }
+    """
+    @app.route('/event-interval/<int:patient_id>/<int:week>/<string:night_id>/', methods=["GET"])
+    def get_event_interval(patient_id, week, night_id):
+
+        day, hours, minutes, seconds = get_patient_time_values(night_id)
+
+        label = request.json
+
+        five_min_data_points = 600000
+
+        #1h data
+        chunk_size = 2000*60*60
+
+        location_begin = label["location_begin"] * get_original_sampling(DATABASE)
+        location_end = label["location_end"] * get_original_sampling(DATABASE)
+
+        print(f"duration in index: {location_end - location_begin}")
+        print(f"start_id: {location_begin}, end_id: {location_end}")
+        
+
+        with sql.connect(DATABASE) as con:
+            cur = con.cursor()
+
+            params = (patient_id, week, day, hours, minutes, seconds, location_begin, location_end)
+
+            query = "SELECT start_id, end_id FROM sleep_stage_detection WHERE patient_id=? AND week=? AND day=? AND hours=? AND minutes=? AND seconds=? AND ? >= start_id AND ? <= end_id"
+
+            result = cur.execute(query, params).fetchall()
+
+            print(f"result: {result}")
+
+
+            if result==[]:
+                print("Corner case")
+                start_id = math.floor(location_begin - (five_min_data_points/2))
+                end_id = math.ceil(location_end + (five_min_data_points/2))
+
+            else:
+                print("Normal case")
+                start_id = result[0][0]
+                end_id = result[0][1]
+
+            
+
+            df =  pd.read_csv(get_data_path(DATABASE) + f"p{patient_id}_w{week}/{night_id}cFnorm.csv", usecols=['MR', 'ML'], chunksize=chunk_size)
+
+            for chunk in df:
+                print(f"chunk start_id: {chunk.index.start}, start_id: {start_id}")
+                if (chunk.index.start <= start_id) and (chunk.index.stop >= end_id):
+                    desired_chunk = chunk
+                    break
+
+            print(f"desired chunk: {desired_chunk}")
+
+            mr = desired_chunk["MR"].loc[start_id:end_id-1]
+            ml = desired_chunk["ML"].loc[start_id:end_id-1]
+            print(mr)
+
+            print(f"length: {end_id-start_id}, mr lengt: {len(mr)}")
+
+            ranges = get_sleep_cycle_selected_intervals(patient_id, week, night_id, DATABASE, start_id, end_id)
+
+            print(f"ranges: {ranges}")
+
+            sampling_ranges = get_sleep_cycle_sampling_ranges(DATABASE, mr, ml, ranges, start_id, end_id)
+            resampled_ranges = get_resampled_ranges(DATABASE, sampling_ranges)
+
+            print(len(resampled_ranges))
+
+
+            return resampled_ranges, 200
 
     @app.route('/weekly-sum-img', methods=["GET"])
     def get_weekly_sum_img():
