@@ -385,8 +385,8 @@ def create_app(test_config=None):
         #1h data
         chunk_size = 2000*60*60
 
-        location_begin = label["location_begin"] * get_original_sampling(DATABASE)
-        location_end = label["location_end"] * get_original_sampling(DATABASE)
+        location_begin = math.floor(label["location_begin"] * get_original_sampling(DATABASE))
+        location_end = math.ceil(label["location_end"] * get_original_sampling(DATABASE))
 
         print(f"duration in index: {location_end - location_begin}")
         print(f"start_id: {location_begin}, end_id: {location_end}")
@@ -403,46 +403,61 @@ def create_app(test_config=None):
 
             print(f"result: {result}")
 
-
+            # If the event is in between two 5 minute intervals we might wanto to return more than 5 minute of data
             if result==[]:
                 print("Corner case")
                 start_id = math.floor(location_begin - (five_min_data_points/2))
                 end_id = math.ceil(location_end + (five_min_data_points/2))
 
+            # The event is in a 5 minute interval
             else:
                 print("Normal case")
                 start_id = result[0][0]
                 end_id = result[0][1]
 
             
-
+            # Open the df with a chunk size of 1h because the interval might be > 5 min
             df =  pd.read_csv(get_data_path(DATABASE) + f"p{patient_id}_w{week}/{night_id}cFnorm.csv", usecols=['MR', 'ML'], chunksize=chunk_size)
 
             for chunk in df:
                 print(f"chunk start_id: {chunk.index.start}, start_id: {start_id}")
                 if (chunk.index.start <= start_id) and (chunk.index.stop >= end_id):
+                    # Find desired chunk
                     desired_chunk = chunk
                     break
 
             print(f"desired chunk: {desired_chunk}")
 
+            # Extract the interesting 5 minutes (or more)
             mr = desired_chunk["MR"].loc[start_id:end_id-1]
             ml = desired_chunk["ML"].loc[start_id:end_id-1]
-            print(mr)
+
+            # Extract the portion in which event occurs
+            mr_event_data = desired_chunk["MR"].loc[location_begin:location_end-1]
+            ml_event_data = desired_chunk["ML"].loc[location_begin:location_end-1]
+
+            #Find start and end indices of event list in original 5 minute of data
+            new_mr_subindices = find_sub_list(mr_event_data.values.tolist(), mr.values.tolist())
+            new_ml_subindices = find_sub_list(ml_event_data.values.tolist(), ml.values.tolist())
 
             print(f"length: {end_id-start_id}, mr lengt: {len(mr)}")
 
+            # Chek for selected intervals to determine sampling rate
             ranges = get_sleep_cycle_selected_intervals(patient_id, week, night_id, DATABASE, start_id, end_id)
 
             print(f"ranges: {ranges}")
 
+            # Determine intervals with sampling rates
             sampling_ranges = get_sleep_cycle_sampling_ranges(DATABASE, mr, ml, ranges, start_id, end_id)
-            resampled_ranges = get_resampled_ranges(DATABASE, sampling_ranges)
 
-            print(len(resampled_ranges))
+            # Add the event data to the interval
+            data_with_event = add_event_data(new_mr_subindices, new_ml_subindices, sampling_ranges)
+
+            # Resample (still not working)
+            #resampled_ranges = get_resampled_ranges2(DATABASE, data_with_event)
 
 
-            return resampled_ranges, 200
+            return data_with_event, 200
 
     @app.route('/weekly-sum-img', methods=["GET"])
     def get_weekly_sum_img():

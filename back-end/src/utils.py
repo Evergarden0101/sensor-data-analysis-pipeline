@@ -2,7 +2,7 @@ import sqlite3 as sql
 from settings import *
 from preprocessing import *
 from SSD2 import *
-import sys, os, re
+import sys, os, re, math
 import matplotlib.pyplot as plt
 import numpy as np
 import xgboost as xgb
@@ -466,7 +466,7 @@ def get_sleep_cycle_sampling_ranges(DATABASE, mr, ml, ranges, start_id, end_id):
                 mr_start = mr.loc[range["start_id"]: range["end_id"]-1]
                 ml_start = ml.loc[range["start_id"]: range["end_id"]-1]
 
-                print(mr_start)
+                print(f"print length mr: ")
 
                 final_ds.append({
                     "start_id": range["start_id"],
@@ -606,6 +606,30 @@ def get_resampled_ranges(DATABASE, sampling_ranges):
 
     return sampling_ranges
 
+def get_resampled_ranges2(DATABASE, sampling_ranges):
+    for sampling_range in sampling_ranges:
+        sampling_range["mr_array"] = nk.signal_resample(sampling_range['mr_array'], method="interpolation", sampling_rate=get_original_sampling(DATABASE), desired_sampling_rate=sampling_range["target_sampling_rate"]).tolist()
+        sampling_range["ml_array"] = nk.signal_resample(sampling_range["ml_array"], method="interpolation", sampling_rate=get_original_sampling(DATABASE), desired_sampling_rate=sampling_range["target_sampling_rate"]).tolist()
+
+        sampling_range["mr_event_array"] = nk.signal_resample(sampling_range['mr_event_array'], method="interpolation", sampling_rate=get_original_sampling(DATABASE), desired_sampling_rate=sampling_range["target_sampling_rate"]).tolist()
+        sampling_range["ml_event_array"] = nk.signal_resample(sampling_range["ml_event_array"], method="interpolation", sampling_rate=get_original_sampling(DATABASE), desired_sampling_rate=sampling_range["target_sampling_rate"]).tolist()
+
+    return sampling_ranges
+
+def add_event_data(mr_event_indices, ml_event_indices, sampling_ranges):
+    for sampling_range in sampling_ranges:
+        print(mr_event_indices)
+        print(len(sampling_range["mr_array"]))
+        sampling_range["mr_event_array"] = sampling_range["mr_array"][mr_event_indices[0]:mr_event_indices[1]+1]
+        sampling_range["ml_event_array"] = sampling_range["ml_array"][ml_event_indices[0]: ml_event_indices[1]+1]
+
+    return sampling_ranges
+
+def find_sub_list(sl,l):
+    sll=len(sl)
+    for ind in (i for i,e in enumerate(l) if e==sl[0]):
+        if l[ind:ind+sll]==sl:
+            return ind,ind+sll-1
 
 def heatmap(data, row_labels, col_labels, ax=None,
             cbar_kw=None, cbarlabel="", **kwargs):
