@@ -164,6 +164,7 @@ export default {
     },
     methods: {
         confirmLabel(){
+            console.log(activeLabel)
             const path = 'http://127.0.0.1:5000/label-brux';
             const payload = [];
 
@@ -193,7 +194,7 @@ export default {
                 });
 
                 console.log(res);
-                // this.$store.commit('clearLabels');
+                this.$store.commit('clearLabels');
                 // this.load = false;
                 this.$store.commit('updateStudyAccuracy', '--');
                 this.$store.commit('updatePatientAccuracy', '--');
@@ -223,6 +224,8 @@ export default {
             this.computeDur();
             // this.Labels[this.labelNum].Dur = computed(()=>{  return this.Labels[this.labelNum].End - this.Labels[this.labelNum].Start  })
             // this.labelNum ++;
+            console.log(this.Labels);
+            console.log(this.labelNum)
             this.$store.commit('saveLabels',JSON.stringify(this.Labels));
             this.form = {'label_id':'','Start':0,'End':0,'Dur':0};
             this.dialogFormVisible = false;
@@ -269,6 +272,7 @@ export default {
             axios.get(path, {headers})
                 .then((res) => {
                     console.log("Data received");
+                    console.log(res.data);
                     // this.loading = ref(false);
                     this.Labels = res.data;
                     // this.$nextTick(() => {
@@ -315,7 +319,7 @@ export default {
         if(this.$store.state.labels){
             console.log("Labels already loaded")
             this.Labels = JSON.parse(this.$store.state.labels);
-            // this.computeDur();
+            this.computeDur();
             // console.log('active label', this.activeLabel)
             // this.$store.commit('clearLabels');
 

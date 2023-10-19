@@ -116,7 +116,8 @@ def create_app(test_config=None):
     @app.route("/label-brux/<int:patient_id>/<int:week>/<string:night_id>", methods=["GET"])
     def get_label_brux(patient_id, week, night_id):
         try:
-            run_prediction(DATABASE, patient_id, week, night_id)
+            print('get_label_brux')
+            predicted_labels = run_prediction(DATABASE, patient_id, week, night_id)
             params = (patient_id, week, night_id)
             query = "SELECT * from predicted_labels WHERE (patient_id=? AND week=? AND night_id=?)"
 
@@ -128,7 +129,7 @@ def create_app(test_config=None):
                 print(columns)
                 #df = get_patients_recordings_df(columns, patient_data.fetchall())
                 predicted_labels_json = get_json_format_from_query(columns=columns, query_results=predicted_labels.fetchall(), start_id=1, end_id=10)
-                
+                print(predicted_labels_json)
             return predicted_labels_json, 200
 
 
@@ -467,8 +468,15 @@ def create_app(test_config=None):
             print('night_path: ',night_path)
             img_local_path =  night_path+str(night)+f'.png'
             print('img_local_path: ',img_local_path)
-            # generate_night_pred_img(DATABASE, night_path, night)
-            img_f = open(img_local_path, 'rb')
+            
+            try:
+                img_f = open(img_local_path, 'rb')
+            except FileNotFoundError:
+                generate_night_pred_img(DATABASE, night_path, night)
+                img_f = open(img_local_path, 'rb')
+            except Exception as e:
+                return f"{e}", 500
+            
             print(img_f)
             res = make_response(img_f.read())   # 用flask提供的make_response 方法来自定义自己的response对象
             res.headers['Content-Type'] = 'image/png'   # 设置response对象的请求头属性'Content-Type'为图片格式

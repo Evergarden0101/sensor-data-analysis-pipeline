@@ -96,6 +96,7 @@ export default {
     mounted() {
         // await this.loadAllPred();
         this.predLabels = JSON.parse(this.$store.state.labels);
+        console.log('predLabels', this.predLabels)
         this.start = this.$store.state.plotStart;
         this.end = this.$store.state.plotEnd;
         // this.checkedML = this.$store.state.checkedML;
