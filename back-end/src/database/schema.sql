@@ -13,7 +13,7 @@ CREATE TABLE models (
   patient_id INTEGER NOT NULL,
   accuracy DECIMAL(6,3),
   model_name TEXT,
-  model_path TEXT
+  model_path TEXT NOT NULL
 );
 
 

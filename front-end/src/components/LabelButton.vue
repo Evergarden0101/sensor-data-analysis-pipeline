@@ -1,5 +1,5 @@
 <template>
-    <el-button @click="postLabel" :loading="load">Rerun Events Classification</el-button>
+    <el-button @click="postLabel" :loading="load">Rerun Model</el-button>
 </template>
 
 <script>
@@ -13,6 +13,7 @@ export default{
         }
     },
     methods:  {
+        // TODO: rurun model
         postLabel(){
             this.load = true;
             const path = 'http://127.0.0.1:5000/label-brux';

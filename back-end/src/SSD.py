@@ -4,7 +4,7 @@ import datetime, math
 import neurokit2 as nk
 import hrvanalysis as hrvana
 from preprocessing import *
-from settings import *
+# from settings import *
 
 
 

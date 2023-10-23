@@ -24,13 +24,13 @@
             </router-link>
         </el-col>
     </el-row>
-    <el-row style="margin-top: 2em;margin-bottom: 2em;height: 30px;overflow: visible; ">
+    <el-row style="margin-top: 2em;margin-bottom: 1em;height: 30px;overflow: visible; ">
         <el-col :span="3" :offset="20" style="margin-top: -150px;height: 130px;">
             <div class="affix-container">
                 <el-affix target=".affix-container" :offset="10">
                     <p style="display: block;margin:0 auto 60px auto;text-align: center;">Weekly Summary</p>
                     <el-button @click="rerender" style="width: 200px;padding: 0;border: 0;">
-                        <el-image :src="imgsrc" :fit="contain" width="200px" @click="rerender"/>
+                        <el-image :src="week_sum_imgsrc" :fit="contain" width="200px" @click="rerender"/>
                     </el-button>
                     <el-dialog v-model="weekSummaryVisible" title="Weekly Summary" center width="60%">
                         <TreatHeatMap v-if="isShow"/>
@@ -39,7 +39,14 @@
             </div>
         </el-col>
     </el-row>
-
+    <el-row style="margin-bottom:3em;margin-top:0">
+        <el-col :span="22" :offset="1">
+            <!-- <el-card :body-style="{ padding: '5px' }" shadow="always" style="border-radius: 10px"> -->
+                <h4 align="center">Signals and Predicted Events for Whole Night</h4>
+                <el-image :src="night_pred_imgsrc" :fit="fill" :zoom-rate="1.2" :max-scale="7" :min-scale="0.2" :preview-src-list="[night_pred_imgsrc]"/>
+            <!-- </el-card> -->
+        </el-col>
+    </el-row>
     <el-row>
         <el-col :span="11" style="padding-left: 1.5em;">
             <el-affix :offset="10">
@@ -74,11 +81,15 @@ export default {
             weekSummaryVisible: false,
             isShow: true,
             // imgsrc: require("@/assets/summary.png"),
-            imgsrc: '',
+            week_sum_imgsrc: '',
+            night_pred_imgsrc: '',
          }
     },
+    // TODO: loading status
     mounted(){
-        this.imgsrc= "http://127.0.0.1:5000/weekly-sum-img?p=" + this.$store.state.patientId+'&w='+this.$store.state.week;
+        this.week_sum_imgsrc= "http://127.0.0.1:5000/weekly-sum-img?p=" + this.$store.state.patientId+'&w='+this.$store.state.week;
+        console.log(this.$store.state.nightId)
+        this.night_pred_imgsrc = "http://127.0.0.1:5000/night-pred-img?p=" + this.$store.state.patientId+'&w='+this.$store.state.week+'&n='+this.$store.state.nightId;
     },
     methods:{
         rerender(){

@@ -27,7 +27,7 @@ const store = createStore({
       checkedMR: true,
       checkedML: true,
       labels: null,
-      samplingRate: 2000,
+      samplingRate: 1000,
       bruxLabelKey: 0,
       studyAccuracy: '--',
       patientAccuracy: '--',
