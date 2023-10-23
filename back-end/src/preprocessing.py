@@ -1,11 +1,24 @@
+
+import sqlite3 as sql
 import pandas as pd 
 import datetime
 import neurokit2 as nk
 import numpy as np
-from settings import *
-from utils import *
+# from settings import *
+# from utils import *
+
 
 # FUNCTIONS
+"""Returns data path stored in db"""
+def get_data_path(DATABASE):
+    with sql.connect(DATABASE) as con:
+        cur = con.cursor()
+
+        data_path = cur.execute("SELECT data_path FROM settings WHERE id=1").fetchone()[0]
+
+    return data_path
+
+
 """Gets patient_id, week and night_id and return a pandas df"""
 def open_brux_csv(DATABASE, patient_id, week, night_id, columns=[]):
     if columns:

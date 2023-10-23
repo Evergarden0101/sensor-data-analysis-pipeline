@@ -9,7 +9,7 @@ from preprocessing import *
 from utils import *
 import sys
 import pandas as pd
-from settings import *
+# from settings import *
 import os, math
 from datetime import datetime
 
@@ -430,6 +430,7 @@ def create_app(test_config=None):
             return result, 200
 
 
+
     @app.route('/weekly-sum-img', methods=["GET"])
     def get_weekly_sum_img():
         try:
@@ -464,15 +465,16 @@ def create_app(test_config=None):
             patient_id = request.args.get('p')
             week = request.args.get('w')
             night = request.args.get('n')
-            night_path = DATA_PATH+'p'+str(patient_id)+'_w'+str(week)+f'/'
-            print('night_path: ',night_path)
-            img_local_path =  night_path+str(night)+f'.png'
+            # week_path = get_data_path(DATABASE)+'p'+str(patient_id)+'_w'+str(week)+f'/'
+            # print('night_path: ',week_path)
+            # img_local_path =  week_path+str(night)+f'.png'
+            img_local_path =  get_data_path(DATABASE)+'p'+str(patient_id)+'_w'+str(week)+f'/'+str(night)+f'.png'
             print('img_local_path: ',img_local_path)
             
             try:
                 img_f = open(img_local_path, 'rb')
             except FileNotFoundError:
-                generate_night_pred_img(DATABASE, night_path, night)
+                generate_night_pred_img(DATABASE, patient_id, week, night)
                 img_f = open(img_local_path, 'rb')
             except Exception as e:
                 return f"{e}", 500

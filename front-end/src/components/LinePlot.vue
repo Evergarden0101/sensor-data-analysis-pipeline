@@ -2,10 +2,6 @@
     <!-- Initialize a select button -->
     <!-- <el-col :span="2"> -->
         <!-- <select id="selectButton"></select> -->
-    <el-card :body-style="{ padding: '5px' }" shadow="always" style="border-radius: 10px">
-        <h4 align="center">Signals and Predicted Events for Whole Night</h4>
-        <el-image :src="imgsrc" :fit="fill" :zoom-rate="1.2" :max-scale="7" :min-scale="0.2" :preview-src-list="[imgsrc]"/>
-    </el-card>
     <el-row style="text-align: center;width: 100%;">
         <h3 align="center" style="text-align: center;">Select your interested range from the plot.</h3>
     </el-row>
@@ -77,7 +73,6 @@ export default {
             carouselheight: '400px',
             cycleNum: 7,
             cycleIdx: 1,
-            imgsrc: '',
         }
     },
     beforeMount() {
@@ -101,7 +96,6 @@ export default {
         this.end = this.$store.state.plotEnd;
         // this.checkedML = this.$store.state.checkedML;
         // this.checkedMR = this.$store.state.checkedMR;
-        this.imgsrc= "http://127.0.0.1:5000/night-pred-img?p=" + this.$store.state.patientId+'&w='+this.$store.state.week+'&n='+this.$store.state.nightId;
         this.data = dataset;
         if(this.data == null){
             this.loadLinePlotData(this.$store.state.patientId, this.$store.state.week, this.$store.state.nightId);
@@ -119,6 +113,7 @@ export default {
 
     },
     methods: {
+        // TODO: switch to next event
         getNewCycle(cur, prev){
             this.loading = ref(true);
             this.$refs.rightCarousel.setActiveItem(cur);
@@ -310,8 +305,8 @@ export default {
                             .attr("y", 0)
                             .attr("width", (d=> x(d.End) - x(d.Start)))
                             .attr("height", height)
-                            .attr("fill", "teal")
-                            .attr("opacity", 0.3)
+                            .attr("fill", "green")
+                            .attr("opacity", 0.4)
                             .attr("class", "labels");
         },
         drawLineplot(channel,start, end){

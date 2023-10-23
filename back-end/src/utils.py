@@ -1,5 +1,5 @@
 import sqlite3 as sql
-from settings import *
+# from settings import *
 from preprocessing import *
 from SSD2 import *
 import sys, os, re, math, itertools
@@ -131,28 +131,22 @@ def insert_label(DATABASE, label):
 
 def generate_model(DATABASE, patient_id, week, night_id):
     print("generate_model")
-    data = open_brux_csv(patient_id, week, night_id)
-    loc = open_brux_loc_csv(patient_id, week, night_id)
-    try:
-        original_sampling = get_original_sampling(DATABASE)
-    except Exception as e:
-        original_sampling = 2000
-    try:
-        selected_sampling =get_selected_sampling(DATABASE)
-    except Exception as e:
-        selected_sampling = 1000
-    dsample_rate = np.round(original_sampling / selected_sampling).astype("int")
-    df = resample_whole_df(data)
+    data = open_brux_csv(DATABASE, patient_id, week, night_id)
+    loc = open_brux_loc_csv(DATABASE, patient_id, week, night_id)
+    original_sampling = get_original_sampling(DATABASE)
+    selected_sampling =get_selected_sampling(DATABASE)
+    # dsample_rate = np.round(original_sampling / selected_sampling).astype("int")
     range_min = 0
     range_max = loc.iloc[2,1]
     bites = np.zeros(data.shape[0], dtype=int)
     print("label bites")
-    for i in range(1, range_max*dsample_rate):
+    for i in range(1, range_max):
         if i < loc.iloc[0,0] or (i > loc.iloc[0,1] and i < loc.iloc[1,0]) or (i > loc.iloc[1,1] and i < loc.iloc[2,0]) or i > loc.iloc[2,1]:
             bites[i] = 0
         else:
             bites[i] = 1
     print("add bites")
+    df = resample_whole_df(data,original_sampling,selected_sampling)
     bites = resample_signal(signal=bites, sampling_rate=original_sampling, SAMPLING_RATE=selected_sampling)
     df.loc[:,'Bites'] = bites
     
@@ -172,21 +166,31 @@ def generate_model(DATABASE, patient_id, week, night_id):
     model.fit(x_train, y_train)
     
     print("save model")
-    # with sql.connect(DATABASE) as con:
-    #     cur = con.cursor()
-    #     cur.execute(f"INSERT INTO models (patient_id, model_path) VALUES {patient_id, DATA_PATH + f'p{patient_id}_model.json'}")
+    with sql.connect(DATABASE) as con:
+        cur = con.cursor()
+        cur.execute(f"INSERT INTO models (patient_id, model_path) VALUES {patient_id, get_data_path(DATABASE) + f'p{patient_id}_model.json'}")
+        cur.close()
 
-    model.save_model(DATA_PATH + f"p{patient_id}_model.json")
+    model.save_model(get_data_path(DATABASE) + f"p{patient_id}_model.json")
     return model
 
 """TODO: Run Prediction"""
 def predict_events(DATABASE, model, patient_id, week, night_id):
     print("predict_events")
-    # data = pd.read_csv(DATA_PATH + f"p{patient_id}_w{week}/{night_id}cFnorm.csv")
-    filePath = DATA_PATH+'p'+str(patient_id)+'_w'+str(week)+f'/'+str(night_id)+f'cFnorm.csv'
+    filePath = get_data_path(DATABASE)+'p'+str(patient_id)+'_w'+str(week)+f'/'+str(night_id)+f'cFnorm.csv'
     # data = open_brux_csv(patient_id, week, night_id)
     data = pd.read_csv(filePath)
-    df = resample_whole_df(data)
+    selected = get_selected_intervals(patient_id, week, night_id, DATABASE)
+    print(selected[0]['start_id'])
+    # print(selected[0][0])
+    df = pd.DataFrame()
+    for i in range(len(selected)):
+        df = df._append(data.iloc[selected[i]['start_id']:selected[i]['end_id'],:])
+    print(df.shape)
+    original_sampling = get_original_sampling(DATABASE)
+    selected_sampling =get_selected_sampling(DATABASE)
+    df = resample_whole_df(df,original_sampling,selected_sampling)
+    
     x_p = df.iloc[:,:2].copy()
     x_p = np.array(x_p.values.tolist())
     y_p = model.predict(x_p)
@@ -200,7 +204,7 @@ def predict_events(DATABASE, model, patient_id, week, night_id):
         while i < len(y_p):
             y_sum = y_p[i];
             cnt = 1;
-            for j in range(1, 5000):
+            for j in range(1, 5*selected_sampling):
                 if(i+j >= len(y_p)):
                     break;
                 y_sum += y_p[i+j];
@@ -212,14 +216,18 @@ def predict_events(DATABASE, model, patient_id, week, night_id):
                     params = (patient_id, week, night_id, event, i, loc_end)
                     query = "INSERT INTO predicted_labels (patient_id, week, night_id, label_id, location_begin, location_end) VALUES (?, ?, ?, ?, ?, ?)"
                     cur.execute(query, params)
+                    print("current end:", loc_end)
                 elif(y_p_mix[-1] == 10):
                     params = (loc_end+cnt, patient_id, week, night_id, event)
                     query = "UPDATE predicted_labels SET location_end = ? WHERE patient_id=? AND week=? AND night_id=? AND label_id=?;"
                     cur.execute(query, params)
+                    loc_end += cnt
+                    print("update end:", loc_end)
                 y_p_mix.extend([10]*cnt);
             else:
                 y_p_mix.extend([0]*cnt);
             i += cnt;
+            # print(i)
     print(event)
     return y_p_mix
     
@@ -241,26 +249,30 @@ def run_prediction(DATABASE, patient_id, week, night_id):
                 
             cur.execute(f"SELECT * FROM models WHERE patient_id={patient_id}")
             model = cur.fetchall()
-            if model:
-                print("Model already exist")
-                xgbc = xgb.XGBClassifier()
-                xgbc.load_model(str(model[0][-1]))
-                predict_events(DATABASE, xgbc, patient_id, week, night_id)
-            else:
-                print("Model does not exist")
-                loc_file = get_data_path(DATABASE) + f"p{patient_id}_w{week}/{night_id}clocation_Bites.csv"
-                loc = pd.read_csv(loc_file)
-                print(loc)
-                for i,row in loc.iterrows():
+            cur.close()
+        if model:
+            print("Model already exist")
+            xgbc = xgb.XGBClassifier()
+            xgbc.load_model(str(model[0][-1]))
+            predict_events(DATABASE, xgbc, patient_id, week, night_id)
+        else:
+            print("Model does not exist")
+            # loc_file = get_data_path(DATABASE) + f"p{patient_id}_w{week}/{night_id}clocation_Bites.csv"
+            # loc = pd.read_csv(loc_file)
+            # print(loc)
+            # for i,row in loc.iterrows():
 
-                    params = (patient_id, week, night_id, i+1, row['Location Begin'],row['Location end'])
-                    query = "INSERT INTO predicted_labels (patient_id, week, night_id, label_id, location_begin, location_end) VALUES (?, ?, ?, ?, ?, ?)"
-                
-                    cur.execute(query, params)
-                    print(f"{i} out of {loc.index[-1]}")
-                # model = generate_model(DATABASE, patient_id, week, night_id)
-                # predict_events(DATABASE, model,patient_id, week, night_id)
-                
+            #     params = (patient_id, week, night_id, i+1, row['Location Begin'],row['Location end'])
+            #     query = "INSERT INTO predicted_labels (patient_id, week, night_id, label_id, location_begin, location_end) VALUES (?, ?, ?, ?, ?, ?)"
+            #     with sql.connect(DATABASE) as con:
+            #         cur = con.cursor()
+            #         cur.execute(query, params)
+            #         cur.close()
+            #     print(f"{i} out of {loc.index[-1]}")
+            model = generate_model(DATABASE, patient_id, week, night_id)
+            predict_events(DATABASE, model,patient_id, week, night_id)
+        with sql.connect(DATABASE) as con:
+            cur = con.cursor()        
             params = (patient_id, week, night_id)
             query = "SELECT * from predicted_labels WHERE (patient_id=? AND week=? AND night_id=?)"
             labels = cur.execute(query, params)
@@ -304,7 +316,7 @@ def get_ssd_values(DATABASE, patient_id, week, night_id):
         else:
             print('DOES NOT EXIST', file=sys.stderr)
             print(patient_id, week, night_id)
-            values = get_HRV_features(DATABASE, patient_id, week, night_id, 2000)
+            values = get_HRV_features(DATABASE, patient_id, week, night_id, get_original_sampling(DATABASE))
 
             for value in values:
                 params = (patient_id, week, day, hours, minutes, seconds, value['start_id'], value['end_id'], value['LF_HF'], value['SD'], value['stage'], value['y'], value['x'], 0)
@@ -424,21 +436,25 @@ def get_activity(DATABASE):
 
 """Returns original sampling rate stored in db"""
 def get_original_sampling(DATABASE):
-    with sql.connect(DATABASE) as con:
-        cur = con.cursor()
+    try:
+        with sql.connect(DATABASE) as con:
+            cur = con.cursor()
 
-        original_sampling = cur.execute("SELECT original_sampling FROM settings WHERE id=1").fetchone()[0]
-
+            original_sampling = cur.execute("SELECT original_sampling FROM settings WHERE id=1").fetchone()[0]
+    except Exception as e:
+        original_sampling = 2000
     return original_sampling
 
 
 """Returns selected sampling rate stored in db"""
 def get_selected_sampling(DATABASE):
-    with sql.connect(DATABASE) as con:
-        cur = con.cursor()
+    try:
+        with sql.connect(DATABASE) as con:
+            cur = con.cursor()
 
-        selected_sampling = cur.execute("SELECT selected_sampling FROM settings WHERE id=1").fetchone()[0]
-
+            selected_sampling = cur.execute("SELECT selected_sampling FROM settings WHERE id=1").fetchone()[0]
+    except Exception as e:
+            selected_sampling = 1000
     return selected_sampling
 
 """Returns non selected sampling rate stored in db"""
@@ -476,15 +492,6 @@ def get_is_normalized(DATABASE):
         normalized = cur.execute("SELECT normalized FROM settings WHERE id=1").fetchone()[0]
 
     return normalized
-
-"""Returns data path stored in db"""
-def get_data_path(DATABASE):
-    with sql.connect(DATABASE) as con:
-        cur = con.cursor()
-
-        data_path = cur.execute("SELECT data_path FROM settings WHERE id=1").fetchone()[0]
-
-    return data_path
 
 
 """Returns settings stored in db as list of json"""
@@ -919,83 +926,116 @@ def generate_weekly_sum_img(DATABASE, img_local_path):
     
     
 """Generate night prediction image"""
-def generate_night_pred_img(DATABASE, night_path, night):
-    data = pd.read_csv(night_path+night+'cFnorm.csv')
-    loc = pd.read_csv(night_path+night+'clocation_Bites.csv')
-    try:
-        original_sampling = get_original_sampling(DATABASE)
-    except Exception as e:
-        original_sampling = 2000
-    try:
-        selected_sampling =get_selected_sampling(DATABASE)
-    except Exception as e:
-        selected_sampling = 1000
-    dsample_rate = np.round(original_sampling / selected_sampling).astype("int")
-    print(dsample_rate)
-    df = resample_whole_df(data)
-    print(df.shape)
-    print(loc.iloc[-1,:])
-    range_min = 0
-    range_max = 25000
-    bites = np.zeros(data.shape[0], dtype=int)
-    for i in range(1, range_max*dsample_rate):
-        if i < loc.iloc[0,0] or (i > loc.iloc[0,1] and i < loc.iloc[1,0]) or (i > loc.iloc[1,1] and i < loc.iloc[2,0]) or i > loc.iloc[2,1]:
-            bites[i] = 0
-        else:
-            bites[i] = 1
+def generate_night_pred_img(DATABASE, patient_id, week, night_id):
+    # data = pd.read_csv(night_path+night+'cFnorm.csv')
+    # loc = pd.read_csv(night_path+night+'clocation_Bites.csv')
+    # original_sampling = get_original_sampling(DATABASE)
+    # selected_sampling = get_selected_sampling(DATABASE)
+    # dsample_rate = np.round(original_sampling / selected_sampling).astype("int")
+    # print(dsample_rate)
+    # df = resample_whole_df(data)
+    # print(df.shape)
+    # print(loc.iloc[-1,:])
+    # range_min = 0
+    # range_max = loc.iloc[2,1]
+    # bites = np.zeros(data.shape[0], dtype=int)
+    # for i in range(1, range_max*dsample_rate):
+    #     if i < loc.iloc[0,0] or (i > loc.iloc[0,1] and i < loc.iloc[1,0]) or (i > loc.iloc[1,1] and i < loc.iloc[2,0]) or i > loc.iloc[2,1]:
+    #         bites[i] = 0
+    #     else:
+    #         bites[i] = 1
 
-    df.loc[:,'Bites'] = bites[::dsample_rate]
-    x = df.iloc[range_min:range_max,:2].copy()
-    y = df.iloc[range_min:range_max,-1].copy()
-    x = np.array(x.values.tolist())
-    y = np.array(y.values.tolist())
-    print(x.shape)
-    print(y.shape)  
+    # df.loc[:,'Bites'] = bites[::dsample_rate]
+    # x = df.iloc[range_min:range_max,:2].copy()
+    # y = df.iloc[range_min:range_max,-1].copy()
+    # x = np.array(x.values.tolist())
+    # y = np.array(y.values.tolist())
+    # print(x.shape)
+    # print(y.shape)  
     
-    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.25) # Split data for test and training
-    SC = StandardScaler()
-    x_train = pd.DataFrame(SC.fit_transform(x_train))
-    x_test = pd.DataFrame(SC.transform(x_test))
+    # x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.25) # Split data for test and training
+    # SC = StandardScaler()
+    # x_train = pd.DataFrame(SC.fit_transform(x_train))
+    # x_test = pd.DataFrame(SC.transform(x_test))
     
-    best_xgb = xgb.XGBClassifier(n_estimators=100, objective='binary:logistic',
-        eval_metric='logloss', subsample=0.6, max_depth=3, learning_rate=0.1, colsample_bytree=1.0, silent=True)
-    best_xgb.fit(x_train, y_train)
+    # best_xgb = xgb.XGBClassifier(n_estimators=100, objective='binary:logistic',
+    #     eval_metric='logloss', subsample=0.6, max_depth=3, learning_rate=0.1, colsample_bytree=1.0)
+    # best_xgb.fit(x_train, y_train)
     
-    accuracies = cross_val_score(estimator = best_xgb, X = x_train, y = y_train, cv = 10)
-    print(accuracies.mean(), accuracies.std())
-    x_p = df.iloc[:,:2].copy()
+    # accuracies = cross_val_score(estimator = best_xgb, X = x_train, y = y_train, cv = 10)
+    # print(accuracies.mean(), accuracies.std())
+    # x_p = df.iloc[:,:2].copy()
+    # x_p = np.array(x_p.values.tolist())
+    # y_p = best_xgb.predict(x_p)
+    # y_p_mix = []
+    # i = 0
+    # event = 0
+    # while i < len(y_p):
+    #     y_sum = y_p[i];
+    #     cnt = 1;
+    #     for j in range(1, 5000):
+    #         if(i+j >= len(y_p)):
+    #             break;
+    #         y_sum += y_p[i+j];
+    #         cnt += 1;
+    #     if y_sum/cnt >= 0.5:
+    #         if(len(y_p_mix)==0 or y_p_mix[-1] != 10):
+    #             event += 1
+    #         y_p_mix.extend([10]*cnt);
+    #     else:
+    #         y_p_mix.extend([0]*cnt);
+    #     i += cnt;
+    week_path = get_data_path(DATABASE)+'p'+str(patient_id)+'_w'+str(week)+f'/'
+    data = pd.read_csv(week_path+night_id+'cFnorm.csv')
+    selected = get_selected_intervals(patient_id, week, night_id, DATABASE)
+    print(selected[0]['start_id'])
+    # print(selected[0][0])
+    df = pd.DataFrame()
+    for i in range(len(selected)):
+        df = df._append(data.iloc[selected[i]['start_id']:selected[i]['end_id'],:])
+    print(df.shape)
+    original_sampling = get_original_sampling(DATABASE)
+    selected_sampling =get_selected_sampling(DATABASE)
+    x_p = resample_whole_df(df,original_sampling,selected_sampling)
     x_p = np.array(x_p.values.tolist())
-    y_p = best_xgb.predict(x_p)
-    y_p_mix = []
-    i = 0
-    event = 0
-    while i < len(y_p):
-        y_sum = y_p[i];
-        cnt = 1;
-        for j in range(1, 5000):
-            if(i+j >= len(y_p)):
-                break;
-            y_sum += y_p[i+j];
-            cnt += 1;
-        if y_sum/cnt >= 0.5:
-            if(len(y_p_mix)==0 or y_p_mix[-1] != 10):
-                event += 1
-            y_p_mix.extend([10]*cnt);
-        else:
-            y_p_mix.extend([0]*cnt);
-        i += cnt;
+
+    with sql.connect(DATABASE) as con:
+        print("DB connected")
+        params = (patient_id, week, night_id)
+        query = "SELECT * from predicted_labels WHERE (patient_id=? AND week=? AND night_id=?)"
+        cur = con.cursor()
+        predicted_labels = cur.execute(query, params)
+        columns = [description[0] for description in predicted_labels.description]
+        print(columns)
+        #df = get_patients_recordings_df(columns, patient_data.fetchall())
+        predicted_labels_json = get_json_format_from_query(columns=columns, query_results=predicted_labels.fetchall(), start_id=1, end_id=10)
+        cur.close()
+    print(predicted_labels_json)
     
+    y_p_mix = []
+    prev = 0
+    for i in range(len(predicted_labels_json)):
+        y_p_mix.extend([0]*(predicted_labels_json[i]['location_begin']-prev))
+        y_p_mix.extend([10]*(predicted_labels_json[i]['location_end']-predicted_labels_json[i]['location_begin']))
+        prev = predicted_labels_json[i]['location_end']
+    print(len(y_p_mix))
+    if(len(y_p_mix) < len(x_p)):
+        y_p_mix.extend([0]*(len(x_p)-len(y_p_mix)))
+
     fig, ax = plt.subplots(1,1, figsize=(50, 15), sharey=True)
     X = np.linspace(0, x_p.shape[0]/selected_sampling, x_p.shape[0])
     ax.plot(X, x_p[:,0],color='r',alpha=0.3, label='MR')
+    print("print MR")
     ax.plot(X, x_p[:,1],color='b',alpha=0.3, label='ML')
+    print("print ML")
     ax.plot(X, y_p_mix[:],color='g',alpha=0.6,linewidth=4, label='Predicted Brux')
+    print("print predicted")
     neg_pred = [-x for x in y_p_mix]
     ax.plot(X, neg_pred[:],color='g',alpha=0.6,linewidth=4)
     ax.legend(loc='upper left', fontsize=20)
     ax.set_ylim(-11,11)
     ax.set_xlabel('Time (s)')
     ax.set_ylabel('Amplitude (mV)')
-    plt.savefig(night_path+str(night)+'.png',bbox_inches='tight')
-    best_xgb.save_model("p1.json")
+    plt.savefig(week_path+str(night_id)+'.png',bbox_inches='tight')
+    # best_xgb.save_model("p1.json")
     
