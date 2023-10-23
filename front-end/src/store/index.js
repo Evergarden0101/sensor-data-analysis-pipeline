@@ -32,6 +32,7 @@ const store = createStore({
       bruxLabelKey: 0,
       studyAccuracy: '--',
       patientAccuracy: '--',
+      nightImg: ''
     }
   },
   mutations: {
@@ -80,6 +81,9 @@ const store = createStore({
     updatePatientAccuracy(state, payload){
       state.patientAccuracy = payload;
     },
+    getNightImg(state, payload){
+      state.nightImg = payload;
+    }
   },
   plugins: [vuexLocal.plugin],
 

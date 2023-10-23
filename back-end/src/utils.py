@@ -16,6 +16,8 @@ from sklearn import tree
 from sklearn.metrics import accuracy_score, confusion_matrix
 import matplotlib
 matplotlib.use('agg')
+sql.register_adapter(np.int64, lambda val: int(val))
+sql.register_adapter(np.int32, lambda val: int(val))
 
 # TODO: create all utils function for app here separately to make app.py code lighter
 
@@ -61,10 +63,10 @@ def post_patient_recording(DATABASE, patient_id, week, day, hours, minutes, seco
         cur = con.cursor()
 
         for i,row in csvData.iterrows():
-    
+
             params = (patient_id, week, day, hours, minutes, seconds, patient_file[-10], row['MR'],row['ML'],row['SU'],row['Microphone'],row['Eye'], row['ECG'], row['Pressure Sensor'])
             query = "INSERT INTO patients_recordings (patient_id, week, day, hours, minutes, seconds, recorder, MR, ML, SU, Microphone, Eye, ECG, Pressure) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
-        
+
             cur.execute(query, params)
             print(f"{i} out of {csvData.index[-1]}")
 
@@ -109,7 +111,7 @@ def retrieve_patient_recording(DATABASE, patient_id, week, day, range_min, SAMPL
                 values = get_json_format_from_query(columns=columns, query_results=patient_recording_query.fetchall(), start_id=0, end_id=13)
 
                 return values, 200
-            
+
             else:
                 print('DOES NOT EXIST', file=sys.stderr)
                 return f"There is no data for patient with id {patient_id} on day {day} of week {week}", 404
@@ -146,25 +148,31 @@ def generate_model(DATABASE, patient_id, week, night_id, recorder):
         else:
             bites[i] = 1
     print("add bites")
-    df = resample_whole_df(data,original_sampling,selected_sampling)
+    MR = get_column_array(get_column_data_from_df(data, "MR"))
+    ML = get_column_array(get_column_data_from_df(data, "ML"))
+    MR = resample_signal(signal=MR, sampling_rate=original_sampling, SAMPLING_RATE=selected_sampling)
+    ML = resample_signal(signal=ML, sampling_rate=original_sampling, SAMPLING_RATE=selected_sampling)
+
+    # df = resample_whole_df(data,original_sampling,selected_sampling)
     bites = resample_signal(signal=bites, sampling_rate=original_sampling, SAMPLING_RATE=selected_sampling)
-    df.loc[:,'Bites'] = bites
-    
+    # df.loc[:,'Bites'] = bites
+    df = pd.DataFrame({'MR': MR, 'ML': ML, 'Bites': bites})
+
     x = df.iloc[range_min:range_max,:2].copy()
     y = df.iloc[range_min:range_max,-1].copy()
     x = np.array(x.values.tolist())
     y = np.array(y.values.tolist())
-    
+
     x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.25) # Split data for test and training
     SC = StandardScaler()
     x_train = pd.DataFrame(SC.fit_transform(x_train))
     x_test = pd.DataFrame(SC.transform(x_test))
-    
+
     print("fit model")
     model = xgb.XGBClassifier(n_estimators=100, objective='binary:logistic',
         eval_metric='logloss', subsample=0.6, max_depth=3, learning_rate=0.1, colsample_bytree=1.0)
     model.fit(x_train, y_train)
-    
+
     print("save model")
     with sql.connect(DATABASE) as con:
         cur = con.cursor()
@@ -172,7 +180,8 @@ def generate_model(DATABASE, patient_id, week, night_id, recorder):
         cur.close()
 
     model.save_model(get_data_path(DATABASE) + f"p{patient_id}_model.json")
-    return model
+    predict_events(DATABASE, model,patient_id, week, night_id)
+    # return model
 
 """TODO: Run Prediction"""
 def predict_events(DATABASE, model, patient_id, week, night_id, recorder):
@@ -181,18 +190,29 @@ def predict_events(DATABASE, model, patient_id, week, night_id, recorder):
     # data = open_brux_csv(patient_id, week, night_id, recorder)
     data = pd.read_csv(filePath)
     selected = get_selected_intervals(patient_id, week, night_id, DATABASE)
-    print(selected[0]['start_id'])
+    # print(selected[0]['start_id'])
     # print(selected[0][0])
     df = pd.DataFrame()
     for i in range(len(selected)):
         df = df._append(data.iloc[selected[i]['start_id']:selected[i]['end_id'],:])
-    print(df.shape)
+    index = df.index
+    # print(index)
+
     original_sampling = get_original_sampling(DATABASE)
     selected_sampling =get_selected_sampling(DATABASE)
-    df = resample_whole_df(df,original_sampling,selected_sampling)
-    
-    x_p = df.iloc[:,:2].copy()
-    x_p = np.array(x_p.values.tolist())
+    # df = resample_whole_df(df,original_sampling,selected_sampling)
+    MR = get_column_array(get_column_data_from_df(df, "MR"))
+    ML = get_column_array(get_column_data_from_df(df, "ML"))
+    MR = resample_signal(signal=MR, sampling_rate=original_sampling, SAMPLING_RATE=selected_sampling)
+    ML = resample_signal(signal=ML, sampling_rate=original_sampling, SAMPLING_RATE=selected_sampling)
+    df = pd.DataFrame({'MR': MR, 'ML': ML})
+
+    index = resample_signal(signal=index, sampling_rate=original_sampling, SAMPLING_RATE=selected_sampling)
+    print(index[10])
+
+    x = df.iloc[:,:2].copy()
+    x_p = np.array(x.values.tolist())
+    # model.set_param({"device": "gpu"})
     y_p = model.predict(x_p)
     y_p_mix = []
     i = 0
@@ -209,17 +229,20 @@ def predict_events(DATABASE, model, patient_id, week, night_id, recorder):
                     break;
                 y_sum += y_p[i+j];
                 cnt += 1;
-            if y_sum/cnt >= 0.5:
+            if y_sum/cnt >= 0.3:
                 if(len(y_p_mix)==0 or y_p_mix[-1] != 10):
                     event += 1
                     loc_end = i+cnt
-                    params = (patient_id, week, night_id, event, i, loc_end)
-                    query = "INSERT INTO predicted_labels (patient_id, week, night_id, label_id, location_begin, location_end) VALUES (?, ?, ?, ?, ?, ?)"
+                    location_begin = index[i]
+                    location_end = index[loc_end]
+                    params = (patient_id, week, night_id, event, location_begin, location_end, i, loc_end)
+                    print(params, ' ', location_begin,' ', location_end)
+                    query = "INSERT INTO predicted_labels (patient_id, week, night_id, label_id, location_begin, location_end, start_index, end_index) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
                     cur.execute(query, params)
                     print("current end:", loc_end)
                 elif(y_p_mix[-1] == 10):
-                    params = (loc_end+cnt, patient_id, week, night_id, event)
-                    query = "UPDATE predicted_labels SET location_end = ? WHERE patient_id=? AND week=? AND night_id=? AND label_id=?;"
+                    params = (index[loc_end+cnt], loc_end+cnt, patient_id, week, night_id, event)
+                    query = "UPDATE predicted_labels SET location_end = ?, end_index = ? WHERE patient_id=? AND week=? AND night_id=? AND label_id=?;"
                     cur.execute(query, params)
                     loc_end += cnt
                     print("update end:", loc_end)
@@ -230,8 +253,8 @@ def predict_events(DATABASE, model, patient_id, week, night_id, recorder):
             # print(i)
     print(event)
     return y_p_mix
-    
-    
+
+
 
 """TODO: check predictions"""
 def run_prediction(DATABASE, patient_id, week, night_id, recorder):
@@ -246,7 +269,7 @@ def run_prediction(DATABASE, patient_id, week, night_id, recorder):
             if labels:
                 print("Labels already exist")
                 return labels
-                
+
             cur.execute(f"SELECT * FROM models WHERE patient_id={patient_id}")
             model = cur.fetchall()
             cur.close()
@@ -272,7 +295,7 @@ def run_prediction(DATABASE, patient_id, week, night_id, recorder):
             model = generate_model(DATABASE, patient_id, week, night_id, recorder)
             predict_events(DATABASE, model,patient_id, week, night_id, recorder)
         with sql.connect(DATABASE) as con:
-            cur = con.cursor()        
+            cur = con.cursor()
             params = (patient_id, week, night_id)
             query = "SELECT * from predicted_labels WHERE (patient_id=? AND week=? AND night_id=?)"
             labels = cur.execute(query, params)
@@ -312,7 +335,7 @@ def get_ssd_values(DATABASE, patient_id, week, night_id, recorder):
             columns = [description[0] for description in result.description]
             print(f"Columns: {columns}")
             values = get_json_format_from_query(columns=columns, query_results=result.fetchall(), start_id=1, end_id=14)
-        
+
         else:
             print('DOES NOT EXIST', file=sys.stderr)
             print(patient_id, week, night_id)
@@ -355,7 +378,7 @@ def get_selected_phases(DATABASE, patient_id, week, night_id):
         query = ("SELECT x,y,ROUND(SD),stage, LF_HF FROM sleep_stage_detection WHERE patient_id=? AND week=? AND day=? AND hours=? AND minutes=? AND seconds=? AND selected=?")
 
         selected = cur.execute(query, params).fetchall()
-            
+
         result = [list(s) for s in selected]
 
 
@@ -376,7 +399,7 @@ def get_standard_selected_phases(DATABASE, patient_id, week, night_id):
         query = ("SELECT x,y,ROUND(SD),stage, LF_HF FROM sleep_stage_detection WHERE patient_id=? AND week=? AND day=? AND hours=? AND minutes=? AND seconds=? AND stage=? AND (SD BETWEEN ? AND ?)")
 
         selected = cur.execute(query, params).fetchall()
-            
+
         result = [list(s) for s in selected]
 
 
@@ -409,7 +432,7 @@ def get_existing_patients_data(DATABASE):
             week = re.search('wk(.*)', folder).group(1)
             night_id_list = list(set(night_id_list))
             night_id_list = sorted(night_id_list)
-            
+
             for night_id in night_id_list:
                 existing_patients_recordings.append({
                     "patient_id": patient_id,
@@ -510,7 +533,7 @@ def get_settings(DATABASE):
 
 
         return get_json_format_from_query(columns, settings.fetchall(), 1, 9)[0]
-    
+
 
 """Returns sensors stored in db as list of json"""
 def get_sensors(DATABASE):
@@ -522,7 +545,7 @@ def get_sensors(DATABASE):
 
         return get_json_format_from_query(columns, sensors.fetchall(), 1, 2)
 
-"""Retrieve selected intervals from DB""" 
+"""Retrieve selected intervals from DB"""
 def get_sleep_cycle_selected_intervals(patient_id, week, night_id, DATABASE, start_id, end_id):
     with sql.connect(DATABASE) as con:
         cur = con.cursor()
@@ -537,7 +560,7 @@ def get_sleep_cycle_selected_intervals(patient_id, week, night_id, DATABASE, sta
 
         return get_json_format_from_query(columns=columns, query_results=result.fetchall(), start_id=0, end_id=1)
 
-"""Retrieve selected intervals from DB""" 
+"""Retrieve selected intervals from DB"""
 def get_selected_intervals(patient_id, week, night_id, DATABASE):
     with sql.connect(DATABASE) as con:
         cur = con.cursor()
@@ -553,7 +576,7 @@ def get_selected_intervals(patient_id, week, night_id, DATABASE):
         return get_json_format_from_query(columns=columns, query_results=result.fetchall(), start_id=0, end_id=1)
 
 
-"""Retrieve REM intervals from DB""" 
+"""Retrieve REM intervals from DB"""
 def get_rem_intervals(patient_id, week, night_id, DATABASE):
     with sql.connect(DATABASE) as con:
         cur = con.cursor()
@@ -568,7 +591,7 @@ def get_rem_intervals(patient_id, week, night_id, DATABASE):
 
         return get_json_format_from_query(columns=columns, query_results=result.fetchall(), start_id=0, end_id=1)
 
-    
+
 
 def get_sleep_cycle_sampling_ranges(DATABASE, mr, ml, ranges, start_id, end_id):
     if len(mr) == len(ml):
@@ -640,7 +663,7 @@ def get_sleep_cycle_sampling_ranges(DATABASE, mr, ml, ranges, start_id, end_id):
 
     else:
         return "MR and ML should have the same length."
-    
+
 
 
 """Get the ranges for the resampling of the dataset"""
@@ -712,7 +735,7 @@ def get_sampling_ranges(DATABASE, mr, ml, ranges):
 
     else:
         return "MR and ML should have the same length."
-    
+
 
 """Resample the ranges obtained from the function above and return dataframe with columns"""
 def get_resampled_ranges(DATABASE, sampling_ranges):
@@ -819,7 +842,7 @@ def heatmap(data, row_labels, col_labels, ax=None,
     # Show all ticks and label them with the respective list entries.
     ax.set_xticks(np.arange(data.shape[1]), labels=col_labels)
     ax.set_yticks(np.arange(data.shape[0]), labels=row_labels)
-    
+
     ax.set_aspect(0.66)
 
     # Let the horizontal axes labeling appear on top.
@@ -929,8 +952,8 @@ def generate_weekly_sum_img(DATABASE, img_local_path):
     fig.tight_layout()
     plt.savefig(img_local_path)
     print("Image saved")
-    
-    
+
+
 """Generate night prediction image"""
 def generate_night_pred_img(DATABASE, patient_id, week, night_id, recorder):
     # data = pd.read_csv(night_path+night+f'{recorder}Fnorm.csv')
@@ -957,17 +980,17 @@ def generate_night_pred_img(DATABASE, patient_id, week, night_id, recorder):
     # x = np.array(x.values.tolist())
     # y = np.array(y.values.tolist())
     # print(x.shape)
-    # print(y.shape)  
-    
+    # print(y.shape)
+
     # x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.25) # Split data for test and training
     # SC = StandardScaler()
     # x_train = pd.DataFrame(SC.fit_transform(x_train))
     # x_test = pd.DataFrame(SC.transform(x_test))
-    
+
     # best_xgb = xgb.XGBClassifier(n_estimators=100, objective='binary:logistic',
     #     eval_metric='logloss', subsample=0.6, max_depth=3, learning_rate=0.1, colsample_bytree=1.0)
     # best_xgb.fit(x_train, y_train)
-    
+
     # accuracies = cross_val_score(estimator = best_xgb, X = x_train, y = y_train, cv = 10)
     # print(accuracies.mean(), accuracies.std())
     # x_p = df.iloc[:,:2].copy()
@@ -999,10 +1022,16 @@ def generate_night_pred_img(DATABASE, patient_id, week, night_id, recorder):
     df = pd.DataFrame()
     for i in range(len(selected)):
         df = df._append(data.iloc[selected[i]['start_id']:selected[i]['end_id'],:])
+    # index = df.index
     print(df.shape)
     original_sampling = get_original_sampling(DATABASE)
     selected_sampling =get_selected_sampling(DATABASE)
-    x_p = resample_whole_df(df,original_sampling,selected_sampling)
+    MR = get_column_array(get_column_data_from_df(df, "MR"))
+    ML = get_column_array(get_column_data_from_df(df, "ML"))
+    MR = resample_signal(signal=MR, sampling_rate=original_sampling, SAMPLING_RATE=selected_sampling)
+    ML = resample_signal(signal=ML, sampling_rate=original_sampling, SAMPLING_RATE=selected_sampling)
+    # index = resample_signal(signal=index, sampling_rate=original_sampling, SAMPLING_RATE=selected_sampling)
+    x_p = pd.DataFrame({'MR': MR, 'ML': ML})
     x_p = np.array(x_p.values.tolist())
 
     with sql.connect(DATABASE) as con:
@@ -1017,13 +1046,13 @@ def generate_night_pred_img(DATABASE, patient_id, week, night_id, recorder):
         predicted_labels_json = get_json_format_from_query(columns=columns, query_results=predicted_labels.fetchall(), start_id=1, end_id=10)
         cur.close()
     print(predicted_labels_json)
-    
+
     y_p_mix = []
     prev = 0
     for i in range(len(predicted_labels_json)):
-        y_p_mix.extend([0]*(predicted_labels_json[i]['location_begin']-prev))
-        y_p_mix.extend([10]*(predicted_labels_json[i]['location_end']-predicted_labels_json[i]['location_begin']))
-        prev = predicted_labels_json[i]['location_end']
+        y_p_mix.extend([0]*(predicted_labels_json[i]['start_index']-prev))
+        y_p_mix.extend([10]*(predicted_labels_json[i]['end_index']-predicted_labels_json[i]['start_index']))
+        prev = predicted_labels_json[i]['end_index']
     print(len(y_p_mix))
     if(len(y_p_mix) < len(x_p)):
         y_p_mix.extend([0]*(len(x_p)-len(y_p_mix)))
@@ -1044,4 +1073,3 @@ def generate_night_pred_img(DATABASE, patient_id, week, night_id, recorder):
     ax.set_ylabel('Amplitude (mV)')
     plt.savefig(week_path+str(night_id)+'.png',bbox_inches='tight')
     # best_xgb.save_model("p1.json")
-    
