@@ -134,7 +134,7 @@
                     </el-card>
                     <el-divider style="margin-top: 10px;margin-bottom:15px"/>
                 </el-row>
-                <el-text class="mx-1" type="warning" style="text-align:center;display:block;margin:auto" v-show="loadingLabel">Loading...</el-text>
+                <!-- <el-text class="mx-1" type="warning" style="text-align:center;display:block;margin:auto" v-show="loadingLabel">Loading...</el-text> -->
                 <el-text class="mx-1" type="warning" style="text-align:center;display:block;margin:auto" v-show="noMoreLabel">End of Events</el-text>
                 
             </div>
@@ -198,7 +198,7 @@ export default {
             return this.count >= this.labelNum
         },
         disabled () {
-            return this.loading || this.noMoreLabel
+            return this.loadingLabel || this.noMoreLabel
         }
     },
     methods: {
@@ -329,7 +329,7 @@ export default {
                     this.computeDur();
                     this.$store.commit('saveLabels',JSON.stringify(this.Labels));
                     // })
-
+                    this.$store.commit('getNightImg', "http://127.0.0.1:8000/night-pred-img?p=" + this.$store.state.patientId+'&w='+this.$store.state.week+'&n='+this.$store.state.nightId)
                     this.$store.commit('updateBruxLabelKey');
                     this.$store.commit('updateLinePlotKey');
                     // return res.data;
@@ -372,8 +372,10 @@ export default {
             this.Labels = JSON.parse(this.$store.state.labels);
             console.log(this.Labels.slice(0,3));
             this.computeDur();
+            this.$store.commit('getNightImg', "http://127.0.0.1:5000/night-pred-img?p=" + this.$store.state.patientId+'&w='+this.$store.state.week+'&n='+this.$store.state.nightId)
+                    
             // console.log('active label', this.activeLabel)
-            // this.$store.commit('clearLabels');
+            this.$store.commit('clearLabels');
 
         }else{
             console.log("Labels not loaded")
