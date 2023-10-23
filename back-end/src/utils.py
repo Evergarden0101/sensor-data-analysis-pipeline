@@ -16,6 +16,8 @@ from sklearn import tree
 from sklearn.metrics import accuracy_score, confusion_matrix
 import matplotlib
 matplotlib.use('agg')
+sql.register_adapter(np.int64, lambda val: int(val))
+sql.register_adapter(np.int32, lambda val: int(val))
 
 # TODO: create all utils function for app here separately to make app.py code lighter
 
@@ -128,7 +130,7 @@ def insert_label(DATABASE, label):
         cur = con.cursor()
         cur.execute(f"INSERT INTO confirmed_labels (patient_id, week, night_id, label_id, location_begin, location_end, corrected) VALUES {label['patient_id'],label['week'],label['night_id'],label['label_id'],label['location_begin'],label['location_end'],label['corrected']}")
 
-
+# TODO: save selected resampled data
 def generate_model(DATABASE, patient_id, week, night_id):
     print("generate_model")
     data = open_brux_csv(DATABASE, patient_id, week, night_id)
@@ -146,9 +148,15 @@ def generate_model(DATABASE, patient_id, week, night_id):
         else:
             bites[i] = 1
     print("add bites")
-    df = resample_whole_df(data,original_sampling,selected_sampling)
+    MR = get_column_array(get_column_data_from_df(data, "MR"))
+    ML = get_column_array(get_column_data_from_df(data, "ML"))
+    MR = resample_signal(signal=MR, sampling_rate=original_sampling, SAMPLING_RATE=selected_sampling)
+    ML = resample_signal(signal=ML, sampling_rate=original_sampling, SAMPLING_RATE=selected_sampling)
+    
+    # df = resample_whole_df(data,original_sampling,selected_sampling)
     bites = resample_signal(signal=bites, sampling_rate=original_sampling, SAMPLING_RATE=selected_sampling)
-    df.loc[:,'Bites'] = bites
+    # df.loc[:,'Bites'] = bites
+    df = pd.DataFrame({'MR': MR, 'ML': ML, 'Bites': bites})
     
     x = df.iloc[range_min:range_max,:2].copy()
     y = df.iloc[range_min:range_max,-1].copy()
@@ -172,7 +180,8 @@ def generate_model(DATABASE, patient_id, week, night_id):
         cur.close()
 
     model.save_model(get_data_path(DATABASE) + f"p{patient_id}_model.json")
-    return model
+    predict_events(DATABASE, model,patient_id, week, night_id)
+    # return model
 
 """TODO: Run Prediction"""
 def predict_events(DATABASE, model, patient_id, week, night_id):
@@ -181,18 +190,29 @@ def predict_events(DATABASE, model, patient_id, week, night_id):
     # data = open_brux_csv(patient_id, week, night_id)
     data = pd.read_csv(filePath)
     selected = get_selected_intervals(patient_id, week, night_id, DATABASE)
-    print(selected[0]['start_id'])
+    # print(selected[0]['start_id'])
     # print(selected[0][0])
     df = pd.DataFrame()
     for i in range(len(selected)):
         df = df._append(data.iloc[selected[i]['start_id']:selected[i]['end_id'],:])
-    print(df.shape)
+    index = df.index
+    # print(index)
+    
     original_sampling = get_original_sampling(DATABASE)
     selected_sampling =get_selected_sampling(DATABASE)
-    df = resample_whole_df(df,original_sampling,selected_sampling)
+    # df = resample_whole_df(df,original_sampling,selected_sampling)
+    MR = get_column_array(get_column_data_from_df(df, "MR"))
+    ML = get_column_array(get_column_data_from_df(df, "ML"))
+    MR = resample_signal(signal=MR, sampling_rate=original_sampling, SAMPLING_RATE=selected_sampling)
+    ML = resample_signal(signal=ML, sampling_rate=original_sampling, SAMPLING_RATE=selected_sampling)
+    df = pd.DataFrame({'MR': MR, 'ML': ML})
     
-    x_p = df.iloc[:,:2].copy()
-    x_p = np.array(x_p.values.tolist())
+    index = resample_signal(signal=index, sampling_rate=original_sampling, SAMPLING_RATE=selected_sampling)
+    print(index[10])
+    
+    x = df.iloc[:,:2].copy()
+    x_p = np.array(x.values.tolist())
+    # model.set_param({"device": "gpu"})
     y_p = model.predict(x_p)
     y_p_mix = []
     i = 0
@@ -209,17 +229,20 @@ def predict_events(DATABASE, model, patient_id, week, night_id):
                     break;
                 y_sum += y_p[i+j];
                 cnt += 1;
-            if y_sum/cnt >= 0.5:
+            if y_sum/cnt >= 0.3:
                 if(len(y_p_mix)==0 or y_p_mix[-1] != 10):
                     event += 1
                     loc_end = i+cnt
-                    params = (patient_id, week, night_id, event, i, loc_end)
-                    query = "INSERT INTO predicted_labels (patient_id, week, night_id, label_id, location_begin, location_end) VALUES (?, ?, ?, ?, ?, ?)"
+                    location_begin = index[i]
+                    location_end = index[loc_end]
+                    params = (patient_id, week, night_id, event, location_begin, location_end, i, loc_end)
+                    print(params, ' ', location_begin,' ', location_end)
+                    query = "INSERT INTO predicted_labels (patient_id, week, night_id, label_id, location_begin, location_end, start_index, end_index) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
                     cur.execute(query, params)
                     print("current end:", loc_end)
                 elif(y_p_mix[-1] == 10):
-                    params = (loc_end+cnt, patient_id, week, night_id, event)
-                    query = "UPDATE predicted_labels SET location_end = ? WHERE patient_id=? AND week=? AND night_id=? AND label_id=?;"
+                    params = (index[loc_end+cnt], loc_end+cnt, patient_id, week, night_id, event)
+                    query = "UPDATE predicted_labels SET location_end = ?, end_index = ? WHERE patient_id=? AND week=? AND night_id=? AND label_id=?;"
                     cur.execute(query, params)
                     loc_end += cnt
                     print("update end:", loc_end)
@@ -269,8 +292,7 @@ def run_prediction(DATABASE, patient_id, week, night_id):
             #         cur.execute(query, params)
             #         cur.close()
             #     print(f"{i} out of {loc.index[-1]}")
-            model = generate_model(DATABASE, patient_id, week, night_id)
-            predict_events(DATABASE, model,patient_id, week, night_id)
+            generate_model(DATABASE, patient_id, week, night_id)
         with sql.connect(DATABASE) as con:
             cur = con.cursor()        
             params = (patient_id, week, night_id)
@@ -993,10 +1015,16 @@ def generate_night_pred_img(DATABASE, patient_id, week, night_id):
     df = pd.DataFrame()
     for i in range(len(selected)):
         df = df._append(data.iloc[selected[i]['start_id']:selected[i]['end_id'],:])
+    # index = df.index
     print(df.shape)
     original_sampling = get_original_sampling(DATABASE)
     selected_sampling =get_selected_sampling(DATABASE)
-    x_p = resample_whole_df(df,original_sampling,selected_sampling)
+    MR = get_column_array(get_column_data_from_df(df, "MR"))
+    ML = get_column_array(get_column_data_from_df(df, "ML"))
+    MR = resample_signal(signal=MR, sampling_rate=original_sampling, SAMPLING_RATE=selected_sampling)
+    ML = resample_signal(signal=ML, sampling_rate=original_sampling, SAMPLING_RATE=selected_sampling)
+    # index = resample_signal(signal=index, sampling_rate=original_sampling, SAMPLING_RATE=selected_sampling)
+    x_p = pd.DataFrame({'MR': MR, 'ML': ML})
     x_p = np.array(x_p.values.tolist())
 
     with sql.connect(DATABASE) as con:
@@ -1015,9 +1043,9 @@ def generate_night_pred_img(DATABASE, patient_id, week, night_id):
     y_p_mix = []
     prev = 0
     for i in range(len(predicted_labels_json)):
-        y_p_mix.extend([0]*(predicted_labels_json[i]['location_begin']-prev))
-        y_p_mix.extend([10]*(predicted_labels_json[i]['location_end']-predicted_labels_json[i]['location_begin']))
-        prev = predicted_labels_json[i]['location_end']
+        y_p_mix.extend([0]*(predicted_labels_json[i]['start_index']-prev))
+        y_p_mix.extend([10]*(predicted_labels_json[i]['end_index']-predicted_labels_json[i]['start_index']))
+        prev = predicted_labels_json[i]['end_index']
     print(len(y_p_mix))
     if(len(y_p_mix) < len(x_p)):
         y_p_mix.extend([0]*(len(x_p)-len(y_p_mix)))

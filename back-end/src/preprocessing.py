@@ -73,13 +73,13 @@ def resample_whole_df(df, sampling_rate=2000, SAMPLING_RATE=1000):
     ECG = get_column_array(get_column_data_from_df(df, "ECG"))
     Pressure = get_column_array(get_column_data_from_df(df, "Pressure Sensor"))
 
-    MR_resampled = resample_signal(signal=MR, sampling_rate=2000, SAMPLING_RATE=1000)
-    ML_resampled = resample_signal(signal=ML, sampling_rate=2000, SAMPLING_RATE=1000)
-    SU_resampled = resample_signal(signal=SU, sampling_rate=2000, SAMPLING_RATE=1000)
-    Microphone_resampled = resample_signal(signal=Microphone, sampling_rate=2000, SAMPLING_RATE=1000)
-    Eye_resampled = resample_signal(signal=Eye, sampling_rate=2000, SAMPLING_RATE=1000)
-    ECG_resampled = resample_signal(signal=ECG, sampling_rate=2000, SAMPLING_RATE=1000)
-    Pressure_resampled = resample_signal(signal=Pressure, sampling_rate=2000, SAMPLING_RATE=1000)
+    MR_resampled = resample_signal(signal=MR, sampling_rate=sampling_rate, SAMPLING_RATE=SAMPLING_RATE)
+    ML_resampled = resample_signal(signal=ML, sampling_rate=sampling_rate, SAMPLING_RATE=SAMPLING_RATE)
+    SU_resampled = resample_signal(signal=SU, sampling_rate=sampling_rate, SAMPLING_RATE=SAMPLING_RATE)
+    Microphone_resampled = resample_signal(signal=Microphone, sampling_rate=sampling_rate, SAMPLING_RATE=SAMPLING_RATE)
+    Eye_resampled = resample_signal(signal=Eye, sampling_rate=sampling_rate, SAMPLING_RATE=SAMPLING_RATE)
+    ECG_resampled = resample_signal(signal=ECG, sampling_rate=sampling_rate, SAMPLING_RATE=SAMPLING_RATE)
+    Pressure_resampled = resample_signal(signal=Pressure, sampling_rate=sampling_rate, SAMPLING_RATE=SAMPLING_RATE)
 
     df_resampled = pd.DataFrame({column_names[0]: MR_resampled,
                                  column_names[1]: ML_resampled,
