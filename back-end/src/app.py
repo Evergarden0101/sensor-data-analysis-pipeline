@@ -366,6 +366,7 @@ def create_app(test_config=None):
             print(e)
             return f"{e}", 500
 
+
     """
     label: 
         {
@@ -377,9 +378,7 @@ def create_app(test_config=None):
     def get_event_interval(patient_id, week, night_id):
 
         day, hours, minutes, seconds = get_patient_time_values(night_id)
-
         label = request.json
-
         five_min_data_points = 600000
 
         #1h data
@@ -389,19 +388,16 @@ def create_app(test_config=None):
         location_end = math.ceil(label["location_end"] * get_original_sampling(DATABASE))
 
         print(f"duration in index: {location_end - location_begin}")
-        print(f"start_id: {location_begin}, end_id: {location_end}")
-        
+        print(f"location_begin: {location_begin}, location_end: {location_end}")
 
         with sql.connect(DATABASE) as con:
             cur = con.cursor()
 
             params = (patient_id, week, day, hours, minutes, seconds, location_begin, location_end)
-
             query = "SELECT start_id, end_id FROM sleep_stage_detection WHERE patient_id=? AND week=? AND day=? AND hours=? AND minutes=? AND seconds=? AND ? >= start_id AND ? <= end_id"
-
             result = cur.execute(query, params).fetchall()
 
-            print(f"result: {result}")
+            print(f"DB 5 min result: {result}")
 
             # If the event is in between two 5 minute intervals we might wanto to return more than 5 minute of data
             if result==[]:
@@ -415,6 +411,7 @@ def create_app(test_config=None):
                 start_id = result[0][0]
                 end_id = result[0][1]
 
+                print(f"Selected 5 min -  start_id: {start_id}, end_id: {end_id}")
             
             # Open the df with a chunk size of 1h because the interval might be > 5 min
             df =  pd.read_csv(get_data_path(DATABASE) + f"p{patient_id}_w{week}/{night_id}cFnorm.csv", usecols=['MR', 'ML'], chunksize=chunk_size)
@@ -425,39 +422,12 @@ def create_app(test_config=None):
                     # Find desired chunk
                     desired_chunk = chunk
                     break
-
             print(f"desired chunk: {desired_chunk}")
 
-            # Extract the interesting 5 minutes (or more)
-            mr = desired_chunk["MR"].loc[start_id:end_id-1]
-            ml = desired_chunk["ML"].loc[start_id:end_id-1]
+            result = get_event_data(desired_chunk, start_id, end_id, location_begin, location_end)
 
-            # Extract the portion in which event occurs
-            mr_event_data = desired_chunk["MR"].loc[location_begin:location_end-1]
-            ml_event_data = desired_chunk["ML"].loc[location_begin:location_end-1]
+            return result, 200
 
-            #Find start and end indices of event list in original 5 minute of data
-            new_mr_subindices = find_sub_list(mr_event_data.values.tolist(), mr.values.tolist())
-            new_ml_subindices = find_sub_list(ml_event_data.values.tolist(), ml.values.tolist())
-
-            print(f"length: {end_id-start_id}, mr lengt: {len(mr)}")
-
-            # Chek for selected intervals to determine sampling rate
-            ranges = get_sleep_cycle_selected_intervals(patient_id, week, night_id, DATABASE, start_id, end_id)
-
-            print(f"ranges: {ranges}")
-
-            # Determine intervals with sampling rates
-            sampling_ranges = get_sleep_cycle_sampling_ranges(DATABASE, mr, ml, ranges, start_id, end_id)
-
-            # Add the event data to the interval
-            data_with_event = add_event_data(new_mr_subindices, new_ml_subindices, sampling_ranges)
-
-            # Resample (still not working)
-            #resampled_ranges = get_resampled_ranges2(DATABASE, data_with_event)
-
-
-            return data_with_event, 200
 
     @app.route('/weekly-sum-img', methods=["GET"])
     def get_weekly_sum_img():

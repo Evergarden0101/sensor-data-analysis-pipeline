@@ -2,7 +2,7 @@ import sqlite3 as sql
 from settings import *
 from preprocessing import *
 from SSD2 import *
-import sys, os, re, math
+import sys, os, re, math, itertools
 import matplotlib.pyplot as plt
 import numpy as np
 import xgboost as xgb
@@ -606,24 +606,56 @@ def get_resampled_ranges(DATABASE, sampling_ranges):
 
     return sampling_ranges
 
-def get_resampled_ranges2(DATABASE, sampling_ranges):
-    for sampling_range in sampling_ranges:
-        sampling_range["mr_array"] = nk.signal_resample(sampling_range['mr_array'], method="interpolation", sampling_rate=get_original_sampling(DATABASE), desired_sampling_rate=sampling_range["target_sampling_rate"]).tolist()
-        sampling_range["ml_array"] = nk.signal_resample(sampling_range["ml_array"], method="interpolation", sampling_rate=get_original_sampling(DATABASE), desired_sampling_rate=sampling_range["target_sampling_rate"]).tolist()
+def get_event_data(desired_chunk, start_id, end_id, location_begin, location_end):
+    # Extract the interesting 5 minutes (or more)
+    mr = desired_chunk["MR"].loc[start_id:end_id-1]
+    ml = desired_chunk["ML"].loc[start_id:end_id-1]
 
-        sampling_range["mr_event_array"] = nk.signal_resample(sampling_range['mr_event_array'], method="interpolation", sampling_rate=get_original_sampling(DATABASE), desired_sampling_rate=sampling_range["target_sampling_rate"]).tolist()
-        sampling_range["ml_event_array"] = nk.signal_resample(sampling_range["ml_event_array"], method="interpolation", sampling_rate=get_original_sampling(DATABASE), desired_sampling_rate=sampling_range["target_sampling_rate"]).tolist()
+    # Extract the portion in which event occurs to find indices (we do it only for mr since indices are the same)
+    mr_event_data = desired_chunk["MR"].loc[location_begin:location_end-1]
 
-    return sampling_ranges
+    # Find start and end indices of event list in original 5 minute of data
+    new_event_subindices = find_sub_list(mr_event_data.values.tolist(), mr.values.tolist())
 
-def add_event_data(mr_event_indices, ml_event_indices, sampling_ranges):
-    for sampling_range in sampling_ranges:
-        print(mr_event_indices)
-        print(len(sampling_range["mr_array"]))
-        sampling_range["mr_event_array"] = sampling_range["mr_array"][mr_event_indices[0]:mr_event_indices[1]+1]
-        sampling_range["ml_event_array"] = sampling_range["ml_array"][ml_event_indices[0]: ml_event_indices[1]+1]
+    # Divide MR data in 3 chunks
+    mr_first_chunk = mr.values.tolist()[: new_event_subindices[0]]
+    mr_event_chunk = mr.values.tolist()[new_event_subindices[0]: new_event_subindices[1] + 1]
+    mr_third_chunk = mr.values.tolist()[new_event_subindices[1]+1:]
 
-    return sampling_ranges
+    # Divide ML data in 3 chunks
+    ml_first_chunk = ml.values.tolist()[: new_event_subindices[0]]
+    ml_event_chunk = ml.values.tolist()[new_event_subindices[0]: new_event_subindices[1] + 1]
+    ml_third_chunk = ml.values.tolist()[new_event_subindices[1]+1:]
+
+    # Resample MR data
+    resmapled_mr_first_chunk =  nk.signal_resample(mr_first_chunk, method="interpolation", sampling_rate=get_original_sampling(DATABASE), desired_sampling_rate=get_selected_sampling(DATABASE)).tolist()
+    resmapled_mr_event_chunk =  nk.signal_resample(mr_event_chunk, method="interpolation", sampling_rate=get_original_sampling(DATABASE), desired_sampling_rate=get_selected_sampling(DATABASE)).tolist()
+    resmapled_mr_third_chunk =  nk.signal_resample(mr_third_chunk, method="interpolation", sampling_rate=get_original_sampling(DATABASE), desired_sampling_rate=get_selected_sampling(DATABASE)).tolist()
+
+    # Resample ML data
+    resmapled_ml_first_chunk =  nk.signal_resample(ml_first_chunk, method="interpolation", sampling_rate=get_original_sampling(DATABASE), desired_sampling_rate=get_selected_sampling(DATABASE)).tolist()
+    resmapled_ml_event_chunk =  nk.signal_resample(ml_event_chunk, method="interpolation", sampling_rate=get_original_sampling(DATABASE), desired_sampling_rate=get_selected_sampling(DATABASE)).tolist()
+    resmapled_ml_third_chunk =  nk.signal_resample(ml_third_chunk, method="interpolation", sampling_rate=get_original_sampling(DATABASE), desired_sampling_rate=get_selected_sampling(DATABASE)).tolist()
+
+    # Concatenate MR and ML chunks
+    mr_resampled = list(itertools.chain(resmapled_mr_first_chunk, resmapled_mr_event_chunk, resmapled_mr_third_chunk))
+    ml_resampled = list(itertools.chain(resmapled_ml_first_chunk, resmapled_ml_event_chunk, resmapled_ml_third_chunk))
+
+    # Find event indices of the new resampled data
+    new_event_resampled_subindices = find_sub_list(resmapled_mr_event_chunk, mr_resampled)
+
+    result = {
+        "5min_start_id": start_id,
+        "5min_end_id": end_id,
+        "start_id": 0,
+        "end_id": len(mr_resampled)-1,
+        "mr_resampled": mr_resampled,
+        "ml_resmapled": ml_resampled,
+        "event_start_id": new_event_resampled_subindices[0],
+        "event_end_id": new_event_resampled_subindices[1]
+    }
+
+    return result
 
 def find_sub_list(sl,l):
     sll=len(sl)
