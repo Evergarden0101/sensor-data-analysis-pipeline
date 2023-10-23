@@ -20,6 +20,7 @@
                 <el-table-column prop="patient_id" label="Patient ID" sortable width="180" />
                 <el-table-column prop="week" label="Week" width="180" />
                 <el-table-column prop="night_id" label="Night ID" />
+                <el-table-column prop="recorder" label="Recorder"/>
                 <el-table-column fixed="right" label="Operations" width="120">
                     <template #default="scope">
                         <el-button

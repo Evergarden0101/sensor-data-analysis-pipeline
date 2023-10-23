@@ -42,11 +42,11 @@ def create_app(test_config=None):
 
              
     #TODO: possibly change in future and include all the parameters in json payload
-    @app.route("/patient-recording/<int:patient_id>/<int:week>/<string:night_id>", methods=['POST'])
-    def upload_patient_recording(patient_id, week, night_id):
+    @app.route("/patient-recording/<int:patient_id>/<string:week>/<string:night_id>/<string:recorder>", methods=['POST'])
+    def upload_patient_recording(patient_id, week, night_id, recorder):
         try:
             day, hours, minutes, seconds = get_patient_time_values(night_id)
-            patient_file = get_data_path(DATABASE) + f"p{patient_id}_w{week}/{night_id}cFnorm.csv"
+            patient_file = get_data_path(DATABASE) + f"p{patient_id}_wk{week}/{night_id}{recorder}Fnorm.csv"
             df = pd.read_csv(patient_file)
             # For the moment the data is automatically resampled when uploaded in DB for efficiency reasons
             # TODO: adapt in the future
@@ -113,11 +113,11 @@ def create_app(test_config=None):
 
     #TODO: possibly get labels from specific patient on a specific week?
     @app.route("/label-brux/", methods=["GET"], defaults={'patient_id': None})
-    @app.route("/label-brux/<int:patient_id>/<int:week>/<string:night_id>", methods=["GET"])
-    def get_label_brux(patient_id, week, night_id):
+    @app.route("/label-brux/<int:patient_id>/<int:week>/<string:night_id>/<string:recorder>", methods=["GET"])
+    def get_label_brux(patient_id, week, night_id, recorder):
         try:
             print('get_label_brux')
-            predicted_labels = run_prediction(DATABASE, patient_id, week, night_id)
+            predicted_labels = run_prediction(DATABASE, patient_id, week, night_id, recorder)
             params = (patient_id, week, night_id)
             query = "SELECT * from predicted_labels WHERE (patient_id=? AND week=? AND night_id=?)"
 
@@ -139,12 +139,12 @@ def create_app(test_config=None):
             return f"{e}", 500
     
 
-    @app.route("/ssd/<int:patient_id>/<int:week>/<string:night_id>", methods=["GET"])
-    def sleep_stage_detection(patient_id, week, night_id):
+    @app.route("/ssd/<int:patient_id>/<string:week>/<string:night_id>/<string:recorder>/", methods=["GET"])
+    def sleep_stage_detection(patient_id, week, night_id, recorder):
         try:
             print('database variable', file=sys.stderr)
 
-            values = get_ssd_values(DATABASE, patient_id, week, night_id)
+            values = get_ssd_values(DATABASE, patient_id, week, night_id, recorder)
             return values
         
         except Exception as e:
@@ -152,7 +152,7 @@ def create_app(test_config=None):
             print(e)
             return f"{e}"
 
-    @app.route("/selected-sleep-phases/<int:patient_id>/<int:week>/<string:night_id>", methods=["GET", "POST"])
+    @app.route("/selected-sleep-phases/<int:patient_id>/<string:week>/<string:night_id>", methods=["GET", "POST"])
     def selected_phases(patient_id, week, night_id):
         if request.method == 'GET':
             try:
@@ -210,7 +210,7 @@ def create_app(test_config=None):
         - Resampling
     """
     #TODO: endpoint to perform preprocessing
-    @app.route("/preprocess/<int:patient_id>/<int:week>/<string:night_id>", methods=["GET"])
+    @app.route("/preprocess/<int:patient_id>/<string:week>/<string:night_id>", methods=["GET"])
     def get_preprocessing(patient_id, week, night_id):
         try:
             #preprocessing_params = request.json
@@ -309,13 +309,13 @@ def create_app(test_config=None):
                 return f"{e}", 500
 
  
-    @app.route("/sleep-cycle/<int:patient_id>/<int:week>/<string:night_id>/<int:sleep_cycle>/", methods=["GET"])
-    def get_sleep_cycle_data(patient_id, week, night_id, sleep_cycle):
+    @app.route("/sleep-cycle/<int:patient_id>/<string:week>/<string:night_id>/<int:sleep_cycle>/<string:recorder>", methods=["GET"])
+    def get_sleep_cycle_data(patient_id, week, night_id, sleep_cycle, recorder):
 
         # Amount of data points in a sleep cycle
         chunk_size = 2000*60*90
 
-        df =  pd.read_csv(get_data_path(DATABASE) + f"p{patient_id}_w{week}/{night_id}cFnorm.csv", usecols=['MR', 'ML'], chunksize=chunk_size)
+        df =  pd.read_csv(get_data_path(DATABASE) + f"p{patient_id}_wk{week}/{night_id}{recorder}Fnorm.csv", usecols=['MR', 'ML'], chunksize=chunk_size)
 
         chunks = []
         max_chunk = 0
@@ -345,10 +345,10 @@ def create_app(test_config=None):
 
 
 
-    @app.route("/lineplot-data/<int:patient_id>/<int:week>/<string:night_id>/", methods=["GET"])
-    def get_lineplot_data(patient_id, week, night_id):
+    @app.route("/lineplot-data/<int:patient_id>/<string:week>/<string:night_id>/<string:recorder>", methods=["GET"])
+    def get_lineplot_data(patient_id, week, night_id, recorder):
         try:
-            df = open_brux_csv(DATABASE, patient_id, week, night_id, columns=['MR', 'ML'])
+            df = open_brux_csv(DATABASE, patient_id, week, night_id, recorder, columns=['MR', 'ML'])
 
             mr = df["MR"].values.tolist()
             ml = df["ML"].values.tolist()
@@ -375,8 +375,8 @@ def create_app(test_config=None):
             "location_end": int
         }
     """
-    @app.route('/event-interval/<int:patient_id>/<int:week>/<string:night_id>/', methods=["GET"])
-    def get_event_interval(patient_id, week, night_id):
+    @app.route('/event-interval/<int:patient_id>/<string:week>/<string:night_id>/<string:recorder>', methods=["GET"])
+    def get_event_interval(patient_id, week, night_id, recorder):
 
         day, hours, minutes, seconds = get_patient_time_values(night_id)
         label = request.json
@@ -394,8 +394,8 @@ def create_app(test_config=None):
         with sql.connect(DATABASE) as con:
             cur = con.cursor()
 
-            params = (patient_id, week, day, hours, minutes, seconds, location_begin, location_end)
-            query = "SELECT start_id, end_id FROM sleep_stage_detection WHERE patient_id=? AND week=? AND day=? AND hours=? AND minutes=? AND seconds=? AND ? >= start_id AND ? <= end_id"
+            params = (patient_id, week, day, hours, minutes, seconds, recorder, location_begin, location_end)
+            query = "SELECT start_id, end_id FROM sleep_stage_detection WHERE patient_id=? AND week=? AND day=? AND hours=? AND minutes=? AND seconds=? AND recorder=? AND ? >= start_id AND ? <= end_id"
             result = cur.execute(query, params).fetchall()
 
             print(f"DB 5 min result: {result}")
@@ -415,7 +415,7 @@ def create_app(test_config=None):
                 print(f"Selected 5 min -  start_id: {start_id}, end_id: {end_id}")
             
             # Open the df with a chunk size of 1h because the interval might be > 5 min
-            df =  pd.read_csv(get_data_path(DATABASE) + f"p{patient_id}_w{week}/{night_id}cFnorm.csv", usecols=['MR', 'ML'], chunksize=chunk_size)
+            df =  pd.read_csv(get_data_path(DATABASE) + f"p{patient_id}_wk{week}/{night_id}{recorder}Fnorm.csv", usecols=['MR', 'ML'], chunksize=chunk_size)
 
             for chunk in df:
                 print(f"chunk start_id: {chunk.index.start}, start_id: {start_id}")
@@ -440,7 +440,7 @@ def create_app(test_config=None):
             #                     img_stream=img_stream)
             patient_id = request.args.get('p')
             week = request.args.get('w')
-            img_local_path =  get_data_path(DATABASE) +"p"+str(patient_id)+"_w"+str(week)+ f"/summary.png"
+            img_local_path =  get_data_path(DATABASE) +"p"+str(patient_id)+"_wk"+str(week)+ f"/summary.png"
             print('img_local_path: ',img_local_path)
             generate_weekly_sum_img(DATABASE, img_local_path)
             img_f = open(img_local_path, 'rb')
@@ -465,16 +465,17 @@ def create_app(test_config=None):
             patient_id = request.args.get('p')
             week = request.args.get('w')
             night = request.args.get('n')
-            # week_path = get_data_path(DATABASE)+'p'+str(patient_id)+'_w'+str(week)+f'/'
+            recorder = request.args.get('r')
+            # week_path = get_data_path(DATABASE)+'p'+str(patient_id)+'_wk'+str(week)+f'/'
             # print('night_path: ',week_path)
             # img_local_path =  week_path+str(night)+f'.png'
-            img_local_path =  get_data_path(DATABASE)+'p'+str(patient_id)+'_w'+str(week)+f'/'+str(night)+f'.png'
+            img_local_path =  get_data_path(DATABASE)+'p'+str(patient_id)+'_wk'+str(week)+f'/'+str(night)+f'.png'
             print('img_local_path: ',img_local_path)
             
             try:
                 img_f = open(img_local_path, 'rb')
             except FileNotFoundError:
-                generate_night_pred_img(DATABASE, patient_id, week, night)
+                generate_night_pred_img(DATABASE, patient_id, week, night, recorder)
                 img_f = open(img_local_path, 'rb')
             except Exception as e:
                 return f"{e}", 500
@@ -490,7 +491,7 @@ def create_app(test_config=None):
             return f"{e}", 500
 
 
-    @app.route('/label-statistics/<int:patient_id>/<int:week>/<string:night_id>/<int:labelId>', methods=["GET"])
+    @app.route('/label-statistics/<int:patient_id>/<string:week>/<string:night_id>/<int:labelId>', methods=["GET"])
     def get_label_statistics(patient_id, week, night_id, labelId):
         try:
             params = (patient_id, week, night_id, labelId)

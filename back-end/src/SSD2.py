@@ -53,7 +53,7 @@ def compute_HRV(rpeaks_clean, sampling_rate=2000, window=5):
 
 
 # Complete pipeline function
-def get_HRV_features(DATABASE, patient_id, week, night_id,  SAMPLING_RATE):
+def get_HRV_features(DATABASE, patient_id, week, night_id, recorder, SAMPLING_RATE):
     start = 0
     print(f"start: {start}")
     # Number of data points in 5 minutes
@@ -65,7 +65,7 @@ def get_HRV_features(DATABASE, patient_id, week, night_id,  SAMPLING_RATE):
     y=0
     x=0
 
-    df = open_brux_csv(DATABASE, patient_id, week, night_id)
+    df = open_brux_csv(DATABASE, patient_id, week, night_id, recorder, columns=["ECG"])
     print(f"dfshape: {df.shape}")
     ecg = df["ECG"]
 

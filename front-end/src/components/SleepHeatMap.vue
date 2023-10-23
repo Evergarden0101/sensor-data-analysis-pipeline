@@ -228,7 +228,7 @@ export default {
     },
 
     async getPatientData(){
-        const path = `http://localhost:5000/ssd/${this.$store.state.patientId}/${this.$store.state.week}/${this.$store.state.nightId}`
+        const path = `http://localhost:5000/ssd/${this.$store.state.patientId}/${this.$store.state.week}/${this.$store.state.nightId}/${this.$store.state.recorder}/`
         const headers = {
                 'Accept': 'application/json',
                 'Content-Type': 'application/json'

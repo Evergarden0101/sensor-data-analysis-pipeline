@@ -20,16 +20,16 @@ def get_data_path(DATABASE):
 
 
 """Gets patient_id, week and night_id and return a pandas df"""
-def open_brux_csv(DATABASE, patient_id, week, night_id, columns=[]):
+def open_brux_csv(DATABASE, patient_id, week, night_id, recorder, columns=[]):
     if columns:
-        return pd.read_csv(get_data_path(DATABASE) + f"p{patient_id}_w{week}/{night_id}cFnorm.csv", usecols=columns)
+        return pd.read_csv(get_data_path(DATABASE) + f"p{patient_id}_wk{week}/{night_id}{recorder}Fnorm.csv", usecols=columns)
     else:
-        return pd.read_csv(get_data_path(DATABASE) + f"p{patient_id}_w{week}/{night_id}cFnorm.csv")
+        return pd.read_csv(get_data_path(DATABASE) + f"p{patient_id}_wk{week}/{night_id}{recorder}Fnorm.csv")
 
 
 
-def open_brux_loc_csv(DATABASE, patient_id, week, night_id):
-    return pd.read_csv(get_data_path(DATABASE) + f"p{patient_id}_w{week}/{night_id}clocation_Bites.csv")
+def open_brux_loc_csv(DATABASE, patient_id, week, night_id, recorder):
+    return pd.read_csv(get_data_path(DATABASE) + f"p{patient_id}_wk{week}/{night_id}{recorder}location_Bites.csv")
 
 
 """Gets complete patient df and return only the specified column"""
@@ -58,7 +58,6 @@ def get_signal_duration(signal, SAMPLING_RATE=2000):
     return datetime.timedelta(seconds=(len(signal)/SAMPLING_RATE))
 
 
-# TODO: understand why it return NaN values for dataset 0901260cFnorm.csv and 1022102cFnorm.csv
 """Resample all the signals contained in the df"""
 def resample_whole_df(df, sampling_rate=2000, SAMPLING_RATE=1000):
     column_names = list(df.columns)

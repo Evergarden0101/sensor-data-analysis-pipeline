@@ -14,9 +14,10 @@ const store = createStore({
   state () {
     return {
       patientId: 1,
-      week: 1,
+      week: 0,
       day: 3,
       nightId: "",
+      recorder: "",
       startStage: 0,
       endStage: 0,
       startPoint: 0,
@@ -46,6 +47,7 @@ const store = createStore({
       state.patientId = payload.patient_id;
       state.week = payload.week;
       state.nightId = payload.night_id;
+      state.recorder = payload.recorder;
     },
     updateLinePlotKey(state){
       state.linePlotKey++;

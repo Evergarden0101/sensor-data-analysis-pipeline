@@ -20,7 +20,7 @@ CREATE TABLE models (
 CREATE TABLE bite_records (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   patient_id INTEGER NOT NULL,
-  week INTEGER NOT NULL,
+  week TEXT NOT NULL,
   night_id INTEGER NOT NULL,
   recorder TEXT,
   label_id INTEGER NOT NULL,
@@ -37,7 +37,7 @@ CREATE TABLE bite_records (
 CREATE TABLE confirmed_labels (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   patient_id INTEGER NOT NULL,
-  week INTEGER NOT NULL,
+  week TEXT NOT NULL,
   night_id INTEGER NOT NULL,
   label_id INTEGER NOT NULL,
   location_begin DECIMAL(11,3) NOT NULL,
@@ -54,7 +54,7 @@ CREATE TABLE confirmed_labels (
 CREATE TABLE predicted_labels (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   patient_id INTEGER NOT NULL,
-  week INTEGER NOT NULL,
+  week TEXT NOT NULL,
   night_id INTEGER NOT NULL,
   label_id INTEGER NOT NULL,
   location_begin DECIMAL(11,3) NOT NULL,
@@ -69,7 +69,7 @@ CREATE TABLE predicted_labels (
 CREATE TABLE patients_recordings (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   patient_id INTEGER NOT NULL,
-  week INTEGER NOT NULL,
+  week TEXT NOT NULL,
   day INTEGER NOT NULL,
   hours INTEGER NOT NULL,
   minutes INTEGER NOT NULL,
@@ -88,7 +88,7 @@ CREATE TABLE patients_recordings (
 CREATE TABLE sleep_stage_detection (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   patient_id INTEGER NOT NULL,
-  week INTEGER NOT NULL,
+  week TEXT NOT NULL,
   day INTEGER NOT NULL,
   hours INTEGER NOT NULL,
   minutes INTEGER NOT NULL,
@@ -100,7 +100,8 @@ CREATE TABLE sleep_stage_detection (
   stage TEXT,
   y INTEGER NOT NULL,
   x INTEGER NOT NULL,
-  selected BOOLEAN NOT NULL
+  selected BOOLEAN NOT NULL,
+  recorder TEXT NOT NULL
 );
 
 CREATE TABLE settings (

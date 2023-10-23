@@ -129,10 +129,10 @@ def insert_label(DATABASE, label):
         cur.execute(f"INSERT INTO confirmed_labels (patient_id, week, night_id, label_id, location_begin, location_end, corrected) VALUES {label['patient_id'],label['week'],label['night_id'],label['label_id'],label['location_begin'],label['location_end'],label['corrected']}")
 
 
-def generate_model(DATABASE, patient_id, week, night_id):
+def generate_model(DATABASE, patient_id, week, night_id, recorder):
     print("generate_model")
-    data = open_brux_csv(DATABASE, patient_id, week, night_id)
-    loc = open_brux_loc_csv(DATABASE, patient_id, week, night_id)
+    data = open_brux_csv(DATABASE, patient_id, week, night_id, recorder)
+    loc = open_brux_loc_csv(DATABASE, patient_id, week, night_id, recorder)
     original_sampling = get_original_sampling(DATABASE)
     selected_sampling =get_selected_sampling(DATABASE)
     # dsample_rate = np.round(original_sampling / selected_sampling).astype("int")
@@ -175,10 +175,10 @@ def generate_model(DATABASE, patient_id, week, night_id):
     return model
 
 """TODO: Run Prediction"""
-def predict_events(DATABASE, model, patient_id, week, night_id):
+def predict_events(DATABASE, model, patient_id, week, night_id, recorder):
     print("predict_events")
-    filePath = get_data_path(DATABASE)+'p'+str(patient_id)+'_w'+str(week)+f'/'+str(night_id)+f'cFnorm.csv'
-    # data = open_brux_csv(patient_id, week, night_id)
+    filePath = get_data_path(DATABASE)+'p'+str(patient_id)+'_w'+str(week)+f'/'+str(night_id)+f'{recorder}Fnorm.csv'
+    # data = open_brux_csv(patient_id, week, night_id, recorder)
     data = pd.read_csv(filePath)
     selected = get_selected_intervals(patient_id, week, night_id, DATABASE)
     print(selected[0]['start_id'])
@@ -234,7 +234,7 @@ def predict_events(DATABASE, model, patient_id, week, night_id):
     
 
 """TODO: check predictions"""
-def run_prediction(DATABASE, patient_id, week, night_id):
+def run_prediction(DATABASE, patient_id, week, night_id, recorder):
     print("run_prediction")
     try:
         with sql.connect(DATABASE) as con:
@@ -254,7 +254,7 @@ def run_prediction(DATABASE, patient_id, week, night_id):
             print("Model already exist")
             xgbc = xgb.XGBClassifier()
             xgbc.load_model(str(model[0][-1]))
-            predict_events(DATABASE, xgbc, patient_id, week, night_id)
+            predict_events(DATABASE, xgbc, patient_id, week, night_id, recorder)
         else:
             print("Model does not exist")
             # loc_file = get_data_path(DATABASE) + f"p{patient_id}_w{week}/{night_id}clocation_Bites.csv"
@@ -269,8 +269,8 @@ def run_prediction(DATABASE, patient_id, week, night_id):
             #         cur.execute(query, params)
             #         cur.close()
             #     print(f"{i} out of {loc.index[-1]}")
-            model = generate_model(DATABASE, patient_id, week, night_id)
-            predict_events(DATABASE, model,patient_id, week, night_id)
+            model = generate_model(DATABASE, patient_id, week, night_id, recorder)
+            predict_events(DATABASE, model,patient_id, week, night_id, recorder)
         with sql.connect(DATABASE) as con:
             cur = con.cursor()        
             params = (patient_id, week, night_id)
@@ -292,7 +292,7 @@ def return_img_stream(img_path):
     return img_stream
 
 
-def get_ssd_values(DATABASE, patient_id, week, night_id):
+def get_ssd_values(DATABASE, patient_id, week, night_id, recorder):
     day, hours, minutes, seconds = get_patient_time_values(night_id)
     with sql.connect(DATABASE) as con:
         print('connected to db', file=sys.stderr)
@@ -300,14 +300,14 @@ def get_ssd_values(DATABASE, patient_id, week, night_id):
 
         print('cur variable defined', file=sys.stderr)
 
-        params = (patient_id, week, day, hours, minutes, seconds)
-        patient_exist = f"SELECT * FROM sleep_stage_detection WHERE (patient_id=? AND week=? AND day=? AND hours=? AND minutes=? AND seconds=?)"
+        params = (patient_id, week, day, hours, minutes, seconds, recorder)
+        patient_exist = f"SELECT * FROM sleep_stage_detection WHERE (patient_id=? AND week=? AND day=? AND hours=? AND minutes=? AND seconds=? AND recorder=?)"
         print('patient_exist query', file=sys.stderr)
 
         if cur.execute(patient_exist, params).fetchall():
             print('EXIST', file=sys.stderr)
-            params = (patient_id, week, day, hours, minutes, seconds)
-            query = "SELECT * FROM sleep_stage_detection WHERE (patient_id=? AND week=? AND day=? AND hours=? AND minutes=? AND seconds=?)"
+            params = (patient_id, week, day, hours, minutes, seconds, recorder)
+            query = "SELECT * FROM sleep_stage_detection WHERE (patient_id=? AND week=? AND day=? AND hours=? AND minutes=? AND seconds=? AND recorder=?)"
             result = cur.execute(query, params)
             columns = [description[0] for description in result.description]
             print(f"Columns: {columns}")
@@ -316,11 +316,11 @@ def get_ssd_values(DATABASE, patient_id, week, night_id):
         else:
             print('DOES NOT EXIST', file=sys.stderr)
             print(patient_id, week, night_id)
-            values = get_HRV_features(DATABASE, patient_id, week, night_id, get_original_sampling(DATABASE))
+            values = get_HRV_features(DATABASE, patient_id, week, night_id, recorder, get_original_sampling(DATABASE))
 
             for value in values:
-                params = (patient_id, week, day, hours, minutes, seconds, value['start_id'], value['end_id'], value['LF_HF'], value['SD'], value['stage'], value['y'], value['x'], 0)
-                query = "INSERT INTO sleep_stage_detection (patient_id, week, day, hours, minutes, seconds, start_id, end_id, LF_HF, SD, stage, y, x, selected) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                params = (patient_id, week, day, hours, minutes, seconds, value['start_id'], value['end_id'], value['LF_HF'], value['SD'], value['stage'], value['y'], value['x'], 0, recorder)
+                query = "INSERT INTO sleep_stage_detection (patient_id, week, day, hours, minutes, seconds, start_id, end_id, LF_HF, SD, stage, y, x, selected, recorder) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
                 cur.execute(query, params)
 
         return values
@@ -396,12 +396,17 @@ def get_existing_patients_data(DATABASE):
         csv_files = [f for f in os.listdir(patient_week_folder) if f.endswith(".csv")]
 
         night_id_list= []
+        night_id_recorder = {}
         for csv in csv_files:
             night_id = re.search("[0-9]+", csv).group(0)
             night_id_list.append(night_id)
 
+            if "location_Bites" not in csv:
+                recorder = re.search('.(?=F)', csv).group(0)
+                night_id_recorder[night_id] = recorder
+
         if night_id_list:
-            week = re.search('w(.*)', folder).group(1)
+            week = re.search('wk(.*)', folder).group(1)
             night_id_list = list(set(night_id_list))
             night_id_list = sorted(night_id_list)
             
@@ -409,7 +414,8 @@ def get_existing_patients_data(DATABASE):
                 existing_patients_recordings.append({
                     "patient_id": patient_id,
                     "week": week,
-                    "night_id": night_id
+                    "night_id": night_id,
+                    "recorder": night_id_recorder[night_id]
 
                 })
 
@@ -926,8 +932,8 @@ def generate_weekly_sum_img(DATABASE, img_local_path):
     
     
 """Generate night prediction image"""
-def generate_night_pred_img(DATABASE, patient_id, week, night_id):
-    # data = pd.read_csv(night_path+night+'cFnorm.csv')
+def generate_night_pred_img(DATABASE, patient_id, week, night_id, recorder):
+    # data = pd.read_csv(night_path+night+f'{recorder}Fnorm.csv')
     # loc = pd.read_csv(night_path+night+'clocation_Bites.csv')
     # original_sampling = get_original_sampling(DATABASE)
     # selected_sampling = get_selected_sampling(DATABASE)
@@ -985,8 +991,8 @@ def generate_night_pred_img(DATABASE, patient_id, week, night_id):
     #     else:
     #         y_p_mix.extend([0]*cnt);
     #     i += cnt;
-    week_path = get_data_path(DATABASE)+'p'+str(patient_id)+'_w'+str(week)+f'/'
-    data = pd.read_csv(week_path+night_id+'cFnorm.csv')
+    week_path = get_data_path(DATABASE)+'p'+str(patient_id)+'_wk'+str(week)+f'/'
+    data = pd.read_csv(week_path+night_id+f'{recorder}Fnorm.csv')
     selected = get_selected_intervals(patient_id, week, night_id, DATABASE)
     print(selected[0]['start_id'])
     # print(selected[0][0])
