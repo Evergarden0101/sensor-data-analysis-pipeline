@@ -6,6 +6,7 @@ DROP TABLE IF EXISTS patients_recordings;
 DROP TABLE IF EXISTS sleep_stage_detection;
 DROP TABLE IF EXISTS settings;
 DROP TABLE IF EXISTS sensors;
+DROP TABLE IF EXISTS week_summary;
 
 
 CREATE TABLE models (
@@ -31,6 +32,16 @@ CREATE TABLE bite_records (
   peakML DECIMAL(11,6),
   avgMR DECIMAL(11,6),
   avgML DECIMAL(11,6)
+);
+
+
+CREATE TABLE week_summary(
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  patient_id INTEGER NOT NULL,
+  week INTEGER NOT NULL,
+  night_id INTEGER NOT NULL,
+  cycle INTEGER NOT NULL,
+  count INTEGER NOT NULL
 );
 
 

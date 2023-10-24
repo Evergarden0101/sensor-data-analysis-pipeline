@@ -177,6 +177,13 @@ def generate_model(DATABASE, patient_id, week, night_id, recorder):
     with sql.connect(DATABASE) as con:
         cur = con.cursor()
         cur.execute(f"INSERT INTO models (patient_id, model_path) VALUES {patient_id, get_data_path(DATABASE) + f'p{patient_id}_model.json'}")
+        model.save_model(get_data_path(DATABASE) + f"p{patient_id}_model.json")
+        
+        cur.execute(f"SELECT * FROM models WHERE patient_id = -1")
+        general_model = cur.fetchall()
+        if not general_model:
+            cur.execute(f"INSERT INTO models (patient_id, model_path) VALUES {-1, get_data_path(DATABASE) + f'general_model.json'}")
+            model.save_model(get_data_path(DATABASE) + f'general_model.json')
         cur.close()
 
     model.save_model(get_data_path(DATABASE) + f"p{patient_id}_model.json")
@@ -229,7 +236,7 @@ def predict_events(DATABASE, model, patient_id, week, night_id, recorder):
                     break;
                 y_sum += y_p[i+j];
                 cnt += 1;
-            if y_sum/cnt >= 0.3:
+            if y_sum/cnt >= 0.5:
                 if(len(y_p_mix)==0 or y_p_mix[-1] != 10):
                     event += 1
                     loc_end = i+cnt
@@ -239,6 +246,21 @@ def predict_events(DATABASE, model, patient_id, week, night_id, recorder):
                     print(params, ' ', location_begin,' ', location_end)
                     query = "INSERT INTO predicted_labels (patient_id, week, night_id, label_id, location_begin, location_end, start_index, end_index) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
                     cur.execute(query, params)
+                    
+                    cycle = np.floor(location_begin / 90 / 60 / original_sampling)+1;
+                    params = (patient_id, week, night_id, cycle)
+                    query = "SELECT count from week_summary WHERE patient_id=? AND week=? AND night_id=? AND cycle=?"
+                    cur.execute(query, params)
+                    count = cur.fetchall()
+                    if count:
+                        print(count[0][0])
+                        params = (count[0][0]+1, patient_id, week, night_id, cycle)
+                        query = "UPDATE week_summary SET count = ? WHERE patient_id=? AND week=? AND night_id=? AND cycle=?"
+                        cur.execute(query, params)
+                    else:
+                        params = (patient_id, week, night_id, cycle, 1)
+                        query = "INSERT INTO week_summary (patient_id, week, night_id, cycle, count) VALUES (?, ?, ?, ?, ?)"
+                        cur.execute(query, params)
                     print("current end:", loc_end)
                 elif(y_p_mix[-1] == 10):
                     params = (index[loc_end+cnt], loc_end+cnt, patient_id, week, night_id, event)
@@ -745,10 +767,14 @@ def get_resampled_ranges(DATABASE, sampling_ranges):
 
     return sampling_ranges
 
-def get_event_data(desired_chunk, start_id, end_id, location_begin, location_end):
+def get_event_data(DATABASE, desired_chunk, start_id, end_id, location_begin, location_end):
     # Extract the interesting 5 minutes (or more)
     mr = desired_chunk["MR"].loc[start_id:end_id-1]
     ml = desired_chunk["ML"].loc[start_id:end_id-1]
+    
+    original_sampling = get_original_sampling(DATABASE)
+    selected_sampling = get_selected_sampling(DATABASE)
+    cnt = [(start_id+i)/original_sampling for i in range(len(mr))]
 
     # Extract the portion in which event occurs to find indices (we do it only for mr since indices are the same)
     mr_event_data = desired_chunk["MR"].loc[location_begin:location_end-1]
@@ -767,18 +793,20 @@ def get_event_data(desired_chunk, start_id, end_id, location_begin, location_end
     ml_third_chunk = ml.values.tolist()[new_event_subindices[1]+1:]
 
     # Resample MR data
-    resmapled_mr_first_chunk =  nk.signal_resample(mr_first_chunk, method="interpolation", sampling_rate=get_original_sampling(DATABASE), desired_sampling_rate=get_selected_sampling(DATABASE)).tolist()
-    resmapled_mr_event_chunk =  nk.signal_resample(mr_event_chunk, method="interpolation", sampling_rate=get_original_sampling(DATABASE), desired_sampling_rate=get_selected_sampling(DATABASE)).tolist()
-    resmapled_mr_third_chunk =  nk.signal_resample(mr_third_chunk, method="interpolation", sampling_rate=get_original_sampling(DATABASE), desired_sampling_rate=get_selected_sampling(DATABASE)).tolist()
+    resmapled_mr_first_chunk =  nk.signal_resample(mr_first_chunk, method="interpolation", sampling_rate=original_sampling, desired_sampling_rate=selected_sampling).tolist()
+    resmapled_mr_event_chunk =  nk.signal_resample(mr_event_chunk, method="interpolation", sampling_rate=original_sampling, desired_sampling_rate=selected_sampling).tolist()
+    resmapled_mr_third_chunk =  nk.signal_resample(mr_third_chunk, method="interpolation", sampling_rate=original_sampling, desired_sampling_rate=selected_sampling).tolist()
 
     # Resample ML data
-    resmapled_ml_first_chunk =  nk.signal_resample(ml_first_chunk, method="interpolation", sampling_rate=get_original_sampling(DATABASE), desired_sampling_rate=get_selected_sampling(DATABASE)).tolist()
-    resmapled_ml_event_chunk =  nk.signal_resample(ml_event_chunk, method="interpolation", sampling_rate=get_original_sampling(DATABASE), desired_sampling_rate=get_selected_sampling(DATABASE)).tolist()
-    resmapled_ml_third_chunk =  nk.signal_resample(ml_third_chunk, method="interpolation", sampling_rate=get_original_sampling(DATABASE), desired_sampling_rate=get_selected_sampling(DATABASE)).tolist()
+    resmapled_ml_first_chunk =  nk.signal_resample(ml_first_chunk, method="interpolation", sampling_rate=original_sampling, desired_sampling_rate=selected_sampling).tolist()
+    resmapled_ml_event_chunk =  nk.signal_resample(ml_event_chunk, method="interpolation", sampling_rate=original_sampling, desired_sampling_rate=selected_sampling).tolist()
+    resmapled_ml_third_chunk =  nk.signal_resample(ml_third_chunk, method="interpolation", sampling_rate=original_sampling, desired_sampling_rate=selected_sampling).tolist()
 
     # Concatenate MR and ML chunks
     mr_resampled = list(itertools.chain(resmapled_mr_first_chunk, resmapled_mr_event_chunk, resmapled_mr_third_chunk))
     ml_resampled = list(itertools.chain(resmapled_ml_first_chunk, resmapled_ml_event_chunk, resmapled_ml_third_chunk))
+    
+    cnt = nk.signal_resample(cnt, method="interpolation", sampling_rate=original_sampling, desired_sampling_rate=selected_sampling).tolist()
 
     # Find event indices of the new resampled data
     new_event_resampled_subindices = find_sub_list(resmapled_mr_event_chunk, mr_resampled)
@@ -788,10 +816,11 @@ def get_event_data(desired_chunk, start_id, end_id, location_begin, location_end
         "5min_end_id": end_id,
         "start_id": 0,
         "end_id": len(mr_resampled)-1,
-        "mr_resampled": mr_resampled,
-        "ml_resmapled": ml_resampled,
+        "MR": mr_resampled,
+        "ML": ml_resampled,
         "event_start_id": new_event_resampled_subindices[0],
-        "event_end_id": new_event_resampled_subindices[1]
+        "event_end_id": new_event_resampled_subindices[1],
+        "cnt": cnt
     }
 
     return result
@@ -928,12 +957,9 @@ def annotate_heatmap(im, data=None, valfmt="{x:.2f}",
 def generate_weekly_sum_img(DATABASE, img_local_path):
     len = 74155516
     print(len)
-    try:
-        original_sampling = get_original_sampling(DATABASE)
-    except Exception as e:
-        original_sampling = 2000
-    cycles = int(np.ceil(len / original_sampling / 60 / 60 / 1.5))
-    stages = list(range(1, cycles + 1))
+    original_sampling = get_original_sampling(DATABASE)
+    cycle_num = int(np.ceil(len / original_sampling / 90 / 60))
+    cycles = list(range(1, cycle_num + 1))
     days = list(range(1, 8))
     data = np.array([[1,0,0,0,0,0,0],
                 [2,1,0,3,3,0,2],
@@ -944,7 +970,7 @@ def generate_weekly_sum_img(DATABASE, img_local_path):
                 [5,1,0,0,0,0,0]])
     fig, ax = plt.subplots()
 
-    im = heatmap(data, days, stages, ax=ax,
+    im = heatmap(data, days, cycles, ax=ax,
                     cmap="YlOrRd")
     texts = annotate_heatmap(im, valfmt="{x:d}")
 

@@ -96,18 +96,19 @@ export default {
         this.end = this.$store.state.plotEnd;
         // this.checkedML = this.$store.state.checkedML;
         // this.checkedMR = this.$store.state.checkedMR;
-        this.data = dataset;
+        // this.data = dataset;
         if(this.data == null){
             this.loadLinePlotData(this.$store.state.patientId, this.$store.state.week, this.$store.state.nightId);
             this.loading = ref(false);
         }else{
             if(this.start == 0 && this.end == 0){
-                this.end = (this.data.length-1)/this.freq;
+                this.end = (this.data['5min_end_id'])/this.freq;
+                this.start = this.data['5min_start_id'] / this.freq;
             }
             this.$store.commit('updataPoint',{startPoint:this.start, endPoint:Math.floor(this.end * 1000) / 1000})
-            this.loading = ref(false);
             if(this.checkedMR) this.drawLineplot('MR',this.start,this.end);
             if(this.checkedML) this.drawLineplot('ML',this.start,this.end);
+            this.loading = ref(false);
             console.log('finish')
         }
 
@@ -160,32 +161,45 @@ export default {
             
         },
         loadLinePlotData(patient_id, week, night_id){
-            const path = `http://127.0.0.1:5000/lineplot-data/${patient_id}/${week}/${night_id}`
+            // const path = `http://127.0.0.1:8000/lineplot-data/${patient_id}/${week}/${night_id}`
+            if(!this.$store.state.selectedEvent){
+                return;
+            }
+            var event = JSON.parse(this.$store.state.selectedEvent)
+            const path = `http://127.0.0.1:5000/event-interval/${patient_id}/${week}/${night_id}/${this.$store.state.recorder}/${event['location_begin']}/${event['location_end']}`
             const headers = {
                     'Accept': 'application/json',
                     'Content-Type': 'application/json',
-                    'Access-Control-Allow-Origin': '*',
-                    'Access-Control-Allow-Methods': 'GET',
-                    'Access-Control-Max-Age': "3600",
-                    'Access-Control-Allow-Credentials': "true",
-                    'Access-Control-Allow-Headers': 'Content-Type'
+                    // 'Access-Control-Allow-Origin': '*',
+                    // 'Access-Control-Allow-Methods': 'GET',
+                    // 'Access-Control-Max-Age': "3600",
+                    // 'Access-Control-Allow-Credentials': "true",
+                    // 'Access-Control-Allow-Headers': 'Content-Type'
             };
 
+            
+
+            
+            // const payload = {
+            //     "location_begin": event['location_begin'],
+            //     "location_end": event['location_end']
+            // };
             axios.get(path, {headers})
                 .then((res) => {
                     console.log("Data received");
                     // this.loading = ref(false);
                     console.log(res)
-                    var option;
-                    var maxY = 0;
-                    var hours = [];
 
                     this.data = res.data;
+                    this.$store.commit('saveLineplotData', JSON.stringify(this.data))
 
                     if(this.start == 0 && this.end == 0){
-                        this.end = (this.data.length-1)/this.freq;
+                        this.end = (this.data['5min_end_id'])/this.freq;
+                        this.start = this.data['5min_start_id'] / this.freq;
                     }
-                    this.$store.commit('updataPoint',{startPoint:this.start, endPoint:Math.floor(this.end * 1000) / 1000})
+
+                    this.$store.commit('updataPoint',{startPoint:Math.floor(this.start * 1000) / 1000, endPoint:Math.floor(this.end * 1000) / 1000})
+                    // this.predLabels = [{'start':this.data.event_start_id, 'end':this.data.event_end_id}]
                     if(this.checkedMR) this.drawLineplot('MR',this.start,this.end);
                     if(this.checkedML) this.drawLineplot('ML',this.start,this.end);
 
@@ -281,6 +295,20 @@ export default {
             // Prettify output
             return result;
         },
+        listToJson(data){
+            const result = [];
+            for (var i=0;i<data['MR'].length;i++) {
+                const obj = {};
+                obj['MR'] = data['MR'][i]
+                obj['ML'] = data['ML'][i]
+                obj['cnt'] = data['cnt'][i]
+
+                result.push(obj);
+            }
+
+            // Prettify output
+            return result;
+        },
         drawLabel(channel, start, end){
             console.log('labels')
             var height = this.plotHeight;
@@ -292,7 +320,7 @@ export default {
 
             var line = d3.select("#"+channel);
             console.log(this.predLabels)
-            if(this.predLabels == null || this.predLabels.length == 0){
+            if(this.predLabels == null){
                 return;
             }
             var rects = line
@@ -325,9 +353,9 @@ export default {
               // ... add more REM phases as needed
             ];
 
-            var csv = this.csvToJson(this.data)
-
-            
+            // var csv = this.csvToJson(this.data)
+            var csv = this.listToJson(this.data)
+            console.log(csv)
             var height = this.plotHeight;
             var width = this.plotWidth;
 
@@ -352,7 +380,7 @@ export default {
 
 
             // Add X axis --> it is a date format
-            var domainLen = (csv.length + 1)/this.freq;
+            var domainLen = (csv.length)/this.freq;
             console.log(domainLen)
             var x = d3.scaleLinear()
                 // .domain(d3.extent(data, function(d) { return d.year; }))
@@ -443,29 +471,29 @@ export default {
                 .datum(csv)
                 .attr("class", "line")
                 .attr("fill", "none")
-                .attr("stroke", "grey")
+                .attr("stroke", "url(#line-gradient)")
                 .attr("stroke-width", 1.5)
                 .attr("d", d3.line()
-                    .x(function(d) { return x((d.cnt))})
+                    .x(function(d) { return x((d['cnt']))})
                     .y(function(d) { return y(d[channel]) })
                 );
 
             // Overlay colored line segments for the remPhases
-            remPhases.forEach(phase => {
-              // Calculate the data points within the remPhase range
-              const phaseData = csv.filter(d => d.cnt >= phase.Start && d.cnt < phase.End);
+            // remPhases.forEach(phase => {
+            //   // Calculate the data points within the remPhase range
+            //   const phaseData = csv.filter(d => d.cnt >= phase.Start && d.cnt < phase.End);
 
-              line.append("path")
-                  .datum(phaseData)
-                  .attr("class", "line")
-                  .attr("fill", "none")
-                  .attr("stroke", "url(#line-gradient)")
-                  .attr("stroke-width", 1.5)
-                  .attr("d", d3.line()
-                      .x(function(d) { return x((d.cnt))})
-                      .y(function(d) { return y(d[channel]) })
-                  );
-            });
+            //   line.append("path")
+            //       .datum(phaseData)
+            //       .attr("class", "line")
+            //       .attr("fill", "none")
+            //       .attr("stroke", "url(#line-gradient)")
+            //       .attr("stroke-width", 1.5)
+            //       .attr("d", d3.line()
+            //           .x(function(d) { return x((d.cnt))})
+            //           .y(function(d) { return y(d[channel]) })
+            //       );
+            // });
 
 
             this.drawLabel(channel, start, end);
@@ -550,8 +578,8 @@ export default {
             // If user double click, reinitialize the chart
             var freq = this.freq;
             svg.on("dblclick",function(){
-                let len = (csv.length)/freq;
-                store.commit('updataPoint',{startPoint:0, endPoint:Math.floor(len * 1000) / 1000});
+                // let len = (csv.length)/freq;;
+                store.commit('updataPoint',{startPoint:Math.floor(that.data['5min_start_id']/freq * 1000) / 1000, endPoint:Math.floor(that.data['5min_end_id'] / freq * 1000) / 1000});
                 store.commit('setLabelRange',{plotStart:0, plotEnd:0});
 
                 store.commit('updateLinePlotKey');

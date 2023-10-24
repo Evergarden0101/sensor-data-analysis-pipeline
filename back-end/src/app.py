@@ -375,18 +375,19 @@ def create_app(test_config=None):
             "location_end": int
         }
     """
-    @app.route('/event-interval/<int:patient_id>/<string:week>/<string:night_id>/<string:recorder>', methods=["GET"])
-    def get_event_interval(patient_id, week, night_id, recorder):
-
+    @app.route('/event-interval/<int:patient_id>/<int:week>/<string:night_id>/<string:recorder>/<int:location_begin>/<int:location_end>', methods=["GET"])
+    def get_event_interval(patient_id, week, night_id, recorder, location_begin, location_end):
+        print("get event interval")
         day, hours, minutes, seconds = get_patient_time_values(night_id)
-        label = request.json
+        # label = request.json
+        # print(label)
         five_min_data_points = 600000
 
         #1h data
         chunk_size = 2000*60*60
 
-        location_begin = math.floor(label["location_begin"] * get_original_sampling(DATABASE))
-        location_end = math.ceil(label["location_end"] * get_original_sampling(DATABASE))
+        # location_begin = math.floor(location_begin * get_original_sampling(DATABASE))
+        # location_end = math.ceil(location_end * get_original_sampling(DATABASE))
 
         print(f"duration in index: {location_end - location_begin}")
         print(f"location_begin: {location_begin}, location_end: {location_end}")
@@ -425,7 +426,7 @@ def create_app(test_config=None):
                     break
             print(f"desired chunk: {desired_chunk}")
 
-            result = get_event_data(desired_chunk, start_id, end_id, location_begin, location_end)
+            result = get_event_data(DATABASE, desired_chunk, start_id, end_id, location_begin, location_end)
 
             return result, 200
 

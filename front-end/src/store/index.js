@@ -32,7 +32,9 @@ const store = createStore({
       bruxLabelKey: 0,
       studyAccuracy: '--',
       patientAccuracy: '--',
-      nightImg: ''
+      nightImg: '',
+      selectedEvent: null,
+      lineplotData: null,
     }
   },
   mutations: {
@@ -83,6 +85,12 @@ const store = createStore({
     },
     getNightImg(state, payload){
       state.nightImg = payload;
+    },
+    selectEvent(state,payload){
+      state.selectedEvent = payload;
+    },
+    saveLineplotData(state,payload){
+      state.lineplotData = payload;
     }
   },
   plugins: [vuexLocal.plugin],
