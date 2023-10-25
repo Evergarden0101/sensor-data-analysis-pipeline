@@ -957,11 +957,6 @@ def annotate_heatmap(im, data=None, valfmt="{x:.2f}",
 """Generate weekly summary image"""
 """TODO: get len and data"""
 def generate_weekly_sum_img(DATABASE, img_local_path, patient_id, week):
-    # len = 74155516
-    # print(len)
-    # original_sampling = get_original_sampling(DATABASE)
-    
-    # cycles = list(range(1, cycle_num + 1))
     print("Generating weekly summary image")
     days = list(range(1, 8))
     data = None
