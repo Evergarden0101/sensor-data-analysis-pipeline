@@ -443,7 +443,7 @@ def create_app(test_config=None):
             week = request.args.get('w')
             img_local_path =  get_data_path(DATABASE) +"p"+str(patient_id)+"_wk"+str(week)+ f"/summary.png"
             print('img_local_path: ',img_local_path)
-            generate_weekly_sum_img(DATABASE, img_local_path)
+            generate_weekly_sum_img(DATABASE, img_local_path, patient_id, week)
             img_f = open(img_local_path, 'rb')
             print(img_f)
             res = make_response(img_f.read())   # 用flask提供的make_response 方法来自定义自己的response对象

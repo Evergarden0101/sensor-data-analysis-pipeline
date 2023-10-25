@@ -14,10 +14,10 @@
         <h4 align="center" style="margin-bottom:0">Sensor Signals for Right Masseter</h4>
     </el-row>
     <el-carousel v-show="checkedMR" style="margin-bottom: 40px;" indicator-position="outside" :autoplay="false" trigger="click" arrow="always" :height="this.carouselheight" @change="getNewCycle" ref="rightCarousel">
-        <el-carousel-item v-for="item in this.cycleNum" :key="item">
-            <h5 align="center" style="margin-bottom: 10px;">Sleep Cycle {{ item }}/{{ this.cycleNum }}</h5>
+        <el-carousel-item v-for="item in this.predLabels" :key="item">
+            <h5 align="center" style="margin-bottom: 10px;">Event {{ item.label_id }}/{{ this.predLabels.length }}</h5>
             <el-row>
-                <div :id="'mrlineplot' + item" v-loading="loading" element-loading-text="The line plots are loading..."></div>
+                <div :id="'mrlineplot' + item.label_id" v-loading="loading" element-loading-text="The line plots are loading..." style="min-width: 150px;display:block;margin:auto"></div>
             </el-row>
         </el-carousel-item>
     </el-carousel>
@@ -30,10 +30,10 @@
         <h4 align="center" style="margin-bottom:0">Sensor Signals for Left Masseter</h4>
     </el-row>
     <el-carousel v-show="checkedML" style="margin-bottom: 40px;" indicator-position="outside" :autoplay="false" trigger="click" arrow="always" :height="this.carouselheight" @change="getNewCycle" ref="leftCarousel">
-        <el-carousel-item v-for="item in this.cycleNum" :key="item">
-            <h5 align="center" style="margin-bottom: 10px;">Sleep Cycle {{ item }}/{{ this.cycleNum }}</h5>
+        <el-carousel-item v-for="item in this.predLabels" :key="item">
+            <h5 align="center" style="margin-bottom: 10px;">Event {{ item.label_id }}/{{ this.predLabels.length }}</h5>
             <el-row>
-                <div :id="'mllineplot' + item" v-loading="loading" element-loading-text="The line plots are loading..."></div>
+                <div :id="'mllineplot' + item.label_id" v-loading="loading" element-loading-text="The line plots are loading..." style="min-width: 150px;display:block;margin:auto"></div>
             </el-row>
         </el-carousel-item>
     </el-carousel>
@@ -59,7 +59,7 @@ export default {
             freq: 2000,
             key: Date.now(),
             activeName: 'left',
-            predLabels: [],
+            // predLabels: [],
             start: 0,
             end: 0,
             max: 10,
@@ -74,6 +74,11 @@ export default {
             cycleNum: 7,
             cycleIdx: 1,
         }
+    },
+    computed: {
+        predLabels() {
+            return JSON.parse(this.$store.state.labels);
+        },
     },
     beforeMount() {
         // set the dimensions and margins of the graph
@@ -90,16 +95,18 @@ export default {
     },
     mounted() {
         // await this.loadAllPred();
-        this.predLabels = JSON.parse(this.$store.state.labels);
+        // this.predLabels = JSON.parse(this.$store.state.labels);
         console.log('predLabels', this.predLabels)
+        this.freq = this.$store.state.samplingRate;
         this.start = this.$store.state.plotStart;
         this.end = this.$store.state.plotEnd;
         // this.checkedML = this.$store.state.checkedML;
         // this.checkedMR = this.$store.state.checkedMR;
         // this.data = dataset;
         if(this.data == null){
+            this.$store.commit('selectEvent', JSON.stringify(this.predLabels[0]));
             this.loadLinePlotData(this.$store.state.patientId, this.$store.state.week, this.$store.state.nightId);
-            this.loading = ref(false);
+            // this.loading = ref(false);
         }else{
             if(this.start == 0 && this.end == 0){
                 this.end = (this.data['5min_end_id'])/this.freq;
@@ -128,9 +135,11 @@ export default {
             this.emptyGraph(ml);
 
             this.cycleIdx = cur+1;
+            console.log('cycleIdx', this.cycleIdx)
+            this.$store.commit('selectEvent', JSON.stringify(this.predLabels[cur]));
+            this.loadLinePlotData(this.$store.state.patientId, this.$store.state.week, this.$store.state.nightId);
             this.rerenderRight(this.checkedMR);
             this.rerenderLeft(this.checkedML);
-            this.loading = ref(false);
         },
         loadAllPred() {
             const path = `http://127.0.0.1:5000/label-brux/${this.$store.state.patientId}/${this.$store.state.week}/${this.$store.state.nightId}`
@@ -165,6 +174,7 @@ export default {
             if(!this.$store.state.selectedEvent){
                 return;
             }
+            console.log(this.$store.state.selectedEvent)
             var event = JSON.parse(this.$store.state.selectedEvent)
             const path = `http://127.0.0.1:5000/event-interval/${patient_id}/${week}/${night_id}/${this.$store.state.recorder}/${event['location_begin']}/${event['location_end']}`
             const headers = {
@@ -203,6 +213,7 @@ export default {
                     if(this.checkedMR) this.drawLineplot('MR',this.start,this.end);
                     if(this.checkedML) this.drawLineplot('ML',this.start,this.end);
 
+                    this.loading = ref(false);
                 })
                 .catch(err=>{
                     console.log(err)
@@ -223,6 +234,7 @@ export default {
                 }
                 this.drawLineplot('ML', start, end);
                 this.$store.commit('selectML',true);
+                this.loading = ref(false);
             }
         },
         rerenderRight(tab) {
@@ -239,6 +251,7 @@ export default {
                 }
                 this.drawLineplot('MR', start, end);
                 this.$store.commit('selectMR',true);
+                this.loading = ref(false);
             }
         },
         emptyGraph(e) {
@@ -338,7 +351,7 @@ export default {
                             .attr("class", "labels");
         },
         drawLineplot(channel,start, end){
-
+            console.log('channel ', channel)
             const remPhases = [
               {
                 'id': 'REM Phase 1',

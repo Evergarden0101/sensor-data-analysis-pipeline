@@ -193,9 +193,13 @@ def generate_model(DATABASE, patient_id, week, night_id, recorder):
 """TODO: Run Prediction"""
 def predict_events(DATABASE, model, patient_id, week, night_id, recorder):
     print("predict_events")
-    filePath = get_data_path(DATABASE)+'p'+str(patient_id)+'_w'+str(week)+f'/'+str(night_id)+f'{recorder}Fnorm.csv'
+    # filePath = get_data_path(DATABASE)+'p'+str(patient_id)+'_w'+str(week)+f'/'+str(night_id)+f'{recorder}Fnorm.csv'
     # data = open_brux_csv(patient_id, week, night_id, recorder)
-    data = pd.read_csv(filePath)
+    data = open_brux_csv(DATABASE, patient_id, week, night_id, recorder)
+    original_sampling = get_original_sampling(DATABASE)
+    selected_sampling =get_selected_sampling(DATABASE)
+    cycle_num = int(np.ceil(data.shape[0] / original_sampling / 90 / 60))
+    
     selected = get_selected_intervals(patient_id, week, night_id, DATABASE)
     # print(selected[0]['start_id'])
     # print(selected[0][0])
@@ -205,8 +209,6 @@ def predict_events(DATABASE, model, patient_id, week, night_id, recorder):
     index = df.index
     # print(index)
 
-    original_sampling = get_original_sampling(DATABASE)
-    selected_sampling =get_selected_sampling(DATABASE)
     # df = resample_whole_df(df,original_sampling,selected_sampling)
     MR = get_column_array(get_column_data_from_df(df, "MR"))
     ML = get_column_array(get_column_data_from_df(df, "ML"))
@@ -215,7 +217,7 @@ def predict_events(DATABASE, model, patient_id, week, night_id, recorder):
     df = pd.DataFrame({'MR': MR, 'ML': ML})
 
     index = resample_signal(signal=index, sampling_rate=original_sampling, SAMPLING_RATE=selected_sampling)
-    print(index[10])
+    # print(index[10])
 
     x = df.iloc[:,:2].copy()
     x_p = np.array(x.values.tolist())
@@ -247,7 +249,7 @@ def predict_events(DATABASE, model, patient_id, week, night_id, recorder):
                     query = "INSERT INTO predicted_labels (patient_id, week, night_id, label_id, location_begin, location_end, start_index, end_index) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
                     cur.execute(query, params)
                     
-                    cycle = np.floor(location_begin / 90 / 60 / original_sampling)+1;
+                    cycle = np.floor(location_begin / 90 / 60 / original_sampling);
                     params = (patient_id, week, night_id, cycle)
                     query = "SELECT count from week_summary WHERE patient_id=? AND week=? AND night_id=? AND cycle=?"
                     cur.execute(query, params)
@@ -258,8 +260,8 @@ def predict_events(DATABASE, model, patient_id, week, night_id, recorder):
                         query = "UPDATE week_summary SET count = ? WHERE patient_id=? AND week=? AND night_id=? AND cycle=?"
                         cur.execute(query, params)
                     else:
-                        params = (patient_id, week, night_id, cycle, 1)
-                        query = "INSERT INTO week_summary (patient_id, week, night_id, cycle, count) VALUES (?, ?, ?, ?, ?)"
+                        params = (patient_id, week, night_id, cycle, cycle_num, 1)
+                        query = "INSERT INTO week_summary (patient_id, week, night_id, cycle, max_cycle, count) VALUES (?, ?, ?, ?, ?, ?)"
                         cur.execute(query, params)
                     print("current end:", loc_end)
                 elif(y_p_mix[-1] == 10):
@@ -285,7 +287,7 @@ def run_prediction(DATABASE, patient_id, week, night_id, recorder):
         with sql.connect(DATABASE) as con:
             cur = con.cursor()
             params = (patient_id, week, night_id)
-            query = "SELECT * from predicted_labels WHERE (patient_id=? AND week=? AND night_id=?)"
+            query = "SELECT DISTINCT * from predicted_labels WHERE (patient_id=? AND week=? AND night_id=?)"
             labels = cur.execute(query, params).fetchall()
             print(labels)
             if labels:
@@ -319,8 +321,8 @@ def run_prediction(DATABASE, patient_id, week, night_id, recorder):
         with sql.connect(DATABASE) as con:
             cur = con.cursor()
             params = (patient_id, week, night_id)
-            query = "SELECT * from predicted_labels WHERE (patient_id=? AND week=? AND night_id=?)"
-            labels = cur.execute(query, params)
+            query = "SELECT DISTINCT * from predicted_labels WHERE (patient_id=? AND week=? AND night_id=?)"
+            labels = cur.execute(query, params).fetchall()
             return labels
     except Exception as e:
             print('Exception raised in run_prediction function')
@@ -954,25 +956,62 @@ def annotate_heatmap(im, data=None, valfmt="{x:.2f}",
 
 """Generate weekly summary image"""
 """TODO: get len and data"""
-def generate_weekly_sum_img(DATABASE, img_local_path):
-    len = 74155516
-    print(len)
-    original_sampling = get_original_sampling(DATABASE)
-    cycle_num = int(np.ceil(len / original_sampling / 90 / 60))
-    cycles = list(range(1, cycle_num + 1))
+def generate_weekly_sum_img(DATABASE, img_local_path, patient_id, week):
+    # len = 74155516
+    # print(len)
+    # original_sampling = get_original_sampling(DATABASE)
+    
+    # cycles = list(range(1, cycle_num + 1))
+    print("Generating weekly summary image")
     days = list(range(1, 8))
-    data = np.array([[1,0,0,0,0,0,0],
-                [2,1,0,3,3,0,2],
-                [1,3,0,0,0,1,0],
-                [0,0,0,0,0,0,0],
-                [1,1,0,0,4,2,0],
-                [7,0,0,0,0,0,0],
-                [5,1,0,0,0,0,0]])
+    data = None
+    cycle_num = 7
+    day_cnt = 0
+    with sql.connect(DATABASE) as con:
+        print("DB connected")
+        cur = con.cursor()
+        params = (patient_id, week)
+        query = "SELECT DISTINCT night_id from week_summary WHERE (patient_id=? AND week=?)"
+        nights = cur.execute(query, params).fetchall()
+        print(nights)
+        
+        for i in nights:
+            print(i[0])
+            params = (patient_id, week, i[0])
+            query = "SELECT max_cycle, cycle, count from week_summary WHERE (patient_id=? AND week=? AND night_id=?)"
+            cycle_count = cur.execute(query, params).fetchall()
+            print(cycle_count[0][0])
+            night_summary = np.zeros(cycle_count[0][0], dtype=int)
+            cycle_num = cycle_count[0][0]
+            for j in cycle_count:
+                print(j)
+                night_summary[j[1]] = j[2]
+            if(data == None):
+                data = night_summary
+            else:
+                data = np.vstack((data, night_summary))
+            day_cnt += 1
+        cur.close()
+    
+    # data = np.array([[1,0,0,0,0,0,0],
+    #             [2,1,0,3,3,0,2],
+    #             [1,3,0,0,0,1,0],
+    #             [0,0,0,0,0,0,0],
+    #             [1,1,0,0,4,2,0],
+    #             [7,0,0,0,0,0,0],
+    #             [5,1,0,0,0,0,0]])
+    while(day_cnt < 7):
+        data = np.vstack((data, np.zeros(cycle_num, dtype=int)))
+        day_cnt += 1
+    data = np.array(data).transpose()
+    cycles = list(range(1, cycle_num + 1))
+    
+    print(data)
     fig, ax = plt.subplots()
 
     im = heatmap(data, days, cycles, ax=ax,
                     cmap="YlOrRd")
-    texts = annotate_heatmap(im, valfmt="{x:d}")
+    # texts = annotate_heatmap(im, valfmt="{x:d}")
 
     # ax.set_title("Weekly Events Detected for Patient")
     fig.tight_layout()
@@ -1063,7 +1102,7 @@ def generate_night_pred_img(DATABASE, patient_id, week, night_id, recorder):
     with sql.connect(DATABASE) as con:
         print("DB connected")
         params = (patient_id, week, night_id)
-        query = "SELECT * from predicted_labels WHERE (patient_id=? AND week=? AND night_id=?)"
+        query = "SELECT DISTINCT * from predicted_labels WHERE (patient_id=? AND week=? AND night_id=?)"
         cur = con.cursor()
         predicted_labels = cur.execute(query, params)
         columns = [description[0] for description in predicted_labels.description]

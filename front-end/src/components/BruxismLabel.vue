@@ -329,7 +329,8 @@ export default {
                     this.computeDur();
                     this.$store.commit('saveLabels',JSON.stringify(this.Labels));
                     // })
-                    this.$store.commit('getNightImg', "http://127.0.0.1:8000/night-pred-img?p=" + this.$store.state.patientId+'&w='+this.$store.state.week+'&n='+this.$store.state.nightId)
+                    this.$store.commit('getNightImg', "http://127.0.0.1:8000/night-pred-img?p=" + this.$store.state.patientId+'&w='+this.$store.state.week+'&n='+this.$store.state.nightId+'&r='+this.$store.state.recorder)
+                    this.$store.commit('getWeekImg', "http://127.0.0.1:5000/weekly-sum-img?p=" + this.$store.state.patientId+'&w='+this.$store.state.week);
                     this.$store.commit('updateBruxLabelKey');
                     this.$store.commit('updateLinePlotKey');
                     // return res.data;
@@ -368,13 +369,14 @@ export default {
     // TODO: loading status
     beforeMount() {
         this.$store.commit('getNightImg','');
+        this.$store.commit('getWeekImg', '');
         if(this.$store.state.labels){
             console.log("Labels already loaded")
             this.Labels = JSON.parse(this.$store.state.labels);
             console.log(this.Labels.slice(0,3));
             this.computeDur();
-            this.$store.commit('getNightImg', "http://127.0.0.1:5000/night-pred-img?p=" + this.$store.state.patientId+'&w='+this.$store.state.week+'&n='+this.$store.state.nightId)
-                    
+            this.$store.commit('getNightImg', "http://127.0.0.1:5000/night-pred-img?p=" + this.$store.state.patientId+'&w='+this.$store.state.week+'&n='+this.$store.state.nightId+'&r='+this.$store.state.recorder)
+            this.$store.commit('getWeekImg', "http://127.0.0.1:5000/weekly-sum-img?p=" + this.$store.state.patientId+'&w='+this.$store.state.week);
             // console.log('active label', this.activeLabel)
             // this.$store.commit('clearLabels');
 

@@ -33,6 +33,7 @@ const store = createStore({
       studyAccuracy: '--',
       patientAccuracy: '--',
       nightImg: '',
+      weekImg: '',
       selectedEvent: null,
       lineplotData: null,
     }
@@ -91,7 +92,10 @@ const store = createStore({
     },
     saveLineplotData(state,payload){
       state.lineplotData = payload;
-    }
+    },
+    getWeekImg(state, payload){
+      state.weekImg = payload;
+    },
   },
   plugins: [vuexLocal.plugin],
 

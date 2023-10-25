@@ -41,6 +41,7 @@ CREATE TABLE week_summary(
   week INTEGER NOT NULL,
   night_id INTEGER NOT NULL,
   cycle INTEGER NOT NULL,
+  max_cycle INTEGER NOT NULL,
   count INTEGER NOT NULL
 );
 
