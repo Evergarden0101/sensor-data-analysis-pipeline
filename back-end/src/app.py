@@ -168,6 +168,12 @@ def create_app(test_config=None):
                         print(s)
                         updates.append({'x': s[0], 'y': s[1]})
 
+                    if len(updates) == 0:
+                        selected = get_rem_intervals(patient_id, week, night_id, DATABASE)
+                        for s in selected:
+                            updates.append({'x': s[0], 'y': s[1]})
+
+
                     post_selected_updates(DATABASE, patient_id, week, night_id, updates)
 
                     return standard_selected, 200
@@ -466,6 +472,8 @@ def create_app(test_config=None):
             week = request.args.get('w')
             night = request.args.get('n')
             recorder = request.args.get('r')
+
+            print(f"recorder: {recorder}")
             # week_path = get_data_path(DATABASE)+'p'+str(patient_id)+'_wk'+str(week)+f'/'
             # print('night_path: ',week_path)
             # img_local_path =  week_path+str(night)+f'.png'
