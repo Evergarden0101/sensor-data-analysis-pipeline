@@ -608,12 +608,13 @@ def get_rem_intervals(patient_id, week, night_id, DATABASE):
         day, hours, minutes, seconds = get_patient_time_values(night_id)
 
         params = ('rem', patient_id, week, day, hours, minutes, seconds)
-        query = "SELECT start_id, end_id FROM sleep_stage_detection WHERE stage=? AND patient_id=? AND week=? AND day=? AND hours=? AND minutes=? and seconds=?"
+        query = "SELECT x,y,ROUND(SD),stage, LF_HF FROM sleep_stage_detection WHERE stage=? AND patient_id=? AND week=? AND day=? AND hours=? AND minutes=? and seconds=?"
 
-        result = cur.execute(query, params)
-        columns = [description[0] for description in result.description]
+        rem = cur.execute(query, params).fetchall()
+        
+        result = [list(r) for r in rem]
 
-        return get_json_format_from_query(columns=columns, query_results=result.fetchall(), start_id=0, end_id=1)
+        return result
 
 
 
