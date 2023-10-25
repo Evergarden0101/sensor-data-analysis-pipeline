@@ -77,6 +77,7 @@ export default {
         choosePatient(index){
             console.log(this.tableData[index]);
             this.$store.commit('updatePatientSeletion', this.tableData[index]);
+            this.$store.commit('clearLabels');
             console.log(this.$store.state);
             this.$router.push('/filtering');
 

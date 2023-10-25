@@ -81,21 +81,23 @@ export default {
             weekSummaryVisible: false,
             isShow: true,
             // imgsrc: require("@/assets/summary.png"),
-            week_sum_imgsrc: '',
+            // week_sum_imgsrc: '',
             // night_pred_imgsrc: '',
          }
     },
     computed: {
         night_pred_imgsrc() {
-            // return JSON.parse(this.$store.state.labels).filter((item) => item.Start<this.$store.state.endPoint && item.End>this.$store.state.startPoint)
             return this.$store.state.nightImg
+        },
+        week_sum_imgsrc() {
+            return this.$store.state.weekImg
         },
     },
     // TODO: loading status
     mounted(){
-        this.week_sum_imgsrc= "http://127.0.0.1:8000/weekly-sum-img?p=" + this.$store.state.patientId+'&w='+this.$store.state.week;
+        // this.week_sum_imgsrc= "http://127.0.0.1:5000/weekly-sum-img?p=" + this.$store.state.patientId+'&w='+this.$store.state.week;
         console.log(this.$store.state.nightId)
-        this.night_pred_imgsrc = "http://127.0.0.1:5000/night-pred-img?p=" + this.$store.state.patientId+'&w='+this.$store.state.week+'&n='+this.$store.state.nightId+'&r='+this.$store.state.recorder;
+        // this.night_pred_imgsrc = "http://127.0.0.1:5000/night-pred-img?p=" + this.$store.state.patientId+'&w='+this.$store.state.week+'&n='+this.$store.state.nightId+'&r='+this.$store.state.recorder;
     },
     methods:{
         rerender(){

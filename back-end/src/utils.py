@@ -177,6 +177,13 @@ def generate_model(DATABASE, patient_id, week, night_id, recorder):
     with sql.connect(DATABASE) as con:
         cur = con.cursor()
         cur.execute(f"INSERT INTO models (patient_id, model_path) VALUES {patient_id, get_data_path(DATABASE) + f'p{patient_id}_model.json'}")
+        model.save_model(get_data_path(DATABASE) + f"p{patient_id}_model.json")
+        
+        cur.execute(f"SELECT * FROM models WHERE patient_id = -1")
+        general_model = cur.fetchall()
+        if not general_model:
+            cur.execute(f"INSERT INTO models (patient_id, model_path) VALUES {-1, get_data_path(DATABASE) + f'general_model.json'}")
+            model.save_model(get_data_path(DATABASE) + f'general_model.json')
         cur.close()
 
     model.save_model(get_data_path(DATABASE) + f"p{patient_id}_model.json")
@@ -186,9 +193,13 @@ def generate_model(DATABASE, patient_id, week, night_id, recorder):
 """TODO: Run Prediction"""
 def predict_events(DATABASE, model, patient_id, week, night_id, recorder):
     print("predict_events")
-    filePath = get_data_path(DATABASE)+'p'+str(patient_id)+'_w'+str(week)+f'/'+str(night_id)+f'{recorder}Fnorm.csv'
+    # filePath = get_data_path(DATABASE)+'p'+str(patient_id)+'_w'+str(week)+f'/'+str(night_id)+f'{recorder}Fnorm.csv'
     # data = open_brux_csv(patient_id, week, night_id, recorder)
-    data = pd.read_csv(filePath)
+    data = open_brux_csv(DATABASE, patient_id, week, night_id, recorder)
+    original_sampling = get_original_sampling(DATABASE)
+    selected_sampling =get_selected_sampling(DATABASE)
+    cycle_num = int(np.ceil(data.shape[0] / original_sampling / 90 / 60))
+    
     selected = get_selected_intervals(patient_id, week, night_id, DATABASE)
     # print(selected[0]['start_id'])
     # print(selected[0][0])
@@ -198,8 +209,6 @@ def predict_events(DATABASE, model, patient_id, week, night_id, recorder):
     index = df.index
     # print(index)
 
-    original_sampling = get_original_sampling(DATABASE)
-    selected_sampling =get_selected_sampling(DATABASE)
     # df = resample_whole_df(df,original_sampling,selected_sampling)
     MR = get_column_array(get_column_data_from_df(df, "MR"))
     ML = get_column_array(get_column_data_from_df(df, "ML"))
@@ -208,7 +217,7 @@ def predict_events(DATABASE, model, patient_id, week, night_id, recorder):
     df = pd.DataFrame({'MR': MR, 'ML': ML})
 
     index = resample_signal(signal=index, sampling_rate=original_sampling, SAMPLING_RATE=selected_sampling)
-    print(index[10])
+    # print(index[10])
 
     x = df.iloc[:,:2].copy()
     x_p = np.array(x.values.tolist())
@@ -229,7 +238,7 @@ def predict_events(DATABASE, model, patient_id, week, night_id, recorder):
                     break;
                 y_sum += y_p[i+j];
                 cnt += 1;
-            if y_sum/cnt >= 0.3:
+            if y_sum/cnt >= 0.5:
                 if(len(y_p_mix)==0 or y_p_mix[-1] != 10):
                     event += 1
                     loc_end = i+cnt
@@ -239,6 +248,21 @@ def predict_events(DATABASE, model, patient_id, week, night_id, recorder):
                     print(params, ' ', location_begin,' ', location_end)
                     query = "INSERT INTO predicted_labels (patient_id, week, night_id, label_id, location_begin, location_end, start_index, end_index) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
                     cur.execute(query, params)
+                    
+                    cycle = np.floor(location_begin / 90 / 60 / original_sampling);
+                    params = (patient_id, week, night_id, cycle)
+                    query = "SELECT count from week_summary WHERE patient_id=? AND week=? AND night_id=? AND cycle=?"
+                    cur.execute(query, params)
+                    count = cur.fetchall()
+                    if count:
+                        print(count[0][0])
+                        params = (count[0][0]+1, patient_id, week, night_id, cycle)
+                        query = "UPDATE week_summary SET count = ? WHERE patient_id=? AND week=? AND night_id=? AND cycle=?"
+                        cur.execute(query, params)
+                    else:
+                        params = (patient_id, week, night_id, cycle, cycle_num, 1)
+                        query = "INSERT INTO week_summary (patient_id, week, night_id, cycle, max_cycle, count) VALUES (?, ?, ?, ?, ?, ?)"
+                        cur.execute(query, params)
                     print("current end:", loc_end)
                 elif(y_p_mix[-1] == 10):
                     params = (index[loc_end+cnt], loc_end+cnt, patient_id, week, night_id, event)
@@ -263,7 +287,7 @@ def run_prediction(DATABASE, patient_id, week, night_id, recorder):
         with sql.connect(DATABASE) as con:
             cur = con.cursor()
             params = (patient_id, week, night_id)
-            query = "SELECT * from predicted_labels WHERE (patient_id=? AND week=? AND night_id=?)"
+            query = "SELECT DISTINCT * from predicted_labels WHERE (patient_id=? AND week=? AND night_id=?)"
             labels = cur.execute(query, params).fetchall()
             print(labels)
             if labels:
@@ -297,8 +321,8 @@ def run_prediction(DATABASE, patient_id, week, night_id, recorder):
         with sql.connect(DATABASE) as con:
             cur = con.cursor()
             params = (patient_id, week, night_id)
-            query = "SELECT * from predicted_labels WHERE (patient_id=? AND week=? AND night_id=?)"
-            labels = cur.execute(query, params)
+            query = "SELECT DISTINCT * from predicted_labels WHERE (patient_id=? AND week=? AND night_id=?)"
+            labels = cur.execute(query, params).fetchall()
             return labels
     except Exception as e:
             print('Exception raised in run_prediction function')
@@ -745,10 +769,14 @@ def get_resampled_ranges(DATABASE, sampling_ranges):
 
     return sampling_ranges
 
-def get_event_data(desired_chunk, start_id, end_id, location_begin, location_end):
+def get_event_data(DATABASE, desired_chunk, start_id, end_id, location_begin, location_end):
     # Extract the interesting 5 minutes (or more)
     mr = desired_chunk["MR"].loc[start_id:end_id-1]
     ml = desired_chunk["ML"].loc[start_id:end_id-1]
+    
+    original_sampling = get_original_sampling(DATABASE)
+    selected_sampling = get_selected_sampling(DATABASE)
+    cnt = [(start_id+i)/original_sampling for i in range(len(mr))]
 
     # Extract the portion in which event occurs to find indices (we do it only for mr since indices are the same)
     mr_event_data = desired_chunk["MR"].loc[location_begin:location_end-1]
@@ -767,18 +795,20 @@ def get_event_data(desired_chunk, start_id, end_id, location_begin, location_end
     ml_third_chunk = ml.values.tolist()[new_event_subindices[1]+1:]
 
     # Resample MR data
-    resmapled_mr_first_chunk =  nk.signal_resample(mr_first_chunk, method="interpolation", sampling_rate=get_original_sampling(DATABASE), desired_sampling_rate=get_selected_sampling(DATABASE)).tolist()
-    resmapled_mr_event_chunk =  nk.signal_resample(mr_event_chunk, method="interpolation", sampling_rate=get_original_sampling(DATABASE), desired_sampling_rate=get_selected_sampling(DATABASE)).tolist()
-    resmapled_mr_third_chunk =  nk.signal_resample(mr_third_chunk, method="interpolation", sampling_rate=get_original_sampling(DATABASE), desired_sampling_rate=get_selected_sampling(DATABASE)).tolist()
+    resmapled_mr_first_chunk =  nk.signal_resample(mr_first_chunk, method="interpolation", sampling_rate=original_sampling, desired_sampling_rate=selected_sampling).tolist()
+    resmapled_mr_event_chunk =  nk.signal_resample(mr_event_chunk, method="interpolation", sampling_rate=original_sampling, desired_sampling_rate=selected_sampling).tolist()
+    resmapled_mr_third_chunk =  nk.signal_resample(mr_third_chunk, method="interpolation", sampling_rate=original_sampling, desired_sampling_rate=selected_sampling).tolist()
 
     # Resample ML data
-    resmapled_ml_first_chunk =  nk.signal_resample(ml_first_chunk, method="interpolation", sampling_rate=get_original_sampling(DATABASE), desired_sampling_rate=get_selected_sampling(DATABASE)).tolist()
-    resmapled_ml_event_chunk =  nk.signal_resample(ml_event_chunk, method="interpolation", sampling_rate=get_original_sampling(DATABASE), desired_sampling_rate=get_selected_sampling(DATABASE)).tolist()
-    resmapled_ml_third_chunk =  nk.signal_resample(ml_third_chunk, method="interpolation", sampling_rate=get_original_sampling(DATABASE), desired_sampling_rate=get_selected_sampling(DATABASE)).tolist()
+    resmapled_ml_first_chunk =  nk.signal_resample(ml_first_chunk, method="interpolation", sampling_rate=original_sampling, desired_sampling_rate=selected_sampling).tolist()
+    resmapled_ml_event_chunk =  nk.signal_resample(ml_event_chunk, method="interpolation", sampling_rate=original_sampling, desired_sampling_rate=selected_sampling).tolist()
+    resmapled_ml_third_chunk =  nk.signal_resample(ml_third_chunk, method="interpolation", sampling_rate=original_sampling, desired_sampling_rate=selected_sampling).tolist()
 
     # Concatenate MR and ML chunks
     mr_resampled = list(itertools.chain(resmapled_mr_first_chunk, resmapled_mr_event_chunk, resmapled_mr_third_chunk))
     ml_resampled = list(itertools.chain(resmapled_ml_first_chunk, resmapled_ml_event_chunk, resmapled_ml_third_chunk))
+    
+    cnt = nk.signal_resample(cnt, method="interpolation", sampling_rate=original_sampling, desired_sampling_rate=selected_sampling).tolist()
 
     # Find event indices of the new resampled data
     new_event_resampled_subindices = find_sub_list(resmapled_mr_event_chunk, mr_resampled)
@@ -788,10 +818,11 @@ def get_event_data(desired_chunk, start_id, end_id, location_begin, location_end
         "5min_end_id": end_id,
         "start_id": 0,
         "end_id": len(mr_resampled)-1,
-        "mr_resampled": mr_resampled,
-        "ml_resmapled": ml_resampled,
+        "MR": mr_resampled,
+        "ML": ml_resampled,
         "event_start_id": new_event_resampled_subindices[0],
-        "event_end_id": new_event_resampled_subindices[1]
+        "event_end_id": new_event_resampled_subindices[1],
+        "cnt": cnt
     }
 
     return result
@@ -925,28 +956,57 @@ def annotate_heatmap(im, data=None, valfmt="{x:.2f}",
 
 """Generate weekly summary image"""
 """TODO: get len and data"""
-def generate_weekly_sum_img(DATABASE, img_local_path):
-    len = 74155516
-    print(len)
-    try:
-        original_sampling = get_original_sampling(DATABASE)
-    except Exception as e:
-        original_sampling = 2000
-    cycles = int(np.ceil(len / original_sampling / 60 / 60 / 1.5))
-    stages = list(range(1, cycles + 1))
+def generate_weekly_sum_img(DATABASE, img_local_path, patient_id, week):
+    print("Generating weekly summary image")
     days = list(range(1, 8))
-    data = np.array([[1,0,0,0,0,0,0],
-                [2,1,0,3,3,0,2],
-                [1,3,0,0,0,1,0],
-                [0,0,0,0,0,0,0],
-                [1,1,0,0,4,2,0],
-                [7,0,0,0,0,0,0],
-                [5,1,0,0,0,0,0]])
+    data = None
+    cycle_num = 7
+    day_cnt = 0
+    with sql.connect(DATABASE) as con:
+        print("DB connected")
+        cur = con.cursor()
+        params = (patient_id, week)
+        query = "SELECT DISTINCT night_id from week_summary WHERE (patient_id=? AND week=?)"
+        nights = cur.execute(query, params).fetchall()
+        print(nights)
+        
+        for i in nights:
+            print(i[0])
+            params = (patient_id, week, i[0])
+            query = "SELECT max_cycle, cycle, count from week_summary WHERE (patient_id=? AND week=? AND night_id=?)"
+            cycle_count = cur.execute(query, params).fetchall()
+            print(cycle_count[0][0])
+            night_summary = np.zeros(cycle_count[0][0], dtype=int)
+            cycle_num = cycle_count[0][0]
+            for j in cycle_count:
+                print(j)
+                night_summary[j[1]] = j[2]
+            if(data == None):
+                data = night_summary
+            else:
+                data = np.vstack((data, night_summary))
+            day_cnt += 1
+        cur.close()
+    
+    # data = np.array([[1,0,0,0,0,0,0],
+    #             [2,1,0,3,3,0,2],
+    #             [1,3,0,0,0,1,0],
+    #             [0,0,0,0,0,0,0],
+    #             [1,1,0,0,4,2,0],
+    #             [7,0,0,0,0,0,0],
+    #             [5,1,0,0,0,0,0]])
+    while(day_cnt < 7):
+        data = np.vstack((data, np.zeros(cycle_num, dtype=int)))
+        day_cnt += 1
+    data = np.array(data).transpose()
+    cycles = list(range(1, cycle_num + 1))
+    
+    print(data)
     fig, ax = plt.subplots()
 
-    im = heatmap(data, days, stages, ax=ax,
+    im = heatmap(data, days, cycles, ax=ax,
                     cmap="YlOrRd")
-    texts = annotate_heatmap(im, valfmt="{x:d}")
+    # texts = annotate_heatmap(im, valfmt="{x:d}")
 
     # ax.set_title("Weekly Events Detected for Patient")
     fig.tight_layout()
@@ -1037,7 +1097,7 @@ def generate_night_pred_img(DATABASE, patient_id, week, night_id, recorder):
     with sql.connect(DATABASE) as con:
         print("DB connected")
         params = (patient_id, week, night_id)
-        query = "SELECT * from predicted_labels WHERE (patient_id=? AND week=? AND night_id=?)"
+        query = "SELECT DISTINCT * from predicted_labels WHERE (patient_id=? AND week=? AND night_id=?)"
         cur = con.cursor()
         predicted_labels = cur.execute(query, params)
         columns = [description[0] for description in predicted_labels.description]
