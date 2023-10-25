@@ -187,7 +187,7 @@ def generate_model(DATABASE, patient_id, week, night_id, recorder):
         cur.close()
 
     model.save_model(get_data_path(DATABASE) + f"p{patient_id}_model.json")
-    predict_events(DATABASE, model,patient_id, week, night_id)
+    predict_events(DATABASE, model,patient_id, week, night_id, recorder)
     # return model
 
 """TODO: Run Prediction"""
