@@ -142,7 +142,7 @@ export default {
             this.rerenderLeft(this.checkedML);
         },
         loadAllPred() {
-            const path = `http://127.0.0.1:5000/label-brux/${this.$store.state.patientId}/${this.$store.state.week}/${this.$store.state.nightId}`
+            const path = `http://127.0.0.1:5000/label-brux/${this.$store.state.patientId}/${this.$store.state.week}/${this.$store.state.nightId}/${this.$store.state.recorder}`
             const headers = {
                     'Accept': 'application/json',
                     'Content-Type': 'application/json',
