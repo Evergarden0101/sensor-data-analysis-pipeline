@@ -113,7 +113,7 @@ def create_app(test_config=None):
 
     #TODO: possibly get labels from specific patient on a specific week?
     @app.route("/label-brux/", methods=["GET"], defaults={'patient_id': None})
-    @app.route("/label-brux/<int:patient_id>/<int:week>/<string:night_id>/<string:recorder>", methods=["GET"])
+    @app.route("/label-brux/<int:patient_id>/<string:week>/<string:night_id>/<string:recorder>", methods=["GET"])
     def get_label_brux(patient_id, week, night_id, recorder):
         try:
             print('get_label_brux')
@@ -169,10 +169,10 @@ def create_app(test_config=None):
                         updates.append({'x': s[0], 'y': s[1]})
 
                     if len(updates) == 0:
-                        selected = get_rem_intervals(patient_id, week, night_id, DATABASE)
-                        for s in selected:
+                        standard_selected = get_rem_intervals(patient_id, week, night_id, DATABASE)
+                        for s in standard_selected:
                             updates.append({'x': s[0], 'y': s[1]})
-
+                    
 
                     post_selected_updates(DATABASE, patient_id, week, night_id, updates)
 
@@ -381,7 +381,7 @@ def create_app(test_config=None):
             "location_end": int
         }
     """
-    @app.route('/event-interval/<int:patient_id>/<int:week>/<string:night_id>/<string:recorder>/<int:location_begin>/<int:location_end>', methods=["GET"])
+    @app.route('/event-interval/<int:patient_id>/<string:week>/<string:night_id>/<string:recorder>/<int:location_begin>/<int:location_end>', methods=["GET"])
     def get_event_interval(patient_id, week, night_id, recorder, location_begin, location_end):
         print("get event interval")
         day, hours, minutes, seconds = get_patient_time_values(night_id)
