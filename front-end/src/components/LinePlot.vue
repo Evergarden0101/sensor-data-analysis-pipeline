@@ -29,7 +29,10 @@
     <el-row v-show="checkedML" style="text-align: center;width: 100%;margin-bottom:0">
         <h4 align="center" style="margin-bottom:0">Sensor Signals for Left Masseter</h4>
     </el-row>
-    <el-carousel v-show="checkedML" style="margin-bottom: 40px;" indicator-position="outside" :autoplay="false" trigger="click" arrow="always" :height="this.carouselheight" @change="getNewCycle" ref="leftCarousel">
+    <el-carousel v-show="checkedML" style="margin-bottom: 40px;" indicator-position="outside" :autoplay="false" 
+        trigger="click" arrow="always" :height="this.carouselheight" 
+        @change="getNewCycle" ref="leftCarousel">
+        <!-- initial-index="this.eventNo" -->
         <el-carousel-item v-for="item in this.predLabels" :key="item">
             <h5 align="center" style="margin-bottom: 10px;">Event {{ item.label_id }}/{{ this.predLabels.length }}</h5>
             <el-row>
@@ -73,15 +76,20 @@ export default {
             carouselheight: '400px',
             cycleNum: 7,
             cycleIdx: 1,
+            eventNo: 0,
         }
     },
     computed: {
         predLabels() {
             return JSON.parse(this.$store.state.labels);
         },
+        // eventNo(){
+        //     return this.$store.state.eventNo;
+        // }
     },
     beforeMount() {
         // set the dimensions and margins of the graph
+        this.loading = ref(true);
         if(this.plotHeight == 0){
             this.plotHeight = document.body.clientHeight/4 - this.margin.top - this.margin.bottom;
             if(this.plotHeight < 300){
@@ -92,19 +100,22 @@ export default {
             this.plotWidth = document.body.clientWidth/2 - this.margin.left - this.margin.right;
         }
         this.carouselheight = this.plotHeight + 100 + 'px';
+        this.eventNo = this.$store.state.eventNo;
     },
     mounted() {
         // await this.loadAllPred();
         // this.predLabels = JSON.parse(this.$store.state.labels);
         console.log('predLabels', this.predLabels)
+        console.log(this.$store.state.eventNo)
         this.freq = this.$store.state.samplingRate;
         this.start = this.$store.state.plotStart;
         this.end = this.$store.state.plotEnd;
         // this.checkedML = this.$store.state.checkedML;
         // this.checkedMR = this.$store.state.checkedMR;
         // this.data = dataset;
+
         if(this.data == null){
-            this.$store.commit('selectEvent', JSON.stringify(this.predLabels[0]));
+            this.$store.commit('selectEvent', JSON.stringify(this.predLabels[this.$store.state.eventNo]));
             this.loadLinePlotData(this.$store.state.patientId, this.$store.state.week, this.$store.state.nightId);
             // this.loading = ref(false);
         }else{
@@ -127,19 +138,21 @@ export default {
             this.$refs.rightCarousel.setActiveItem(cur);
             this.$refs.leftCarousel.setActiveItem(cur);
 
-            var id = 'mrlineplot'+this.cycleIdx;
+            var id = 'mrlineplot'+this.eventNo;
             var mr = document.getElementById(id);
             this.emptyGraph(mr);
-            id = 'mllineplot'+this.cycleIdx;
+            id = 'mllineplot'+this.eventNo;
             var ml = document.getElementById(id);
             this.emptyGraph(ml);
 
             this.cycleIdx = cur+1;
             console.log('cycleIdx', this.cycleIdx)
+            this.$store.commit('setEventNo', cur);
             this.$store.commit('selectEvent', JSON.stringify(this.predLabels[cur]));
-            this.loadLinePlotData(this.$store.state.patientId, this.$store.state.week, this.$store.state.nightId);
-            this.rerenderRight(this.checkedMR);
-            this.rerenderLeft(this.checkedML);
+            this.$store.commit('updateLinePlotKey');
+            // this.loadLinePlotData(this.$store.state.patientId, this.$store.state.week, this.$store.state.nightId);
+            // this.rerenderRight(this.checkedMR);
+            // this.rerenderLeft(this.checkedML);
         },
         loadAllPred() {
             const path = `http://127.0.0.1:5000/label-brux/${this.$store.state.patientId}/${this.$store.state.week}/${this.$store.state.nightId}/${this.$store.state.recorder}`
@@ -170,7 +183,8 @@ export default {
             
         },
         loadLinePlotData(patient_id, week, night_id){
-            // const path = `http://127.0.0.1:8000/lineplot-data/${patient_id}/${week}/${night_id}`
+            console.log('loadLinePlotData')
+            // const path = `http://127.0.0.1:5000/lineplot-data/${patient_id}/${week}/${night_id}`
             if(!this.$store.state.selectedEvent){
                 return;
             }
@@ -222,7 +236,7 @@ export default {
         },
         rerenderLeft(tab) {
             if(tab == false){
-                var ml = document.getElementById('mllineplot'+this.cycleIdx)
+                var ml = document.getElementById('mllineplot'+this.eventNo)
                 this.emptyGraph(ml);
                 this.$store.commit('selectML',false);
             } else if(tab == true){
@@ -239,7 +253,7 @@ export default {
         },
         rerenderRight(tab) {
             if(tab == false){
-                var mr = document.getElementById('mrlineplot'+this.cycleIdx)
+                var mr = document.getElementById('mrlineplot'+this.eventNo)
                 this.emptyGraph(mr);
                 this.$store.commit('selectMR',false);
             } else if(tab == true){
@@ -374,7 +388,7 @@ export default {
 
             // append the svg object to the body of the page
             if(channel == 'MR'){
-                var svg = d3.select("#mrlineplot"+this.cycleIdx)
+                var svg = d3.select("#mrlineplot"+this.eventNo)
                 .append("svg")
                     .attr("width", width + this.margin.left + this.margin.right)
                     .attr("height", height + this.margin.top + this.margin.bottom)
@@ -382,7 +396,7 @@ export default {
                     .attr("transform",
                         "translate(" + this.margin.left + "," + this.margin.top + ")");
             } else if(channel == 'ML'){
-                var svg = d3.select("#mllineplot"+this.cycleIdx)
+                var svg = d3.select("#mllineplot"+this.eventNo)
                 .append("svg")
                     .attr("width", width + this.margin.left + this.margin.right)
                     .attr("height", height + this.margin.top + this.margin.bottom)

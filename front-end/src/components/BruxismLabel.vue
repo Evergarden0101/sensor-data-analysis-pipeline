@@ -305,6 +305,7 @@ export default {
                 }
                 this.labelNum ++;
             }
+            console.log(this.Labels);
             console.log(this.cycles);
         },
         loadPredLabels(){
@@ -329,7 +330,7 @@ export default {
                     this.computeDur();
                     this.$store.commit('saveLabels',JSON.stringify(this.Labels));
                     // })
-                    this.$store.commit('getNightImg', "http://127.0.0.1:8000/night-pred-img?p=" + this.$store.state.patientId+'&w='+this.$store.state.week+'&n='+this.$store.state.nightId+'&r='+this.$store.state.recorder)
+                    this.$store.commit('getNightImg', "http://127.0.0.1:5000/night-pred-img?p=" + this.$store.state.patientId+'&w='+this.$store.state.week+'&n='+this.$store.state.nightId+'&r='+this.$store.state.recorder)
                     this.$store.commit('getWeekImg', "http://127.0.0.1:5000/weekly-sum-img?p=" + this.$store.state.patientId+'&w='+this.$store.state.week);
                     this.$store.commit('updateBruxLabelKey');
                     this.$store.commit('updateLinePlotKey');

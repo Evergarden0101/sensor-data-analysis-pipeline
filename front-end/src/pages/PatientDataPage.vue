@@ -57,7 +57,7 @@ export default {
     },
     methods: {
         async loadAll() {
-            const path = 'http://localhost:5000/existing-patients-recordings/';
+            const path = 'http://127.0.0.1:5000/existing-patients-recordings/';
             const headers = { 
                 'Accept': 'application/json',
                 'Content-Type': 'application/json'
