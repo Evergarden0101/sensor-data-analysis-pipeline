@@ -36,6 +36,8 @@ const store = createStore({
       weekImg: '',
       selectedEvent: null,
       lineplotData: null,
+      eventNo: 1,
+      predFinish: false,
     }
   },
   mutations: {
@@ -96,6 +98,12 @@ const store = createStore({
     getWeekImg(state, payload){
       state.weekImg = payload;
     },
+    setEventNo(state, payload){
+      state.eventNo = payload;
+    },
+    setPredFinish(state, payload){
+      state.predFinish = payload;
+    }
   },
   plugins: [vuexLocal.plugin],
 

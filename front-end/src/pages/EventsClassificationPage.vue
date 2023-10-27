@@ -30,7 +30,14 @@
                 <el-affix target=".affix-container" :offset="10">
                     <p style="display: block;margin:0 auto 60px auto;text-align: center;">Weekly Summary</p>
                     <el-button @click="rerender" style="width: 200px;padding: 0;border: 0;">
-                        <el-image :src="week_sum_imgsrc" :fit="contain" width="200px" @click="rerender"/>
+                        <el-skeleton style="width: 200px" :loading="load_week_img" animated>
+                            <template #template>
+                                <el-skeleton-item variant="image" style="width: 200px;height:200px" />
+                            </template>
+                            <template #default>
+                                <el-image :src="week_sum_imgsrc" :fit="contain" width="200px" @click="rerender"/>
+                            </template>
+                        </el-skeleton>
                     </el-button>
                     <el-dialog v-model="weekSummaryVisible" title="Weekly Summary" center width="60%">
                         <TreatHeatMap v-if="isShow"/>
@@ -43,7 +50,17 @@
         <el-col :span="22" :offset="1">
             <!-- <el-card :body-style="{ padding: '5px' }" shadow="always" style="border-radius: 10px"> -->
                 <h4 align="center">Signals and Predicted Events for Whole Night</h4>
-                <el-image :src="night_pred_imgsrc" :fit="fill" :zoom-rate="1.2" :max-scale="7" :min-scale="0.2" :preview-src-list="[night_pred_imgsrc]"/>
+                <el-skeleton style="width: 100%" :loading="load_night_img" animated>
+                    <template #template>
+                        <el-skeleton-item variant="image" style="width: 100%;height:40vh" />
+                    </template>
+                    <template #default>
+                        <el-image :src="night_pred_imgsrc" :fit="fill"
+                            :zoom-rate="1.2" :max-scale="7" :min-scale="0.2" :preview-src-list="[night_pred_imgsrc]"/>
+                    </template>
+                </el-skeleton>
+                <!-- <el-image :src="night_pred_imgsrc" :fit="fill" v-loading="load_night_img"
+                    :zoom-rate="1.2" :max-scale="7" :min-scale="0.2" :preview-src-list="[night_pred_imgsrc]"/> -->
             <!-- </el-card> -->
         </el-col>
     </el-row>
@@ -92,6 +109,12 @@ export default {
         week_sum_imgsrc() {
             return this.$store.state.weekImg
         },
+        load_night_img() {
+            return this.night_pred_imgsrc == ''
+        },
+        load_week_img() {
+            return this.week_sum_imgsrc == ''
+        }
     },
     // TODO: loading status
     mounted(){

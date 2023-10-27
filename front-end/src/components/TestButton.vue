@@ -14,7 +14,7 @@ export default{
     },
     methods: {
         getLabel(){
-            const path = 'http://localhost:5000/label-brux/123';
+            const path = 'http://127.0.0.1:5000/label-brux/123';
             const headers = { 
                 'Accept': 'application/json',
                 'Content-Type': 'application/json'

@@ -91,53 +91,60 @@
             </el-row>
             <el-divider style="margin-top: 0px;margin-bottom:15px"/>
 
-
-            <!-- <el-row v-for="(item,index) in [Labels[currentPage - 1]]" :key="index" > -->
-            <div style="overflow: auto; max-height: 80vh" v-infinite-scroll="loadLabel" infinite-scroll-disabled="disabled">
-                <el-row v-for="(cycle,index) in this.cycles" :key="index">
-                    <el-text tag="ins" style="font-size:25px;font-weight:10px;margin-bottom:10px">Cycle {{ cycle.cycle }}</el-text>
-                
-                    <el-card v-for="(item,index) in cycle.labels" :key="index" shadow="hover" style="border-radius:25px;margin:0px 10px 8px 10px">
-                        <el-row>
-                            <el-col :span="3"><el-button text="plain" round
-                                bg @click="locateLabel(item)" style="margin-left: 0;">
-                                    <el-text class="mx-1" type="primary" tag="ins">Label {{ item.label_id }}</el-text>
-                            </el-button></el-col>
-                            <el-col :span="20" :offset="1">
-                                <el-form :inline="true" :model="Labels" class="demo-form-inline">
-                                    <el-form-item label="Start:" style="margin-left: 1em;">
-                                        <el-input-number v-model="item.Start" :placeholder="item.Start" style="width: 70px;" 
-                                        :controls="false" :disabled="!item.Confirm" @change="rerun = true"/>
-                                        <el-text size="large" style="margin-left: 0.3em;">s</el-text>
-                                    </el-form-item>
-                                    <el-form-item label="End:" style="margin-left: 1em;">
-                                        <el-input-number v-model="item.End" :placeholder="item.End" style="width: 70px;" 
-                                        :controls="false" :disabled="!item.Confirm" @change="rerun = true"/>
-                                        <el-text size="large" style="margin-left: 0.3em;">s</el-text>
-                                    </el-form-item>
-                                    <el-form-item label="Duration:" style="margin-left: 1em;">
-                                        <!-- <el-input-number v-model="item.Dur" :placeholder="item.Dur" style="width: 45px;" 
-                                        :disabled="true" :controls="false" /> -->
-                                        <el-text size="large" class="mx-1" type="warning" tag="ins">{{ item.Dur }}</el-text>
-                                        <el-text size="large" style="margin-left: 0.3em;">s</el-text>
-                                    </el-form-item>
-                                    <el-form-item style="margin-left: 1em;">
-                                        <el-switch v-model="item.Confirm" :active-icon="CircleCheckFilled" :inactive-icon="CircleCloseFilled" 
-                                        style="--el-switch-on-color: #13ce66; --el-switch-off-color: #ff4949" size="small" 
-                                        active-text="Confirm Event" inactive-text="Discard Event" @change="rerun = true"/>
-                                    </el-form-item>
-                                    
-                                    <!-- <LabelInfoCard :label-id="item.label_id"/> -->
-                                </el-form>
-                            </el-col>
+            <el-skeleton style="width: 100%" :loading="!this.$store.state.predFinish" animated >
+                <template #template>
+                    <el-skeleton :rows="7" animated style="margin-bottom:15px"/>
+                </template>
+                <template #default>
+                    <div style="overflow: auto; max-height: 80vh" v-infinite-scroll="loadLabel" infinite-scroll-disabled="disabled">
+                        <el-row v-for="(cycle,index) in this.cycles" :key="index">
+                            <el-text tag="ins" style="font-size:25px;font-weight:10px;margin-bottom:10px">Cycle {{ cycle.cycle }}</el-text>
+                        
+                            <el-card v-for="(item,index) in cycle.labels" :key="index" shadow="hover" style="border-radius:25px;margin:0px 10px 8px 10px">
+                                <el-row>
+                                    <el-col :span="3"><el-button text="plain" round
+                                        bg @click="locateLabel(item)" style="margin-left: 0;">
+                                            <el-text class="mx-1" type="primary" tag="ins">Label {{ item.label_id }}</el-text>
+                                    </el-button></el-col>
+                                    <el-col :span="20" :offset="1">
+                                        <el-form :inline="true" :model="Labels" class="demo-form-inline">
+                                            <el-form-item label="Start:" style="margin-left: 1em;">
+                                                <el-input-number v-model="item.Start" :placeholder="item.Start" style="width: 70px;" 
+                                                :controls="false" :disabled="!item.Confirm" @change="rerun = true"/>
+                                                <el-text size="large" style="margin-left: 0.3em;">s</el-text>
+                                            </el-form-item>
+                                            <el-form-item label="End:" style="margin-left: 1em;">
+                                                <el-input-number v-model="item.End" :placeholder="item.End" style="width: 70px;" 
+                                                :controls="false" :disabled="!item.Confirm" @change="rerun = true"/>
+                                                <el-text size="large" style="margin-left: 0.3em;">s</el-text>
+                                            </el-form-item>
+                                            <el-form-item label="Duration:" style="margin-left: 1em;">
+                                                <!-- <el-input-number v-model="item.Dur" :placeholder="item.Dur" style="width: 45px;" 
+                                                :disabled="true" :controls="false" /> -->
+                                                <el-text size="large" class="mx-1" type="warning" tag="ins">{{ item.Dur }}</el-text>
+                                                <el-text size="large" style="margin-left: 0.3em;">s</el-text>
+                                            </el-form-item>
+                                            <el-form-item style="margin-left: 1em;">
+                                                <el-switch v-model="item.Confirm" :active-icon="CircleCheckFilled" :inactive-icon="CircleCloseFilled" 
+                                                style="--el-switch-on-color: #13ce66; --el-switch-off-color: #ff4949" size="small" 
+                                                active-text="Confirm Event" inactive-text="Discard Event" @change="rerun = true"/>
+                                            </el-form-item>
+                                            
+                                            <!-- <LabelInfoCard :label-id="item.label_id"/> -->
+                                        </el-form>
+                                    </el-col>
+                                </el-row>
+                            </el-card>
+                            <el-divider style="margin-top: 10px;margin-bottom:15px"/>
                         </el-row>
-                    </el-card>
-                    <el-divider style="margin-top: 10px;margin-bottom:15px"/>
-                </el-row>
-                <!-- <el-text class="mx-1" type="warning" style="text-align:center;display:block;margin:auto" v-show="loadingLabel">Loading...</el-text> -->
-                <el-text class="mx-1" type="warning" style="text-align:center;display:block;margin:auto" v-show="noMoreLabel">End of Events</el-text>
-                
-            </div>
+                        <!-- <el-text class="mx-1" type="warning" style="text-align:center;display:block;margin:auto" v-show="loadingLabel">Loading...</el-text> -->
+                        
+                    </div>
+                </template>
+            </el-skeleton>
+            <el-text class="mx-1" type="warning" style="text-align:center;display:block;margin:auto" v-show="noMoreLabel">End of Events</el-text>
+            <!-- <el-row v-for="(item,index) in [Labels[currentPage - 1]]" :key="index" > -->
+            
             <!-- <el-row>
                 <el-pagination v-model:current-page="currentPage" :page-size="1"
                 layout="prev, pager, next, jumper" :total="labelNum" style="display: flex;margin: auto;"
@@ -305,6 +312,7 @@ export default {
                 }
                 this.labelNum ++;
             }
+            console.log(this.Labels);
             console.log(this.cycles);
         },
         loadPredLabels(){
@@ -325,14 +333,25 @@ export default {
                     console.log(res.data);
                     // this.loading = ref(false);
                     this.Labels = res.data;
+                    if(!this.Labels||this.Labels.length == 0){
+                        this.$notify({
+                            duration: 0,
+                            title: 'NO EVENTS DETECTED',
+                            dangerouslyUseHTMLString: true,
+                            message: '<strong>No events detected. Please check the control files, adjust the filter or start with another day to rerun the model.</strong>',
+                            type: 'warning'
+                        });
+                        return;
+                    }
                     // this.$nextTick(() => {
                     this.computeDur();
                     this.$store.commit('saveLabels',JSON.stringify(this.Labels));
+                    this.$store.commit('setPredFinish', true);
                     // })
-                    this.$store.commit('getNightImg', "http://127.0.0.1:8000/night-pred-img?p=" + this.$store.state.patientId+'&w='+this.$store.state.week+'&n='+this.$store.state.nightId+'&r='+this.$store.state.recorder)
+                    this.$store.commit('getNightImg', "http://127.0.0.1:5000/night-pred-img?p=" + this.$store.state.patientId+'&w='+this.$store.state.week+'&n='+this.$store.state.nightId+'&r='+this.$store.state.recorder)
                     this.$store.commit('getWeekImg', "http://127.0.0.1:5000/weekly-sum-img?p=" + this.$store.state.patientId+'&w='+this.$store.state.week);
-                    this.$store.commit('updateBruxLabelKey');
                     this.$store.commit('updateLinePlotKey');
+                    this.$store.commit('updateBruxLabelKey');
                     // return res.data;
                 })
                 .catch(err=>{
@@ -373,8 +392,19 @@ export default {
         if(this.$store.state.labels){
             console.log("Labels already loaded")
             this.Labels = JSON.parse(this.$store.state.labels);
-            console.log(this.Labels.slice(0,3));
+            if(!this.Labels||this.Labels.length == 0){
+                this.$notify({
+                    duration: 0,
+                    title: 'NO EVENTS DETECTED',
+                    dangerouslyUseHTMLString: true,
+                    message: '<strong>No events detected. Please check the control files, adjust the filter or start with another day to rerun the model.</strong>',
+                    type: 'warning'
+                });
+                return;
+            }
+            console.log(this.Labels);
             this.computeDur();
+            this.$store.commit('setPredFinish', true);
             this.$store.commit('getNightImg', "http://127.0.0.1:5000/night-pred-img?p=" + this.$store.state.patientId+'&w='+this.$store.state.week+'&n='+this.$store.state.nightId+'&r='+this.$store.state.recorder)
             this.$store.commit('getWeekImg', "http://127.0.0.1:5000/weekly-sum-img?p=" + this.$store.state.patientId+'&w='+this.$store.state.week);
             // console.log('active label', this.activeLabel)
