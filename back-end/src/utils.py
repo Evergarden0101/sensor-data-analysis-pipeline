@@ -817,20 +817,13 @@ def get_event_data(DATABASE, desired_chunk, start_id, end_id, location_begin, lo
         mr_event_chunk = mr.values.tolist()[new_event_subindices[0]: new_event_subindices[1] + 1]
         mr_third_chunk = mr.values.tolist()[new_event_subindices[1]+1:]
 
-        print(f"MR - 1: {len(mr_first_chunk)} 2: {len(mr_event_chunk)} 3: {len(mr_third_chunk)}")
-        print(mr_first_chunk)
-
         # Divide ML data in 3 chunks
         ml_first_chunk = ml.values.tolist()[: new_event_subindices[0]]
         ml_event_chunk = ml.values.tolist()[new_event_subindices[0]: new_event_subindices[1] + 1]
         ml_third_chunk = ml.values.tolist()[new_event_subindices[1]+1:]
 
-        print(f"ML - 1: {len(ml_first_chunk)} 2: {len(ml_event_chunk)} 3: {len(ml_third_chunk)}")
-
-
         # Resample MR data
         resmapled_mr_first_chunk =  nk.signal_resample(mr_first_chunk, method="interpolation", sampling_rate=original_sampling, desired_sampling_rate=selected_sampling).tolist()
-        print(resmapled_mr_first_chunk)
         resmapled_mr_event_chunk =  nk.signal_resample(mr_event_chunk, method="interpolation", sampling_rate=original_sampling, desired_sampling_rate=selected_sampling).tolist()
         resmapled_mr_third_chunk =  nk.signal_resample(mr_third_chunk, method="interpolation", sampling_rate=original_sampling, desired_sampling_rate=selected_sampling).tolist()
 
