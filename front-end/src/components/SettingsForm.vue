@@ -46,6 +46,9 @@
                     />
                 </el-select>
             </el-form-item>
+            <el-form-item label="Activity usual duration (s)" required="true">
+                <el-input-number v-model="generalInfoForm.activityDuration" :precision="2" :step="0.5" />
+            </el-form-item>
         </el-form>
 
         <el-button type="primary" @click="handleNext1()" style="margin-top:3%">Next<el-icon class="el-icon--right"><ArrowRight /></el-icon></el-button>
@@ -229,6 +232,7 @@ export default {
             generalInfoForm: reactive({
                 studyType: ref(''),
                 activityType: ref(''),
+                activityDuration: ref(0)
             }),
 
             sensorsForm: reactive({
@@ -324,6 +328,7 @@ export default {
             this.dbEntryExist = true;
             this.generalInfoForm.studyType = this.settings.study_type;
             this.generalInfoForm.activityType = this.settings.activity;
+            this.generalInfoForm.activityDuration = this.settings.activity_duration;
             this.samplingRateForm.originalSampling = this.settings.original_sampling;
             this.samplingRateForm.SelectedSampling = this.settings.selected_sampling;
             this.samplingRateForm.NonSelectedSampling = this.settings.non_selected_sampling;
@@ -373,7 +378,7 @@ export default {
 
     methods: {
         handleNext1(){
-            if(this.generalInfoForm.studyType != '' && this.generalInfoForm.activityType != ''){
+            if(this.generalInfoForm.studyType != '' && this.generalInfoForm.activityType != '' && this.generalInfoForm.activityDuration != ''){
                 this.formNumber++
             }
             else{
@@ -413,6 +418,7 @@ export default {
             const payload = {
                 "studyType": this.generalInfoForm.studyType,
                 "activityType": this.generalInfoForm.activityType,
+                "activityDuration": this.generalInfoForm.activityDuration,
                 "originalSampling": this.samplingRateForm.originalSampling,
                 "SelectedSampling": this.samplingRateForm.SelectedSampling,
                 "NonSelectedSampling": this.samplingRateForm.NonSelectedSampling,
@@ -437,6 +443,7 @@ export default {
             .catch(err=>{
                 console.log(err)
                 this.settingsPosted = false;
+                this.error = true; 
             })
         },
         postSensors(){

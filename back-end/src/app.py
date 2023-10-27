@@ -45,14 +45,13 @@ def create_app(test_config=None):
     @app.route("/patient-recording/<int:patient_id>/<string:week>/<string:night_id>/<string:recorder>", methods=['POST'])
     def upload_patient_recording(patient_id, week, night_id, recorder):
         try:
-            day, hours, minutes, seconds = get_patient_time_values(night_id)
             patient_file = get_data_path(DATABASE) + f"p{patient_id}_wk{week}/{night_id}{recorder}Fnorm.csv"
             df = pd.read_csv(patient_file)
             # For the moment the data is automatically resampled when uploaded in DB for efficiency reasons
             # TODO: adapt in the future
             csvData = resample_whole_df(df)
 
-            post_patient_recording(DATABASE, patient_id, week, day, hours, minutes, seconds, patient_file, csvData)
+            post_patient_recording(DATABASE, patient_id, week, night_id, patient_file, csvData)
 
             return "Successfuly inserted into Database.", 200
         
@@ -68,14 +67,14 @@ def create_app(test_config=None):
         }
 
     """
-    @app.route("/patient-recording/<int:patient_id>/<string:week>/<string:day>", methods=["GET"])
-    def get_patient_recording(patient_id, week, day):
+    @app.route("/patient-recording/<int:patient_id>/<string:week>/<string:night_id>", methods=["GET"])
+    def get_patient_recording(patient_id, week, night_id):
         try:
             try:
                 range_min = request.json
             except:
                 range_min = None
-            response = retrieve_patient_recording(DATABASE, patient_id, week, day, range_min, SAMPLING_RATE=2000)
+            response = retrieve_patient_recording(DATABASE, patient_id, week, night_id, range_min, SAMPLING_RATE=2000)
 
             return response
 
@@ -221,12 +220,10 @@ def create_app(test_config=None):
         try:
             #preprocessing_params = request.json
 
-            day, hours, minutes, seconds = get_patient_time_values(night_id)
-
             print("night id params okay")
 
-            params = (patient_id, week, day, hours, minutes, seconds)
-            query = "SELECT * from patients_recordings WHERE (patient_id=? AND week=? AND day=? AND hours=? AND minutes=? AND seconds=?)"
+            params = (patient_id, week, night_id)
+            query = "SELECT * from patients_recordings WHERE (patient_id=? AND week=? AND night_id=?)"
 
             with sql.connect(DATABASE) as con:
                 print("DB connected")
@@ -271,7 +268,7 @@ def create_app(test_config=None):
                     cur = con.cursor()
                     cur.execute("DELETE FROM settings")
                     params = tuple(settings.values())
-                    query = "INSERT  INTO settings (study_type, activity, original_sampling, selected_sampling, non_selected_sampling, dataset_format, filtered, normalized, data_path) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                    query = "INSERT  INTO settings (study_type, activity, activity_duration, original_sampling, selected_sampling, non_selected_sampling, dataset_format, filtered, normalized, data_path) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
                     cur.execute(query, params)
 
                 return "Inserted settings into DB", 200
@@ -384,13 +381,13 @@ def create_app(test_config=None):
     @app.route('/event-interval/<int:patient_id>/<string:week>/<string:night_id>/<string:recorder>/<int:location_begin>/<int:location_end>', methods=["GET"])
     def get_event_interval(patient_id, week, night_id, recorder, location_begin, location_end):
         print("get event interval")
-        day, hours, minutes, seconds = get_patient_time_values(night_id)
         # label = request.json
         # print(label)
-        five_min_data_points = 600000
+        original_sampling = get_original_sampling(DATABASE)
+        activity_duration_data_points = get_activity_duration(DATABASE) * original_sampling
 
         #1h data
-        chunk_size = 2000*60*60
+        chunk_size = original_sampling*60*60
 
         # location_begin = math.floor(location_begin * get_original_sampling(DATABASE))
         # location_end = math.ceil(location_end * get_original_sampling(DATABASE))
@@ -401,8 +398,8 @@ def create_app(test_config=None):
         with sql.connect(DATABASE) as con:
             cur = con.cursor()
 
-            params = (patient_id, week, day, hours, minutes, seconds, recorder, location_begin, location_end)
-            query = "SELECT start_id, end_id FROM sleep_stage_detection WHERE patient_id=? AND week=? AND day=? AND hours=? AND minutes=? AND seconds=? AND recorder=? AND ? >= start_id AND ? <= end_id"
+            params = (patient_id, week, night_id, recorder, location_begin, location_end)
+            query = "SELECT start_id, end_id FROM sleep_stage_detection WHERE patient_id=? AND week=? AND night_id=? AND recorder=? AND ? >= start_id AND ? <= end_id"
             result = cur.execute(query, params).fetchall()
 
             print(f"DB 5 min result: {result}")
@@ -410,8 +407,8 @@ def create_app(test_config=None):
             # If the event is in between two 5 minute intervals we might wanto to return more than 5 minute of data
             if result==[]:
                 print("Corner case")
-                start_id = math.floor(location_begin - (five_min_data_points/2))
-                end_id = math.ceil(location_end + (five_min_data_points/2))
+                start_id = math.floor(location_begin - activity_duration_data_points)
+                end_id = math.ceil(location_end + activity_duration_data_points)
 
             # The event is in a 5 minute interval
             else:
