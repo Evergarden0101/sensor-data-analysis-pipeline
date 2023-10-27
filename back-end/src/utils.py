@@ -40,32 +40,16 @@ def get_json_format_from_query(columns, query_results, start_id, end_id):
         return values
 
 """Takes night_id and return day, hours, minutes and seconds values"""
-# TODO: adapt get_existing_patients function
-def get_patient_time_values(night_id):
-    try:
-        day = night_id[:2]
-        hours = night_id[2:4]
-        minutes = night_id[4:6]
-        seconds = night_id[6]
-
-    except IndexError:
-        day = night_id[:2]
-        hours = '0' + night_id[2]
-        minutes = night_id[3:5]
-        seconds = night_id[5]
-
-    return day, hours, minutes, seconds
-
 """Post patient recording in the database"""
-def post_patient_recording(DATABASE, patient_id, week, day, hours, minutes, seconds, patient_file, csvData):
+def post_patient_recording(DATABASE, patient_id, week, night_id, patient_file, csvData):
     with sql.connect(DATABASE) as con:
         print("DATABASE CONNECTED")
         cur = con.cursor()
 
         for i,row in csvData.iterrows():
 
-            params = (patient_id, week, day, hours, minutes, seconds, patient_file[-10], row['MR'],row['ML'],row['SU'],row['Microphone'],row['Eye'], row['ECG'], row['Pressure Sensor'])
-            query = "INSERT INTO patients_recordings (patient_id, week, day, hours, minutes, seconds, recorder, MR, ML, SU, Microphone, Eye, ECG, Pressure) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+            params = (patient_id, week, night_id, patient_file[-10], row['MR'],row['ML'],row['SU'],row['Microphone'],row['Eye'], row['ECG'], row['Pressure Sensor'])
+            query = "INSERT INTO patients_recordings (patient_id, week, night_id, recorder, MR, ML, SU, Microphone, Eye, ECG, Pressure) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
 
             cur.execute(query, params)
             print(f"{i} out of {csvData.index[-1]}")
@@ -80,14 +64,14 @@ def post_patient_recording(DATABASE, patient_id, week, day, hours, minutes, seco
                 end_min: int
             }
 """
-def retrieve_patient_recording(DATABASE, patient_id, week, day, range_min, SAMPLING_RATE):
+def retrieve_patient_recording(DATABASE, patient_id, week, night_id, range_min, SAMPLING_RATE):
     with sql.connect(DATABASE) as con:
             print('connected to db', file=sys.stderr)
             cur = con.cursor()
 
             if not range_min:
-                params = (patient_id, week, day)
-                patient_recording = f"SELECT * FROM patients_recordings WHERE (patient_id=? AND week=? AND day=?)"
+                params = (patient_id, week, night_id)
+                patient_recording = f"SELECT * FROM patients_recordings WHERE (patient_id=? AND week=? AND night_id=?)"
 
             else:
                 start_min = range_min["start_min"]
@@ -97,8 +81,8 @@ def retrieve_patient_recording(DATABASE, patient_id, week, day, range_min, SAMPL
                     start_min_id = start_min * SAMPLING_RATE * 60
                     end_min_id = end_min * SAMPLING_RATE * 60
 
-                    params = (patient_id, week, day, start_min_id, end_min_id)
-                    patient_recording = f"SELECT * FROM patients_recordings WHERE (patient_id=? AND week=? AND day=?) AND (id >= ? AND id <= ?)"
+                    params = (patient_id, week, night_id, start_min_id, end_min_id)
+                    patient_recording = f"SELECT * FROM patients_recordings WHERE (patient_id=? AND week=? AND night_id=?) AND (id >= ? AND id <= ?)"
             print('patient_exist query', file=sys.stderr)
 
             patient_recording_query = cur.execute(patient_recording, params)
@@ -108,13 +92,13 @@ def retrieve_patient_recording(DATABASE, patient_id, week, day, range_min, SAMPL
 
                 columns = [description[0] for description in patient_recording_query.description]
                 print(columns)
-                values = get_json_format_from_query(columns=columns, query_results=patient_recording_query.fetchall(), start_id=0, end_id=13)
+                values = get_json_format_from_query(columns=columns, query_results=patient_recording_query.fetchall(), start_id=0, end_id=9)
 
                 return values, 200
 
             else:
                 print('DOES NOT EXIST', file=sys.stderr)
-                return f"There is no data for patient with id {patient_id} on day {day} of week {week}", 404
+                return f"There is no data for patient with id {patient_id} on night {night_id} of week {week}", 404
 
 
 """Delete predicted label for a specific patient in the Database"""
@@ -340,25 +324,24 @@ def return_img_stream(img_path):
 
 
 def get_ssd_values(DATABASE, patient_id, week, night_id, recorder):
-    day, hours, minutes, seconds = get_patient_time_values(night_id)
     with sql.connect(DATABASE) as con:
         print('connected to db', file=sys.stderr)
         cur = con.cursor()
 
         print('cur variable defined', file=sys.stderr)
 
-        params = (patient_id, week, day, hours, minutes, seconds, recorder)
-        patient_exist = f"SELECT * FROM sleep_stage_detection WHERE (patient_id=? AND week=? AND day=? AND hours=? AND minutes=? AND seconds=? AND recorder=?)"
+        params = (patient_id, week, night_id, recorder)
+        patient_exist = f"SELECT * FROM sleep_stage_detection WHERE (patient_id=? AND week=? AND night_id=? AND recorder=?)"
         print('patient_exist query', file=sys.stderr)
 
         if cur.execute(patient_exist, params).fetchall():
             print('EXIST', file=sys.stderr)
-            params = (patient_id, week, day, hours, minutes, seconds, recorder)
-            query = "SELECT * FROM sleep_stage_detection WHERE (patient_id=? AND week=? AND day=? AND hours=? AND minutes=? AND seconds=? AND recorder=?)"
+            params = (patient_id, week, night_id, recorder)
+            query = "SELECT * FROM sleep_stage_detection WHERE (patient_id=? AND week=? AND night_id=? AND recorder=?)"
             result = cur.execute(query, params)
             columns = [description[0] for description in result.description]
             print(f"Columns: {columns}")
-            values = get_json_format_from_query(columns=columns, query_results=result.fetchall(), start_id=1, end_id=14)
+            values = get_json_format_from_query(columns=columns, query_results=result.fetchall(), start_id=1, end_id=10)
 
         else:
             print('DOES NOT EXIST', file=sys.stderr)
@@ -366,8 +349,8 @@ def get_ssd_values(DATABASE, patient_id, week, night_id, recorder):
             values = get_HRV_features(DATABASE, patient_id, week, night_id, recorder, get_original_sampling(DATABASE))
 
             for value in values:
-                params = (patient_id, week, day, hours, minutes, seconds, value['start_id'], value['end_id'], value['LF_HF'], value['SD'], value['stage'], value['y'], value['x'], 0, recorder)
-                query = "INSERT INTO sleep_stage_detection (patient_id, week, day, hours, minutes, seconds, start_id, end_id, LF_HF, SD, stage, y, x, selected, recorder) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                params = (patient_id, week, night_id, value['start_id'], value['end_id'], value['LF_HF'], value['SD'], value['stage'], value['y'], value['x'], 0, recorder)
+                query = "INSERT INTO sleep_stage_detection (patient_id, week, night_id, start_id, end_id, LF_HF, SD, stage, y, x, selected, recorder) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
                 cur.execute(query, params)
 
         return values
@@ -377,17 +360,15 @@ def post_selected_updates(DATABASE, patient_id, week, night_id, updates):
         print('connected to db', file=sys.stderr)
         cur = con.cursor()
 
-        day, hours, minutes, seconds = get_patient_time_values(night_id)
-
-        params = (patient_id, week, day, hours, minutes, seconds)
-        query = "UPDATE sleep_stage_detection SET selected = 0 WHERE patient_id=? AND week=? AND day=? AND hours=? AND minutes=? AND seconds=?"
+        params = (patient_id, week, night_id)
+        query = "UPDATE sleep_stage_detection SET selected = 0 WHERE patient_id=? AND week=? AND night_id=?"
 
         cur.execute(query, params)
 
         for update in updates:
-            params = (patient_id, week, day, hours, minutes, seconds, update["x"], update["y"])
+            params = (patient_id, week, night_id, update["x"], update["y"])
 
-            query = "UPDATE sleep_stage_detection SET selected = 1 WHERE patient_id=? AND week=? AND day=? AND hours=? AND minutes=? AND seconds=? AND x=? AND y=?"
+            query = "UPDATE sleep_stage_detection SET selected = 1 WHERE patient_id=? AND week=? AND night_id=? AND x=? AND y=?"
             cur.execute(query, params)
 
 
@@ -395,11 +376,9 @@ def get_selected_phases(DATABASE, patient_id, week, night_id):
     with sql.connect(DATABASE) as con:
         cur = con.cursor()
 
-        day, hours, minutes, seconds = get_patient_time_values(night_id)
+        params = (patient_id, week, night_id, 1)
 
-        params = (patient_id, week, day, hours, minutes, seconds, 1)
-
-        query = ("SELECT x,y,ROUND(SD),stage, LF_HF FROM sleep_stage_detection WHERE patient_id=? AND week=? AND day=? AND hours=? AND minutes=? AND seconds=? AND selected=?")
+        query = ("SELECT x,y,ROUND(SD),stage, LF_HF FROM sleep_stage_detection WHERE patient_id=? AND week=? AND night_id=? AND selected=?")
 
         selected = cur.execute(query, params).fetchall()
 
@@ -416,11 +395,9 @@ def get_standard_selected_phases(DATABASE, patient_id, week, night_id):
     with sql.connect(DATABASE) as con:
         cur = con.cursor()
 
-        day, hours, minutes, seconds = get_patient_time_values(night_id)
+        params = (patient_id, week, night_id, 'rem', SDNNmin, SDNNmax)
 
-        params = (patient_id, week, day, hours, minutes, seconds, 'rem', SDNNmin, SDNNmax)
-
-        query = ("SELECT x,y,ROUND(SD),stage, LF_HF FROM sleep_stage_detection WHERE patient_id=? AND week=? AND day=? AND hours=? AND minutes=? AND seconds=? AND stage=? AND (SD BETWEEN ? AND ?)")
+        query = ("SELECT x,y,ROUND(SD),stage, LF_HF FROM sleep_stage_detection WHERE patient_id=? AND week=? AND night_id=? AND stage=? AND (SD BETWEEN ? AND ?)")
 
         selected = cur.execute(query, params).fetchall()
 
@@ -486,6 +463,15 @@ def get_activity(DATABASE):
         activity = cur.execute("SELECT activity FROM settings WHERE id=1").fetchone()[0]
 
     return activity
+
+"""Returns activity duration stored in db"""
+def get_activity_duration(DATABASE):
+    with sql.connect(DATABASE) as con:
+        cur = con.cursor()
+
+        activity_duration = cur.execute("SELECT activity_duration FROM settings WHERE id=1").fetchone()[0]
+    
+    return activity_duration
 
 """Returns original sampling rate stored in db"""
 def get_original_sampling(DATABASE):
@@ -556,7 +542,7 @@ def get_settings(DATABASE):
         columns = [description[0] for description in settings.description]
 
 
-        return get_json_format_from_query(columns, settings.fetchall(), 1, 9)[0]
+        return get_json_format_from_query(columns, settings.fetchall(), 1, 10)[0]
 
 
 """Returns sensors stored in db as list of json"""
@@ -574,10 +560,8 @@ def get_sleep_cycle_selected_intervals(patient_id, week, night_id, DATABASE, sta
     with sql.connect(DATABASE) as con:
         cur = con.cursor()
 
-        day, hours, minutes, seconds = get_patient_time_values(night_id)
-
-        params = (1, patient_id, week, day, hours, minutes, seconds, start_id, end_id)
-        query = "SELECT start_id, end_id FROM sleep_stage_detection WHERE selected=? AND patient_id=? AND week=? AND day=? AND hours=? AND minutes=? and seconds=? and start_id>=? and end_id<=?"
+        params = (1, patient_id, week, night_id, start_id, end_id)
+        query = "SELECT start_id, end_id FROM sleep_stage_detection WHERE selected=? AND patient_id=? AND week=? AND night_id=? and start_id>=? and end_id<=?"
 
         result = cur.execute(query, params)
         columns = [description[0] for description in result.description]
@@ -589,10 +573,8 @@ def get_selected_intervals(patient_id, week, night_id, DATABASE):
     with sql.connect(DATABASE) as con:
         cur = con.cursor()
 
-        day, hours, minutes, seconds = get_patient_time_values(night_id)
-
-        params = (1, patient_id, week, day, hours, minutes, seconds)
-        query = "SELECT start_id, end_id FROM sleep_stage_detection WHERE selected=? AND patient_id=? AND week=? AND day=? AND hours=? AND minutes=? and seconds=?"
+        params = (1, patient_id, week, night_id)
+        query = "SELECT start_id, end_id FROM sleep_stage_detection WHERE selected=? AND patient_id=? AND week=? AND night_id=?"
 
         result = cur.execute(query, params)
         columns = [description[0] for description in result.description]
@@ -605,10 +587,8 @@ def get_rem_intervals(patient_id, week, night_id, DATABASE):
     with sql.connect(DATABASE) as con:
         cur = con.cursor()
 
-        day, hours, minutes, seconds = get_patient_time_values(night_id)
-
-        params = ('rem', patient_id, week, day, hours, minutes, seconds)
-        query = "SELECT x,y,ROUND(SD),stage, LF_HF FROM sleep_stage_detection WHERE stage=? AND patient_id=? AND week=? AND day=? AND hours=? AND minutes=? and seconds=?"
+        params = ('rem', patient_id, week, night_id)
+        query = "SELECT x,y,ROUND(SD),stage, LF_HF FROM sleep_stage_detection WHERE stage=? AND patient_id=? AND week=? AND night_id=?"
 
         rem = cur.execute(query, params).fetchall()
         
@@ -785,36 +765,86 @@ def get_event_data(DATABASE, desired_chunk, start_id, end_id, location_begin, lo
     # Find start and end indices of event list in original 5 minute of data
     new_event_subindices = find_sub_list(mr_event_data.values.tolist(), mr.values.tolist())
 
-    # Divide MR data in 3 chunks
-    mr_first_chunk = mr.values.tolist()[: new_event_subindices[0]]
-    mr_event_chunk = mr.values.tolist()[new_event_subindices[0]: new_event_subindices[1] + 1]
-    mr_third_chunk = mr.values.tolist()[new_event_subindices[1]+1:]
+    if start_id == location_begin:
+        print("Special case- 5 minute start with event")
+        
+        mr_event_chunk = mr.values.tolist()[new_event_subindices[0]: new_event_subindices[1] + 1]
+        mr_second_chunk = mr.values.tolist()[new_event_subindices[1]+1:]
 
-    # Divide ML data in 3 chunks
-    ml_first_chunk = ml.values.tolist()[: new_event_subindices[0]]
-    ml_event_chunk = ml.values.tolist()[new_event_subindices[0]: new_event_subindices[1] + 1]
-    ml_third_chunk = ml.values.tolist()[new_event_subindices[1]+1:]
+        resmapled_mr_event_chunk =  nk.signal_resample(mr_event_chunk, method="interpolation", sampling_rate=original_sampling, desired_sampling_rate=selected_sampling).tolist()
+        resmapled_mr_second_chunk =  nk.signal_resample(mr_second_chunk, method="interpolation", sampling_rate=original_sampling, desired_sampling_rate=selected_sampling).tolist()
 
-    # Resample MR data
-    resmapled_mr_first_chunk =  nk.signal_resample(mr_first_chunk, method="interpolation", sampling_rate=original_sampling, desired_sampling_rate=selected_sampling).tolist()
-    resmapled_mr_event_chunk =  nk.signal_resample(mr_event_chunk, method="interpolation", sampling_rate=original_sampling, desired_sampling_rate=selected_sampling).tolist()
-    resmapled_mr_third_chunk =  nk.signal_resample(mr_third_chunk, method="interpolation", sampling_rate=original_sampling, desired_sampling_rate=selected_sampling).tolist()
 
-    # Resample ML data
-    resmapled_ml_first_chunk =  nk.signal_resample(ml_first_chunk, method="interpolation", sampling_rate=original_sampling, desired_sampling_rate=selected_sampling).tolist()
-    resmapled_ml_event_chunk =  nk.signal_resample(ml_event_chunk, method="interpolation", sampling_rate=original_sampling, desired_sampling_rate=selected_sampling).tolist()
-    resmapled_ml_third_chunk =  nk.signal_resample(ml_third_chunk, method="interpolation", sampling_rate=original_sampling, desired_sampling_rate=selected_sampling).tolist()
+        ml_event_chunk = ml.values.tolist()[new_event_subindices[0]: new_event_subindices[1] + 1]
+        ml_second_chunk = ml.values.tolist()[new_event_subindices[1]+1:]
 
-    # Concatenate MR and ML chunks
-    mr_resampled = list(itertools.chain(resmapled_mr_first_chunk, resmapled_mr_event_chunk, resmapled_mr_third_chunk))
-    ml_resampled = list(itertools.chain(resmapled_ml_first_chunk, resmapled_ml_event_chunk, resmapled_ml_third_chunk))
+        resmapled_ml_event_chunk =  nk.signal_resample(ml_event_chunk, method="interpolation", sampling_rate=original_sampling, desired_sampling_rate=selected_sampling).tolist()
+        resmapled_ml_second_chunk =  nk.signal_resample(ml_second_chunk, method="interpolation", sampling_rate=original_sampling, desired_sampling_rate=selected_sampling).tolist()
+
+        mr_resampled = list(itertools.chain(resmapled_mr_event_chunk, resmapled_mr_second_chunk))
+        ml_resampled = list(itertools.chain(resmapled_ml_event_chunk, resmapled_ml_second_chunk))
+
+        new_event_resampled_subindices = find_sub_list(resmapled_mr_event_chunk, mr_resampled)
+
+    elif end_id == location_end:
+        print("Special case - 5 minute ends with event")
+
+        mr_first_chunk = mr.values.tolist()[: new_event_subindices[0]]
+        mr_event_chunk = mr.values.tolist()[new_event_subindices[0]: new_event_subindices[1] + 1]
+
+        ml_first_chunk = ml.values.tolist()[: new_event_subindices[0]]
+        ml_event_chunk = ml.values.tolist()[new_event_subindices[0]: new_event_subindices[1] + 1]
+
+        resmapled_mr_first_chunk =  nk.signal_resample(mr_first_chunk, method="interpolation", sampling_rate=original_sampling, desired_sampling_rate=selected_sampling).tolist()
+        resmapled_mr_event_chunk =  nk.signal_resample(mr_event_chunk, method="interpolation", sampling_rate=original_sampling, desired_sampling_rate=selected_sampling).tolist()
+
+        resmapled_ml_first_chunk =  nk.signal_resample(ml_first_chunk, method="interpolation", sampling_rate=original_sampling, desired_sampling_rate=selected_sampling).tolist()
+        resmapled_ml_event_chunk =  nk.signal_resample(ml_event_chunk, method="interpolation", sampling_rate=original_sampling, desired_sampling_rate=selected_sampling).tolist()
+
+        mr_resampled = list(itertools.chain(resmapled_mr_first_chunk, resmapled_mr_event_chunk))
+        ml_resampled = list(itertools.chain(resmapled_ml_first_chunk, resmapled_ml_event_chunk))
+
+        new_event_resampled_subindices = find_sub_list(resmapled_mr_event_chunk, mr_resampled)
+
+    else:
+        # Divide MR data in 3 chunks
+        mr_first_chunk = mr.values.tolist()[: new_event_subindices[0]]
+        mr_event_chunk = mr.values.tolist()[new_event_subindices[0]: new_event_subindices[1] + 1]
+        mr_third_chunk = mr.values.tolist()[new_event_subindices[1]+1:]
+
+        print(f"MR - 1: {len(mr_first_chunk)} 2: {len(mr_event_chunk)} 3: {len(mr_third_chunk)}")
+        print(mr_first_chunk)
+
+        # Divide ML data in 3 chunks
+        ml_first_chunk = ml.values.tolist()[: new_event_subindices[0]]
+        ml_event_chunk = ml.values.tolist()[new_event_subindices[0]: new_event_subindices[1] + 1]
+        ml_third_chunk = ml.values.tolist()[new_event_subindices[1]+1:]
+
+        print(f"ML - 1: {len(ml_first_chunk)} 2: {len(ml_event_chunk)} 3: {len(ml_third_chunk)}")
+
+
+        # Resample MR data
+        resmapled_mr_first_chunk =  nk.signal_resample(mr_first_chunk, method="interpolation", sampling_rate=original_sampling, desired_sampling_rate=selected_sampling).tolist()
+        print(resmapled_mr_first_chunk)
+        resmapled_mr_event_chunk =  nk.signal_resample(mr_event_chunk, method="interpolation", sampling_rate=original_sampling, desired_sampling_rate=selected_sampling).tolist()
+        resmapled_mr_third_chunk =  nk.signal_resample(mr_third_chunk, method="interpolation", sampling_rate=original_sampling, desired_sampling_rate=selected_sampling).tolist()
+
+        # Resample ML data
+        resmapled_ml_first_chunk =  nk.signal_resample(ml_first_chunk, method="interpolation", sampling_rate=original_sampling, desired_sampling_rate=selected_sampling).tolist()
+        resmapled_ml_event_chunk =  nk.signal_resample(ml_event_chunk, method="interpolation", sampling_rate=original_sampling, desired_sampling_rate=selected_sampling).tolist()
+        resmapled_ml_third_chunk =  nk.signal_resample(ml_third_chunk, method="interpolation", sampling_rate=original_sampling, desired_sampling_rate=selected_sampling).tolist()
+
+        # Concatenate MR and ML chunks
+        mr_resampled = list(itertools.chain(resmapled_mr_first_chunk, resmapled_mr_event_chunk, resmapled_mr_third_chunk))
+        ml_resampled = list(itertools.chain(resmapled_ml_first_chunk, resmapled_ml_event_chunk, resmapled_ml_third_chunk))
+        
+        # Find event indices of the new resampled data
+        new_event_resampled_subindices = find_sub_list(resmapled_mr_event_chunk, mr_resampled)
     
     cnt = nk.signal_resample(cnt, method="interpolation", sampling_rate=original_sampling, desired_sampling_rate=selected_sampling).tolist()
 
-    # Find event indices of the new resampled data
-    new_event_resampled_subindices = find_sub_list(resmapled_mr_event_chunk, mr_resampled)
-
     result = {
+        #TODO: rename 5 min start and end id
         "5min_start_id": start_id,
         "5min_end_id": end_id,
         "start_id": 0,
