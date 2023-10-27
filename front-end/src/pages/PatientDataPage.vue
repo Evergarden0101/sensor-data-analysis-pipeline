@@ -57,7 +57,7 @@ export default {
     },
     methods: {
         async loadAll() {
-            const path = 'http://localhost:5000/existing-patients-recordings/';
+            const path = 'http://127.0.0.1:5000/existing-patients-recordings/';
             const headers = { 
                 'Accept': 'application/json',
                 'Content-Type': 'application/json'
@@ -78,6 +78,10 @@ export default {
             console.log(this.tableData[index]);
             this.$store.commit('updatePatientSeletion', this.tableData[index]);
             this.$store.commit('clearLabels');
+            this.$store.commit('getNightImg', '');
+            this.$store.commit('getWeekImg', '');
+            this.$store.commit('setPredFinish', false);
+            this.$store.commit('setEventNo', 1);
             console.log(this.$store.state);
             this.$router.push('/filtering');
 

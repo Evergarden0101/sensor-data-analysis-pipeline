@@ -413,7 +413,7 @@ export default {
         },  
 
         postSettings(){
-            const path = 'http://localhost:5000/settings/';
+            const path = 'http://127.0.0.1:5000/settings/';
 
             const payload = {
                 "studyType": this.generalInfoForm.studyType,
@@ -447,7 +447,7 @@ export default {
             })
         },
         postSensors(){
-            const path = 'http://localhost:5000/sensors/';
+            const path = 'http://127.0.0.1:5000/sensors/';
 
             let payload = [];
 
@@ -487,7 +487,7 @@ export default {
             return "Sensor " + index  
         },
         async getSettings(){
-            const path = 'http://localhost:5000/settings/';
+            const path = 'http://127.0.0.1:5000/settings/';
 
             const headers = { 
                 'Accept': 'application/json',
@@ -505,7 +505,7 @@ export default {
         },
         async getSensors(){
 
-            const path = 'http://localhost:5000/sensors/';
+            const path = 'http://127.0.0.1:5000/sensors/';
 
             const headers = { 
                 'Accept': 'application/json',
