@@ -78,6 +78,10 @@ export default {
             console.log(this.tableData[index]);
             this.$store.commit('updatePatientSeletion', this.tableData[index]);
             this.$store.commit('clearLabels');
+            this.$store.commit('getNightImg', '');
+            this.$store.commit('getWeekImg', '');
+            this.$store.commit('setPredFinish', false);
+            this.$store.commit('setEventNo', 1);
             console.log(this.$store.state);
             this.$router.push('/filtering');
 

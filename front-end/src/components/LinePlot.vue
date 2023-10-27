@@ -13,7 +13,9 @@
     <el-row v-show="checkedMR" style="text-align: center;width: 100%;margin-bottom:0">
         <h4 align="center" style="margin-bottom:0">Sensor Signals for Right Masseter</h4>
     </el-row>
-    <el-carousel v-show="checkedMR" style="margin-bottom: 40px;" indicator-position="outside" :autoplay="false" trigger="click" arrow="always" :height="this.carouselheight" @change="getNewCycle" ref="rightCarousel">
+    <el-carousel v-show="checkedMR" style="margin-bottom: 40px;" indicator-position="outside" :autoplay="false" 
+        trigger="click" arrow="always" :height="this.carouselheight" :initial-index="this.eventNo-1"
+        @change="getNewCycle" ref="rightCarousel">
         <el-carousel-item v-for="item in this.predLabels" :key="item">
             <h5 align="center" style="margin-bottom: 10px;">Event {{ item.label_id }}/{{ this.predLabels.length }}</h5>
             <el-row>
@@ -30,7 +32,7 @@
         <h4 align="center" style="margin-bottom:0">Sensor Signals for Left Masseter</h4>
     </el-row>
     <el-carousel v-show="checkedML" style="margin-bottom: 40px;" indicator-position="outside" :autoplay="false" 
-        trigger="click" arrow="always" :height="this.carouselheight" 
+        trigger="click" arrow="always" :height="this.carouselheight"  :initial-index="this.eventNo-1"
         @change="getNewCycle" ref="leftCarousel">
         <!-- initial-index="this.eventNo" -->
         <el-carousel-item v-for="item in this.predLabels" :key="item">
@@ -76,7 +78,7 @@ export default {
             carouselheight: '400px',
             cycleNum: 7,
             cycleIdx: 1,
-            eventNo: 0,
+            eventNo: 1,
         }
     },
     computed: {
@@ -105,7 +107,7 @@ export default {
     mounted() {
         // await this.loadAllPred();
         // this.predLabels = JSON.parse(this.$store.state.labels);
-        console.log('predLabels', this.predLabels)
+        // console.log('predLabels', this.predLabels)
         console.log(this.$store.state.eventNo)
         this.freq = this.$store.state.samplingRate;
         this.start = this.$store.state.plotStart;
@@ -113,41 +115,49 @@ export default {
         // this.checkedML = this.$store.state.checkedML;
         // this.checkedMR = this.$store.state.checkedMR;
         // this.data = dataset;
-
-        if(this.data == null){
-            this.$store.commit('selectEvent', JSON.stringify(this.predLabels[this.$store.state.eventNo]));
-            this.loadLinePlotData(this.$store.state.patientId, this.$store.state.week, this.$store.state.nightId);
-            // this.loading = ref(false);
-        }else{
-            if(this.start == 0 && this.end == 0){
-                this.end = (this.data['5min_end_id'])/this.freq;
-                this.start = this.data['5min_start_id'] / this.freq;
-            }
-            this.$store.commit('updataPoint',{startPoint:this.start, endPoint:Math.floor(this.end * 1000) / 1000})
-            if(this.checkedMR) this.drawLineplot('MR',this.start,this.end);
-            if(this.checkedML) this.drawLineplot('ML',this.start,this.end);
-            this.loading = ref(false);
-            console.log('finish')
+        if(!this.$store.state.predFinish){
+            return;
         }
+
+        // if(this.data == null){
+            this.$store.commit('selectEvent', JSON.stringify(this.predLabels[this.$store.state.eventNo-1]));
+            this.loadLinePlotData(this.$store.state.patientId, this.$store.state.week, this.$store.state.nightId);
+            console.log("load finish")
+            // this.loading = ref(false);
+        // }else{
+        //     if(this.start == 0 && this.end == 0){
+        //         this.end = (this.data['5min_end_id'])/this.freq;
+        //         this.start = this.data['5min_start_id'] / this.freq;
+        //     }
+        //     this.$store.commit('updataPoint',{startPoint:this.start, endPoint:Math.floor(this.end * 1000) / 1000})
+        //     if(this.checkedMR) this.drawLineplot('MR',this.start,this.end);
+        //     if(this.checkedML) this.drawLineplot('ML',this.start,this.end);
+        //     this.loading = ref(false);
+        //     console.log('finish')
+        // }
 
     },
     methods: {
         // TODO: switch to next event
         getNewCycle(cur, prev){
+            if(cur == prev || (cur+1 ==this.eventNo)){
+                return;
+            }
+            console.log('getNewCycle')
             this.loading = ref(true);
-            this.$refs.rightCarousel.setActiveItem(cur);
-            this.$refs.leftCarousel.setActiveItem(cur);
+            // this.$refs.rightCarousel.setActiveItem(cur);
+            // this.$refs.leftCarousel.setActiveItem(cur);
 
-            var id = 'mrlineplot'+this.eventNo;
-            var mr = document.getElementById(id);
-            this.emptyGraph(mr);
-            id = 'mllineplot'+this.eventNo;
-            var ml = document.getElementById(id);
-            this.emptyGraph(ml);
+            // var id = 'mrlineplot'+this.eventNo;
+            // var mr = document.getElementById(id);
+            // this.emptyGraph(mr);
+            // id = 'mllineplot'+this.eventNo;
+            // var ml = document.getElementById(id);
+            // this.emptyGraph(ml);
 
             this.cycleIdx = cur+1;
             console.log('cycleIdx', this.cycleIdx)
-            this.$store.commit('setEventNo', cur);
+            this.$store.commit('setEventNo', this.cycleIdx);
             this.$store.commit('selectEvent', JSON.stringify(this.predLabels[cur]));
             this.$store.commit('updateLinePlotKey');
             // this.loadLinePlotData(this.$store.state.patientId, this.$store.state.week, this.$store.state.nightId);
