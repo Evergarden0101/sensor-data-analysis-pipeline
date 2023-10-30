@@ -112,7 +112,7 @@ def remove_pred_label(DATABASE, label):
 def insert_label(DATABASE, label):
     with sql.connect(DATABASE) as con:
         cur = con.cursor()
-        cur.execute(f"INSERT INTO confirmed_labels (patient_id, week, night_id, label_id, location_begin, location_end, corrected) VALUES {label['patient_id'],label['week'],label['night_id'],label['label_id'],label['location_begin'],label['location_end'],label['corrected']}")
+        cur.execute(f"INSERT INTO confirmed_labels (patient_id, week, night_id, recorder, label_id, location_begin, location_end, start_index, end_index, start_time, end_time) VALUES {label['patient_id'],label['week'],label['night_id'],label['recorder'],label['label_id'],label['location_begin'],label['location_end'],label['start_index'],label['end_index'],label['Start'],label['End']}")
 
 
 def generate_model(DATABASE, patient_id, week, night_id, recorder):
@@ -161,13 +161,13 @@ def generate_model(DATABASE, patient_id, week, night_id, recorder):
     gen_model = False
     with sql.connect(DATABASE) as con:
         cur = con.cursor()
-        cur.execute(f"INSERT INTO models (patient_id, model_path) VALUES {patient_id, get_data_path(DATABASE) + f'p{patient_id}_model.json'}")
+        cur.execute(f"INSERT INTO models (patient_id, model_path, validation_file_path) VALUES {patient_id, get_data_path(DATABASE) + f'p{patient_id}_model.json', get_data_path(DATABASE) + f'p{patient_id}_wk{week}/{night_id}{recorder}Fnorm.csv'}")
         model.save_model(get_data_path(DATABASE) + f"p{patient_id}_model.json")
         
         cur.execute(f"SELECT * FROM models WHERE patient_id = -1")
         general_model = cur.fetchall()
         if not general_model:
-            cur.execute(f"INSERT INTO models (patient_id, model_path) VALUES {-1, get_data_path(DATABASE) + f'general_model.json'}")
+            cur.execute(f"INSERT INTO models (patient_id, model_path, validation_file_path) VALUES {-1, get_data_path(DATABASE) + f'general_model.json', get_data_path(DATABASE) + f'p{patient_id}_wk{week}/{night_id}{recorder}Fnorm.csv'}")
             model.save_model(get_data_path(DATABASE) + f'general_model.json')
             gen_model = True
         cur.close()
@@ -183,7 +183,7 @@ def generate_model(DATABASE, patient_id, week, night_id, recorder):
 
     return labels
 
-"""TODO: Run Prediction"""
+"""TODO: check prediction length """
 def predict_events(DATABASE, model, patient_id, week, night_id, recorder):
     print("predict_events")
     data = open_brux_csv(DATABASE, patient_id, week, night_id, recorder)
@@ -220,34 +220,37 @@ def predict_events(DATABASE, model, patient_id, week, night_id, recorder):
     print(len(y_p))
     with sql.connect(DATABASE) as con:
         cur = con.cursor()
+        loc_start = 0
+        loc_end = 0
         while i < len(y_p):
             y_sum = y_p[i];
             cnt = 1;
             for j in range(1, 5*selected_sampling):
-                if(i+j >= len(y_p)):
+                if(i+j >= len(y_p) or ((index[i+j] - index[i])>5*selected_sampling)):
                     break;
                 y_sum += y_p[i+j];
                 cnt += 1;
-            if y_sum/cnt >= 0.3:
-                if(len(y_p_mix)==0 or y_p_mix[-1] != 10):
+            if y_sum/cnt >= 0.5:
+                if(loc_start == 0 or loc_end-loc_start > 30*selected_sampling):
                     event += 1
+                    loc_start = i
                     loc_end = i+cnt
                     location_begin = index[i]
                     location_end = index[loc_end]
-                    params = (patient_id, week, night_id, event, location_begin, location_end, i, loc_end)
+                    params = (patient_id, week, night_id, recorder, event, location_begin, location_end, i, loc_end)
                     print(params, ' ', location_begin,' ', location_end)
-                    query = "INSERT INTO predicted_labels (patient_id, week, night_id, label_id, location_begin, location_end, start_index, end_index) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+                    query = "INSERT INTO predicted_labels (patient_id, week, night_id, recorder, label_id, location_begin, location_end, start_index, end_index) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
                     cur.execute(query, params)
                     
                     cycle = np.floor(location_begin / 90 / 60 / original_sampling);
                     params = (patient_id, week, night_id, cycle)
-                    query = "SELECT count from week_summary WHERE patient_id=? AND week=? AND night_id=? AND cycle=?"
+                    query = "SELECT count from week_summary WHERE (patient_id=? AND week=? AND night_id=? AND cycle=?)"
                     cur.execute(query, params)
                     count = cur.fetchall()
                     if count:
                         print(count[0][0])
                         params = (count[0][0]+1, patient_id, week, night_id, cycle)
-                        query = "UPDATE week_summary SET count = ? WHERE patient_id=? AND week=? AND night_id=? AND cycle=?"
+                        query = "UPDATE week_summary SET count = ? WHERE (patient_id=? AND week=? AND night_id=? AND cycle=?)"
                         cur.execute(query, params)
                     else:
                         params = (patient_id, week, night_id, cycle, cycle_num, 1)
@@ -255,19 +258,20 @@ def predict_events(DATABASE, model, patient_id, week, night_id, recorder):
                         cur.execute(query, params)
                     print("current end:", loc_end)
                 elif(y_p_mix[-1] == 10):
-                    params = (index[loc_end+cnt], loc_end+cnt, patient_id, week, night_id, event)
-                    query = "UPDATE predicted_labels SET location_end = ?, end_index = ? WHERE patient_id=? AND week=? AND night_id=? AND label_id=?;"
+                    params = (index[loc_end+cnt], loc_end+cnt, patient_id, week, night_id, recorder, event)
+                    query = "UPDATE predicted_labels SET location_end = ?, end_index = ? WHERE (patient_id=? AND week=? AND night_id=? AND recorder=? AND label_id=?)"
                     cur.execute(query, params)
                     loc_end += cnt
                     print("update end:", loc_end)
                 y_p_mix.extend([10]*cnt);
             else:
+                loc_start = 0
                 y_p_mix.extend([0]*cnt);
             i += cnt;
             # print(i)
         print(event)
-        params = (patient_id, week, night_id)
-        query = "SELECT DISTINCT * from predicted_labels WHERE (patient_id=? AND week=? AND night_id=?)"
+        params = (patient_id, week, night_id, recorder)
+        query = "SELECT DISTINCT * from predicted_labels WHERE (patient_id=? AND week=? AND night_id=? AND recorder=?)"
         labels = cur.execute(query, params).fetchall()
     return labels
 
@@ -279,8 +283,8 @@ def run_prediction(DATABASE, patient_id, week, night_id, recorder):
     try:
         with sql.connect(DATABASE) as con:
             cur = con.cursor()
-            params = (patient_id, week, night_id)
-            query = "SELECT DISTINCT * from predicted_labels WHERE (patient_id=? AND week=? AND night_id=?)"
+            params = (patient_id, week, night_id, recorder)
+            query = "SELECT DISTINCT * from predicted_labels WHERE (patient_id=? AND week=? AND night_id=? AND recorder=?)"
             labels = cur.execute(query, params).fetchall()
             print(labels)
             if labels:
@@ -1071,14 +1075,14 @@ def generate_night_pred_img(DATABASE, patient_id, week, night_id, recorder):
 
     with sql.connect(DATABASE) as con:
         print("DB connected")
-        params = (patient_id, week, night_id)
-        query = "SELECT DISTINCT * from predicted_labels WHERE (patient_id=? AND week=? AND night_id=?)"
+        params = (patient_id, week, night_id, recorder)
+        query = "SELECT DISTINCT * from predicted_labels WHERE (patient_id=? AND week=? AND night_id=? AND recorder=?)"
         cur = con.cursor()
         predicted_labels = cur.execute(query, params)
         columns = [description[0] for description in predicted_labels.description]
         print(columns)
         #df = get_patients_recordings_df(columns, patient_data.fetchall())
-        predicted_labels_json = get_json_format_from_query(columns=columns, query_results=predicted_labels.fetchall(), start_id=1, end_id=10)
+        predicted_labels_json = get_json_format_from_query(columns=columns, query_results=predicted_labels.fetchall(), start_id=1, end_id=9)
         cur.close()
     print(predicted_labels_json)
 

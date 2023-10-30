@@ -122,7 +122,6 @@ export default {
         // if(this.data == null){
             this.$store.commit('selectEvent', JSON.stringify(this.predLabels[this.$store.state.eventNo-1]));
             this.loadLinePlotData(this.$store.state.patientId, this.$store.state.week, this.$store.state.nightId);
-            console.log("load finish")
             // this.loading = ref(false);
         // }else{
         //     if(this.start == 0 && this.end == 0){
@@ -138,7 +137,6 @@ export default {
 
     },
     methods: {
-        // TODO: switch to next event
         getNewCycle(cur, prev){
             if(cur == prev || (cur+1 ==this.eventNo)){
                 return;
@@ -156,7 +154,6 @@ export default {
             // this.emptyGraph(ml);
 
             this.cycleIdx = cur+1;
-            console.log('cycleIdx', this.cycleIdx)
             this.$store.commit('setEventNo', this.cycleIdx);
             this.$store.commit('selectEvent', JSON.stringify(this.predLabels[cur]));
             this.$store.commit('updateLinePlotKey');
@@ -192,6 +189,7 @@ export default {
                 })
             
         },
+        // TODO: load before image
         loadLinePlotData(patient_id, week, night_id){
             console.log('loadLinePlotData')
             // const path = `http://127.0.0.1:5000/lineplot-data/${patient_id}/${week}/${night_id}`
@@ -210,14 +208,7 @@ export default {
                     // 'Access-Control-Allow-Credentials': "true",
                     // 'Access-Control-Allow-Headers': 'Content-Type'
             };
-
             
-
-            
-            // const payload = {
-            //     "location_begin": event['location_begin'],
-            //     "location_end": event['location_end']
-            // };
             axios.get(path, {headers})
                 .then((res) => {
                     console.log("Data received");

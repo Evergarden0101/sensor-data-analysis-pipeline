@@ -219,10 +219,14 @@ export default {
                     "patient_id": this.$store.state.patientId,
                     "week":this.$store.state.week,
                     "night_id":this.$store.state.nightId,
+                    "recorder":this.$store.state.recorder,
                     "label_id": this.Labels[i]['label_id'],
-                    "location_begin": this.Labels[i]['Start'],
-                    "location_end": this.Labels[i]['End'],
-                    "corrected": true,
+                    "location_begin": this.Labels[i]['location_begin'],
+                    "location_end": this.Labels[i]['location_end'],
+                    "start_index": this.Labels[i]['start_index'],
+                    "end_index": this.Labels[i]['end_index'],
+                    "Start": this.Labels[i]['Start'],
+                    "End": this.Labels[i]['End'],
                 })
             };
 
@@ -240,10 +244,10 @@ export default {
                 });
 
                 console.log(res);
-                this.$store.commit('clearLabels');
+                // this.$store.commit('clearLabels');
                 // this.load = false;
-                this.$store.commit('updateStudyAccuracy', '--');
-                this.$store.commit('updatePatientAccuracy', '--');
+                // this.$store.commit('updateStudyAccuracy', '--');
+                // this.$store.commit('updatePatientAccuracy', '--');
                 // this.$store.commit('updateBruxLabelKey')
             })
             .catch(err=>{
@@ -252,8 +256,10 @@ export default {
             })
         },
         locateLabel(item){
+            this.$store.commit('setLabelRange',{plotStart:0, plotEnd:0});
+            this.$store.commit('setEventNo', item.label_id);
             this.$store.commit('updateLinePlotKey');
-            this.$store.commit('setLabelRange',{plotStart:item.Start, plotEnd:item.End});
+            // this.$store.commit('setLabelRange',{plotStart:item.Start, plotEnd:item.End});
         },
         openDialog(){
             this.form.Start = this.$store.state.startPoint;
@@ -300,7 +306,7 @@ export default {
                 // console.log(this.Labels[label])
                 this.Labels[label].Start = Math.floor(this.Labels[label].location_begin / samplingRate * 1000) / 1000;
                 this.Labels[label].End = Math.floor(this.Labels[label].location_end / samplingRate * 1000) / 1000;
-                this.Labels[label].Dur = computed(()=>{  return this.Labels[label].End - this.Labels[label].Start  })
+                this.Labels[label].Dur = computed(()=>{  return Math.floor((this.Labels[label].End - this.Labels[label].Start) * 1000) / 1000 })
                 this.Labels[label].Confirm = true
                 let cycle = Math.floor(this.Labels[label].Start / 90 / 60) + 1;
                 let findCycle = this.cycles.find((item)=>{return item.cycle == cycle});

@@ -13,7 +13,7 @@ CREATE TABLE models (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   patient_id INTEGER NOT NULL,
   accuracy DECIMAL(6,3),
-  model_name TEXT,
+  validation_file_path TEXT NOT NULL,
   model_path TEXT NOT NULL
 );
 
@@ -51,17 +51,20 @@ CREATE TABLE confirmed_labels (
   patient_id INTEGER NOT NULL,
   week TEXT NOT NULL,
   night_id INTEGER NOT NULL,
+  recorder TEXT,
   label_id INTEGER NOT NULL,
   location_begin INTEGER NOT NULL,
   location_end INTEGER NOT NULL,
   start_index INTEGER NOT NULL,
   end_index INTEGER NOT NULL,
-  peakMR DECIMAL(11,6),
-  peakML DECIMAL(11,6),
-  avgMR DECIMAL(11,6),
-  avgML DECIMAL(11,6),
-  corrected BOOLEAN NOT NULL
-  -- duration  REAL NOT NULL
+  start_time DECIMAL(11,6),
+  end_time DECIMAL(11,6)
+  -- peakMR DECIMAL(11,6),
+  -- peakML DECIMAL(11,6),
+  -- avgMR DECIMAL(11,6),
+  -- avgML DECIMAL(11,6),
+  -- corrected BOOLEAN,
+  -- duration DECIMAL(11,6)
 );
 
 
@@ -70,15 +73,16 @@ CREATE TABLE predicted_labels (
   patient_id INTEGER NOT NULL,
   week TEXT NOT NULL,
   night_id INTEGER NOT NULL,
+  recorder TEXT,
   label_id INTEGER NOT NULL,
   location_begin INTEGER NOT NULL,
   location_end INTEGER NOT NULL,
   start_index INTEGER NOT NULL,
-  end_index INTEGER NOT NULL,
-  peakMR DECIMAL(11,6),
-  peakML DECIMAL(11,6),
-  avgMR DECIMAL(11,6),
-  avgML DECIMAL(11,6)
+  end_index INTEGER NOT NULL
+  -- peakMR DECIMAL(11,6),
+  -- peakML DECIMAL(11,6),
+  -- avgMR DECIMAL(11,6),
+  -- avgML DECIMAL(11,6)
   -- duration  REAL NOT NULL
 );
 

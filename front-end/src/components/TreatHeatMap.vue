@@ -5,6 +5,7 @@
 
 <script>
 import * as echarts from 'echarts';
+import axios from 'axios';
 
 export default {
   name: 'TreatHeatMap',
@@ -14,9 +15,32 @@ export default {
     }
   },
   mounted() {
+    // this.getWeeklySummary();
     this.drawTreatHeatMap();
   },
   methods: {
+    getWeeklySummary(){
+        const path = `http://127.0.0.1:5000/weekly-summary/${this.$store.state.patientId}/${this.$store.state.week}/`
+        const headers = {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': 'GET',
+                'Access-Control-Max-Age': "3600",
+                'Access-Control-Allow-Credentials': "true",
+                'Access-Control-Allow-Headers': 'Content-Type'
+        };
+
+        axios.get(path, {headers})
+            .then((res) => {
+                console.log(res.data)
+                this.data = res.data
+                this.drawTreatHeatMap()
+            })
+            .catch(err=>{
+                console.log(err)
+            })
+    },
     drawTreatHeatMap(){
         var dom = document.getElementById("chart-container");
         var myChart = echarts.init(dom, null, {
