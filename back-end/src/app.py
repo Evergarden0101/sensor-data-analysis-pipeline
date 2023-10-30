@@ -90,6 +90,7 @@ def create_app(test_config=None):
             "duration": int
         }
     """
+    # TODO: remove predicted label
     @app.route("/label-brux", methods=["POST"])
     @app.errorhandler(werkzeug.exceptions.BadRequest)
     def post_label_brux():
@@ -103,11 +104,11 @@ def create_app(test_config=None):
             for label in labels:
                 if label["location_begin"] > label["location_end"]:
                     return "Start time cannot be greater than end time!", 400
-                remove_pred_label(DATABASE, label)
+                # remove_pred_label(DATABASE, label)
                 insert_label(DATABASE, label)
             return "Successfuly inserted into Database", 200
         except Exception as e:
-            print('Exception raised', e)
+            print('Exception raised in confirming labels', e)
             return f"{e}", 400
 
     #TODO: possibly get labels from specific patient on a specific week?
@@ -117,8 +118,8 @@ def create_app(test_config=None):
         try:
             print('get_label_brux')
             predicted_labels = run_prediction(DATABASE, patient_id, week, night_id, recorder)
-            params = (patient_id, week, night_id)
-            query = "SELECT * from predicted_labels WHERE (patient_id=? AND week=? AND night_id=?)"
+            params = (patient_id, week, night_id, recorder)
+            query = "SELECT * from predicted_labels WHERE (patient_id=? AND week=? AND night_id=? AND recorder=?)"
 
             with sql.connect(DATABASE) as con:
                 print("DB connected")
@@ -127,13 +128,13 @@ def create_app(test_config=None):
                 columns = [description[0] for description in predicted_labels.description]
                 print(columns)
                 #df = get_patients_recordings_df(columns, patient_data.fetchall())
-                predicted_labels_json = get_json_format_from_query(columns=columns, query_results=predicted_labels.fetchall(), start_id=1, end_id=10)
+                predicted_labels_json = get_json_format_from_query(columns=columns, query_results=predicted_labels.fetchall(), start_id=1, end_id=9)
                 print(predicted_labels_json)
             return predicted_labels_json, 200
 
 
         except Exception as e:
-            print('Exception raised')
+            print('Exception raised in getting predicted labels')
             print(e)
             return f"{e}", 500
     
@@ -493,6 +494,53 @@ def create_app(test_config=None):
             return res
         except Exception as e:
             print('Exception raised in getting night prediction image')
+            print(e)
+            return f"{e}", 500
+
+
+    # TODO: rerun model and general model
+    @app.route('/rerun-model/<int:patient_id>/<string:week>/<string:night_id>/<string:recorder>', methods=["GET"])
+    def rerun_model(patient_id, week, night_id, recorder):
+        try:
+            # params = (patient_id, week, night_id, recorder)
+            # query = "SELECT * from bite_records WHERE (patient_id=? AND week=? AND night_id=? AND labelId=?)"
+
+            with sql.connect(DATABASE) as con:
+                print("DB connected")
+                cur = con.cursor()
+                cur.execute(f"SELECT * FROM models WHERE patient_id={patient_id}")
+                model = cur.fetchall()
+                xgbc = xgb.XGBClassifier()
+                xgbc.load_model(str(model[0][-1]))
+                patient_accuracy = 0
+                study_accuracy = 0
+                
+            return flask.jsonify(patient_accuracy=patient_accuracy, study_accuracy=study_accuracy), 200
+        except Exception as e:
+            print('Exception raised in rerunning model')
+            print(e)
+            return f"{e}", 500
+
+
+    # TODO: heatmap data
+    @app.route('/weekly-summary/<int:patient_id>/<string:week>/', methods=["GET"])
+    def get_weekly_summary(patient_id, week):
+        try:
+            # params = (patient_id, week, night_id, labelId)
+            # query = "SELECT * from bite_records WHERE (patient_id=? AND week=? AND night_id=? AND labelId=?)"
+
+            # with sql.connect(DATABASE) as con:
+            #     print("DB connected")
+            #     cur = con.cursor()
+            #     bite_records = cur.execute(query, params)
+            #     columns = [description[0] for description in bite_records.description]
+            #     print(columns)
+            #     #df = get_patients_recordings_df(columns, patient_data.fetchall())
+            #     bite_records_json = get_json_format_from_query(columns=columns, query_results=bite_records.fetchall()) #, start_id=1, end_id=14)
+                
+            return None, 200
+        except Exception as e:
+            print('Exception raised in getting week summary')
             print(e)
             return f"{e}", 500
 

@@ -16,39 +16,45 @@ export default{
         // TODO: rurun model
         postLabel(){
             this.load = true;
-            const path = 'http://127.0.0.1:5000/label-brux';
-            const payload = [];
+            const path = `http://127.0.0.1:5000/rerun-model/${this.$store.state.patientId}/${this.$store.state.week}/${this.$store.state.nightId}/${this.$store.state.recorder}`;
+            // const payload = [];
 
-            for(var i=0; i<this.labels.length; i++){
-                payload.push({
-                    "patient_id": this.$store.state.patientId,
-                    "week":this.$store.state.week,
-                    "night_id":this.$store.state.nightId,
-                    "label_id": this.labels[i]['label_id'],
-                    "location_begin": this.labels[i]['Start'],
-                    "location_end": this.labels[i]['End'],
-                    "corrected": true,
-                })
-            };
+            // for(var i=0; i<this.labels.length; i++){
+            //     payload.push({
+            //         "patient_id": this.$store.state.patientId,
+            //         "week":this.$store.state.week,
+            //         "night_id":this.$store.state.nightId,
+            //         "label_id": this.labels[i]['label_id'],
+            //         "location_begin": this.labels[i]['Start'],
+            //         "location_end": this.labels[i]['End'],
+            //         "corrected": true,
+            //     })
+            // };
 
             const headers = { 
                 'Accept': 'application/json',
                 'Content-Type': 'application/json'
             };
 
-            // axios.post(path, payload, {headers})
-            // .then((res) => {
-            //     console.log(res);
-            //     this.$store.commit('clearLabels');
-            //     // this.load = false;
-            //     this.$store.commit('updateStudyAccuracy', '--');
-            //     this.$store.commit('updatePatientAccuracy', '--');
-            //     // this.$store.commit('updateBruxLabelKey')
-            // })
-            // .catch(err=>{
-            //     console.log(err)
-            //     // this.load = false;
-            // })
+            axios.get(path, {headers})
+            .then((res) => {
+                this.$message({
+                    showClose: true,
+                    message: 'Model rerun successfully!',
+                    type: 'success'
+                });
+                console.log(res);
+                // this.$store.commit('clearLabels');
+                // this.load = false;
+                // TODO: update accuracy
+                this.$store.commit('updateStudyAccuracy', '--');
+                this.$store.commit('updatePatientAccuracy', '--');
+                // this.$store.commit('updateBruxLabelKey')
+            })
+            .catch(err=>{
+                console.log(err)
+                // this.load = false;
+            })
         }
     },
 }
