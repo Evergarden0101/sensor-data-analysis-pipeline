@@ -304,9 +304,9 @@ export default {
             let samplingRate = this.$store.state.samplingRate;
             for (let label in this.Labels){
                 // console.log(this.Labels[label])
-                this.Labels[label].Start = Math.floor(this.Labels[label].location_begin / samplingRate * 1000 / 1000);
-                this.Labels[label].End = Math.floor(this.Labels[label].location_end / samplingRate * 1000 / 1000);
-                this.Labels[label].Dur = computed(()=>{  return this.Labels[label].End - this.Labels[label].Start  })
+                this.Labels[label].Start = Math.floor(this.Labels[label].location_begin / samplingRate * 1000) / 1000;
+                this.Labels[label].End = Math.floor(this.Labels[label].location_end / samplingRate * 1000) / 1000;
+                this.Labels[label].Dur = computed(()=>{  return Math.floor((this.Labels[label].End - this.Labels[label].Start) * 1000) / 1000 })
                 this.Labels[label].Confirm = true
                 let cycle = Math.floor(this.Labels[label].Start / 90 / 60) + 1;
                 let findCycle = this.cycles.find((item)=>{return item.cycle == cycle});
