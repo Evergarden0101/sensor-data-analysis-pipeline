@@ -544,6 +544,52 @@ def create_app(test_config=None):
             print(e)
             return f"{e}", 500
 
+    
+    # TODO: heatmap data
+    @app.route('/event-trend', methods=["GET"])
+    def get_event_trend():
+        try:
+            # patient_id = request.json
+            patient_id = [1,2]
+            patient_id = tuple(patient_id)
+           
+            with sql.connect(DATABASE) as con:
+                print("DB connected")
+                cur = con.cursor()
+                cur.execute(f"SELECT patient_id, day_no, SUM(count) AS count FROM week_summary WHERE patient_id IN {patient_id} GROUP BY day_no, patient_id ORDER BY patient_id, day_no")
+                data = cur.fetchall()
+                columns = ['patient_id', 'day', 'count']
+                df = pd.DataFrame(data, columns=columns)
+                print(df)
+                cur.execute(f"SELECT MIN(day_no) AS min_day, MAX(day_no) AS max_day FROM week_summary WHERE patient_id IN {patient_id}")
+                day_info = cur.fetchone()
+                day_list = [day_info[0],day_info[1]]
+                day_list = pd.DataFrame(day_list,columns=['day'])
+                day_list['date'] = pd.to_datetime(day_list['day'], unit='D', origin='2023-01-01')
+                day_list = day_list.set_index('date').resample('D').asfreq()
+                day_list['day'] = day_list['day'].interpolate(method='linear', limit_direction='both')
+                # print(day_list.index)
+                day_lists = pd.DataFrame(day_list['day'],columns=['day'])
+                # print(day_lists)
+                for i in patient_id:
+                    print(i)
+                    df_patient = df[df['patient_id']==i]
+                    df_patient['date'] = day_list.index[df_patient['day']]
+                    # print(df_patient)
+                    daily_df = df_patient.set_index('date').resample('D').asfreq()
+                    # print(daily_df)
+                    # Interpolate the 'count' column
+                    day_lists[i] = daily_df['count']
+                    day_lists[i] = day_lists[i].interpolate(method='linear', limit_direction='both')
+                    
+            day_lists = day_lists.set_index('day')
+            print(day_lists)
+            return day_lists.to_json(orient="records"), 200
+        except Exception as e:
+            print('Exception raised in getting event trend')
+            print(e)
+            return f"{e}", 500
+
 
     @app.route('/label-statistics/<int:patient_id>/<string:week>/<string:night_id>/<int:labelId>', methods=["GET"])
     def get_label_statistics(patient_id, week, night_id, labelId):

@@ -42,7 +42,8 @@ CREATE TABLE week_summary(
   night_id INTEGER NOT NULL,
   cycle INTEGER NOT NULL,
   max_cycle INTEGER NOT NULL,
-  count INTEGER NOT NULL
+  count INTEGER NOT NULL,
+  day_no INTEGER
 );
 
 

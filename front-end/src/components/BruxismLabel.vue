@@ -297,6 +297,7 @@ export default {
                 this.loadingLabel = false
             }, 200)
         },
+        // TODO: check sampling rate
         computeDur(){
             this.labelNum = 0;
             this.cycles = [];

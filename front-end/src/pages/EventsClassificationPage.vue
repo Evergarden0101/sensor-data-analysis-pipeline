@@ -120,6 +120,8 @@ export default {
     mounted(){
         // this.week_sum_imgsrc= "http://127.0.0.1:5000/weekly-sum-img?p=" + this.$store.state.patientId+'&w='+this.$store.state.week;
         console.log(this.$store.state.nightId)
+        console.log(this.$store.state.nightImg)
+        console.log(this.$store.state.weekImg)
         // this.night_pred_imgsrc = "http://127.0.0.1:5000/night-pred-img?p=" + this.$store.state.patientId+'&w='+this.$store.state.week+'&n='+this.$store.state.nightId+'&r='+this.$store.state.recorder;
     },
     methods:{
