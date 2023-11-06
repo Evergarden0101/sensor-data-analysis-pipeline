@@ -545,7 +545,7 @@ def create_app(test_config=None):
             return f"{e}", 500
 
     
-    # TODO: heatmap data
+    # TODO: payload input list of patient_id
     @app.route('/event-trend', methods=["GET"])
     def get_event_trend():
         try:
@@ -567,7 +567,7 @@ def create_app(test_config=None):
                 day_list = pd.DataFrame(day_list,columns=['day'])
                 day_list['date'] = pd.to_datetime(day_list['day'], unit='D', origin='2023-01-01')
                 day_list = day_list.set_index('date').resample('D').asfreq()
-                day_list['day'] = day_list['day'].interpolate(method='linear', limit_direction='both')
+                day_list['day'] = day_list['day'].interpolate(method='linear', limit_direction='both').astype(int)
                 # print(day_list.index)
                 day_lists = pd.DataFrame(day_list['day'],columns=['day'])
                 # print(day_lists)
@@ -580,7 +580,7 @@ def create_app(test_config=None):
                     # print(daily_df)
                     # Interpolate the 'count' column
                     day_lists[i] = daily_df['count']
-                    day_lists[i] = day_lists[i].interpolate(method='linear', limit_direction='both')
+                    day_lists[i] = day_lists[i].interpolate(method='spline', order=1).astype(int)
                     
             day_lists = day_lists.set_index('day')
             print(day_lists)
