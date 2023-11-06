@@ -269,7 +269,7 @@ def predict_events(DATABASE, model, patient_id, week, night_id, recorder):
                 y_p_mix.extend([0]*cnt);
             i += cnt;
             # print(i)
-        print(event)
+        # print(event)
         params = (patient_id, week, night_id, recorder)
         query = "SELECT DISTINCT * from predicted_labels WHERE (patient_id=? AND week=? AND night_id=? AND recorder=?)"
         labels = cur.execute(query, params).fetchall()
@@ -995,11 +995,13 @@ def generate_weekly_sum_img(DATABASE, img_local_path, patient_id, week):
     data = None
     cycle_num = 7
     day_cnt = 0
+    weeknum = int(week.split('-')[0]) - 1
+    print("weeknum: ",weeknum)
     with sql.connect(DATABASE) as con:
         print("DB connected")
         cur = con.cursor()
         params = (patient_id, week)
-        query = "SELECT DISTINCT night_id from week_summary WHERE (patient_id=? AND week=?)"
+        query = "SELECT DISTINCT night_id from week_summary WHERE (patient_id=? AND week=?) ORDER BY night_id ASC;"
         nights = cur.execute(query, params).fetchall()
         print(nights)
         query = "SELECT max(max_cycle) from week_summary WHERE (patient_id=? AND week=?)"
@@ -1014,15 +1016,22 @@ def generate_weekly_sum_img(DATABASE, img_local_path, patient_id, week):
             cycle_count = cur.execute(query, params).fetchall()
             night_summary = np.zeros(max_cycle, dtype=int)
             cycle_num = max_cycle
+            day_no = weeknum*7 + day_cnt
+            print("day no: ", day_no)
             for j in cycle_count:
                 # print(j)
                 night_summary[j[1]] = j[2]
+                params = (day_no, patient_id, week, i[0], j[1])
+                query = "UPDATE week_summary SET day_no = ? WHERE (patient_id=? AND week=? AND night_id=? AND cycle=?)"
+                cur.execute(query, params)
             print(night_summary)
             if(day_cnt == 0):
                 data = night_summary
             else:
                 data = np.vstack((np.array(data), np.array(night_summary)))
+            
             day_cnt += 1
+            
         # cur.close()
     
     # data = np.array([[1,0,0,0,0,0,0],
