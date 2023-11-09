@@ -1,4 +1,4 @@
-from flask import Flask, request, make_response
+from flask import Flask, request, make_response, jsonify
 import werkzeug
 import os
 import sqlite3 as sql
@@ -515,7 +515,7 @@ def create_app(test_config=None):
                 patient_accuracy = 0
                 study_accuracy = 0
                 
-            return flask.jsonify(patient_accuracy=patient_accuracy, study_accuracy=study_accuracy), 200
+            return jsonify(patient_accuracy=patient_accuracy, study_accuracy=study_accuracy), 200
         except Exception as e:
             print('Exception raised in rerunning model')
             print(e)
@@ -558,11 +558,13 @@ def create_app(test_config=None):
                 cur = con.cursor()
                 cur.execute(f"SELECT patient_id, day_no, SUM(count) AS count FROM week_summary WHERE patient_id IN {patient_id} GROUP BY day_no, patient_id ORDER BY patient_id, day_no")
                 data = cur.fetchall()
+                print(data)
                 columns = ['patient_id', 'day', 'count']
                 df = pd.DataFrame(data, columns=columns)
                 print(df)
                 cur.execute(f"SELECT MIN(day_no) AS min_day, MAX(day_no) AS max_day FROM week_summary WHERE patient_id IN {patient_id}")
                 day_info = cur.fetchone()
+                print(day_info)
                 day_list = [day_info[0],day_info[1]]
                 day_list = pd.DataFrame(day_list,columns=['day'])
                 day_list['date'] = pd.to_datetime(day_list['day'], unit='D', origin='2023-01-01')
