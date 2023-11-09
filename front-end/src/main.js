@@ -14,14 +14,14 @@ import PatientInfoPage from './pages/PatientInfoPage.vue';
 import SelectPatientPage from './pages/SelectPatientPage.vue'
 import PatientDataPage from './pages/PatientDataPage.vue';
 import SettingsPage from './pages/SettingsPage.vue';
-import PathNotFound from './components/PathNotFound.vue';
+import PathNotFoundPage from './pages/PathNotFoundPage.vue';
 import store from './store'
 
 const router = VueRouter.createRouter({
     history: VueRouter.createWebHistory(process.env.BASE_URL),
      routes:[{
          path: '/:pathMatch(.*)*',
-         component: PathNotFound
+         component: PathNotFoundPage
      },{
          path: '/',
          component: HomePage,
