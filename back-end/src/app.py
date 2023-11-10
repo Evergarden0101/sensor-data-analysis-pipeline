@@ -101,11 +101,9 @@ def create_app(test_config=None):
             except werkzeug.exceptions.BadRequest:
                 return "Please sent a Json package!", 400
 
-            for label in labels:
-                if label["location_begin"] > label["location_end"]:
-                    return "Start time cannot be greater than end time!", 400
-                # remove_pred_label(DATABASE, label)
-                insert_label(DATABASE, label)
+            # remove_pred_label(DATABASE, labels)
+            insert_label(DATABASE, labels)
+            
             return "Successfuly inserted into Database", 200
         except Exception as e:
             print('Exception raised in confirming labels', e)
@@ -504,17 +502,32 @@ def create_app(test_config=None):
         try:
             # params = (patient_id, week, night_id, recorder)
             # query = "SELECT * from bite_records WHERE (patient_id=? AND week=? AND night_id=? AND labelId=?)"
-
+            # patient model
             with sql.connect(DATABASE) as con:
                 print("DB connected")
                 cur = con.cursor()
                 cur.execute(f"SELECT * FROM models WHERE patient_id={patient_id}")
                 model = cur.fetchall()
-                xgbc = xgb.XGBClassifier()
-                xgbc.load_model(str(model[0][-1]))
-                patient_accuracy = 0
-                study_accuracy = 0
-                
+                cur.close()
+            
+            # TODO: update accuracy
+            xgbc = xgb.XGBClassifier()
+            xgbc.load_model(str(model[0][-1]))
+            patient_accuracy = run_confirmation(DATABASE, xgbc, patient_id, week, night_id, recorder)
+            
+            with sql.connect(DATABASE) as con:
+                print("DB connected")
+                cur = con.cursor()
+                cur.execute(f"SELECT * FROM models WHERE patient_id={-1}")
+                model = cur.fetchall()
+                cur.close()
+            xgbc = xgb.XGBClassifier()
+            xgbc.load_model(str(model[0][-1]))
+            study_accuracy = run_confirmation(DATABASE, xgbc, patient_id, week, night_id, recorder)
+            
+            
+            # TODO: study model
+            
             return jsonify(patient_accuracy=patient_accuracy, study_accuracy=study_accuracy), 200
         except Exception as e:
             print('Exception raised in rerunning model')
@@ -549,20 +562,28 @@ def create_app(test_config=None):
     @app.route('/event-trend', methods=["GET"])
     def get_event_trend():
         try:
-            # patient_id = request.json
-            patient_id = [1,2]
+            patient_id = request.json["patient_id"]
+            # patient_id = [1,2]
+            # print("patient id: ",patient_id)
             patient_id = tuple(patient_id)
+            print("tuple patient id: ",patient_id)
            
             with sql.connect(DATABASE) as con:
                 print("DB connected")
                 cur = con.cursor()
-                cur.execute(f"SELECT patient_id, day_no, SUM(count) AS count FROM week_summary WHERE patient_id IN {patient_id} GROUP BY day_no, patient_id ORDER BY patient_id, day_no")
+                if(len(patient_id)>1):
+                    cur.execute(f"SELECT patient_id, day_no, SUM(count) AS count FROM week_summary WHERE patient_id IN {patient_id} GROUP BY day_no, patient_id ORDER BY patient_id, day_no")
+                elif(len(patient_id)==1):
+                    cur.execute(f"SELECT patient_id, day_no, SUM(count) AS count FROM week_summary WHERE patient_id={patient_id[0]} GROUP BY day_no, patient_id ORDER BY patient_id, day_no")
                 data = cur.fetchall()
                 print(data)
                 columns = ['patient_id', 'day', 'count']
                 df = pd.DataFrame(data, columns=columns)
                 print(df)
-                cur.execute(f"SELECT MIN(day_no) AS min_day, MAX(day_no) AS max_day FROM week_summary WHERE patient_id IN {patient_id}")
+                if(len(patient_id)>1):
+                    cur.execute(f"SELECT MIN(day_no) AS min_day, MAX(day_no) AS max_day FROM week_summary WHERE patient_id IN {patient_id}")
+                elif(len(patient_id)==1):
+                    cur.execute(f"SELECT MIN(day_no) AS min_day, MAX(day_no) AS max_day FROM week_summary WHERE patient_id={patient_id[0]}")
                 day_info = cur.fetchone()
                 print(day_info)
                 day_list = [day_info[0],day_info[1]]
