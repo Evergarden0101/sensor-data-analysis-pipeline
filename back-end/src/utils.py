@@ -109,11 +109,27 @@ def remove_pred_label(DATABASE, label):
 
 
 """Insert label for a specific patient in the Database"""
-def insert_label(DATABASE, label):
+def insert_label(DATABASE, labels):
+    original_sampling = get_original_sampling(DATABASE)
+    cur_cycle = -1
+    count = 0
     with sql.connect(DATABASE) as con:
         cur = con.cursor()
-        cur.execute(f"INSERT INTO confirmed_labels (patient_id, week, night_id, recorder, label_id, location_begin, location_end, start_index, end_index, start_time, end_time) VALUES {label['patient_id'],label['week'],label['night_id'],label['recorder'],label['label_id'],label['location_begin'],label['location_end'],label['start_index'],label['end_index'],label['Start'],label['End']}")
-
+        for label in labels:
+                # if label["location_begin"] > label["location_end"]:
+                #     return "Start time cannot be greater than end time!", 400
+            cur.execute(f"INSERT INTO confirmed_labels (patient_id, week, night_id, recorder, label_id, location_begin, location_end, start_index, end_index, start_time, end_time) VALUES {label['patient_id'],label['week'],label['night_id'],label['recorder'],label['label_id'],label['location_begin'],label['location_end'],label['start_index'],label['end_index'],label['Start'],label['End']}")
+            cycle = np.floor(label['location_begin'] / 90 / 60 / original_sampling)
+            if  (cur_cycle == -1):
+                cur_cycle = cycle
+                count = 1
+            elif cycle == cur_cycle:
+                count += 1
+            elif (cycle != cur_cycle):
+                cur.execute(f"UPDATE week_summary SET count = {count} WHERE (patient_id={label['patient_id']} AND week={label['week']} AND night_id={label['night_id']} AND cycle={cur_cycle})")
+                count = 1
+                cur_cycle = cycle
+        
 
 def generate_model(DATABASE, patient_id, week, night_id, recorder):
     print("generate_model")
@@ -172,7 +188,6 @@ def generate_model(DATABASE, patient_id, week, night_id, recorder):
             gen_model = True
         cur.close()
 
-    model.save_model(get_data_path(DATABASE) + f"p{patient_id}_model.json")
     labels = predict_events(DATABASE, model, patient_id, week, night_id, recorder)
     if (not labels) or (len(labels) < 1):
         with sql.connect(DATABASE) as con:
@@ -321,6 +336,70 @@ def run_prediction(DATABASE, patient_id, week, night_id, recorder):
             print('Exception raised in run_prediction function')
             print(e)
             return f"{e}", 500
+
+
+def run_confirmation(DATABASE, model, patient_id, week, night_id, recorder):
+    original_sampling = get_original_sampling(DATABASE)
+    selected_sampling = get_selected_sampling(DATABASE)
+    with sql.connect(DATABASE) as con:
+        print("DB connected")
+        cur = con.cursor()
+        cur.execute(f"SELECT * FROM confirmed_labels WHERE patient_id={patient_id} AND week={week} AND night_id={night_id} AND recorder={recorder}")
+        labels = cur.fetchall()
+        cur.close()
+    print(labels)
+    data = open_brux_csv(DATABASE, patient_id, week, night_id, recorder)
+    bites = np.zeros(data.shape[0], dtype=int)
+    print("label bites")
+    for label in labels:
+        for i in range(label[6], label[7]):
+            bites[i] = 1
+    print("add bites")
+    MR = get_column_array(get_column_data_from_df(data, "MR"))
+    ML = get_column_array(get_column_data_from_df(data, "ML"))
+    MR = resample_signal(signal=MR, sampling_rate=original_sampling, SAMPLING_RATE=selected_sampling)
+    ML = resample_signal(signal=ML, sampling_rate=original_sampling, SAMPLING_RATE=selected_sampling)
+
+    # df = resample_whole_df(data,original_sampling,selected_sampling)
+    bites = resample_signal(signal=bites, sampling_rate=original_sampling, SAMPLING_RATE=selected_sampling)
+    # df.loc[:,'Bites'] = bites
+    df = pd.DataFrame({'MR': MR, 'ML': ML, 'Bites': bites})
+
+    x = df.iloc[:,:2].copy()
+    y = df.iloc[:,-1].copy()
+    x = np.array(x.values.tolist())
+    y = np.array(y.values.tolist())
+
+    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.25) # Split data for test and training
+    SC = StandardScaler()
+    x_train = pd.DataFrame(SC.fit_transform(x_train))
+    x_test = pd.DataFrame(SC.transform(x_test))
+
+    print("fit model")
+    model.fit(x_train, y_train)
+
+    print("save model")
+    with sql.connect(DATABASE) as con:
+        cur = con.cursor()
+        cur.execute(f"INSERT INTO models (patient_id, model_path, validation_file_path) VALUES {patient_id, get_data_path(DATABASE) + f'p{patient_id}_model.json', get_data_path(DATABASE) + f'p{patient_id}_wk{week}/{night_id}{recorder}Fnorm.csv'}")
+        model.save_model(get_data_path(DATABASE) + f"p{patient_id}_model.json")
+        cur.close()
+    return get_model_accuracy(DATABASE, model, patient_id, week, night_id, recorder)
+
+
+def get_model_accuracy(DATABASE, model, patient_id, week, night_id, recorder):
+    with sql.connect(DATABASE) as con:
+        cur = con.cursor()
+        cur.execute(f"SELECT validation_file_path FROM models WHERE patient_id={patient_id}")
+        path = cur.fetchone()[0]
+        cur.close()
+    print(path)
+    file_path = get_data_path(DATABASE) + f'p{patient_id}_wk{week}/{night_id}{recorder}Fnorm.csv'
+    if file_path == path:
+        return 0;
+    data = open_brux_csv(DATABASE, patient_id, week, night_id, recorder)
+    
+    return 0
 
 
 def return_img_stream(img_path):
