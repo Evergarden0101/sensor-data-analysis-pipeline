@@ -603,8 +603,10 @@ def create_app(test_config=None):
                     # print(daily_df)
                     # Interpolate the 'count' column
                     day_lists[i] = daily_df['count']
-                    day_lists[i] = day_lists[i].interpolate(method='spline', order=1).astype(int)
-                    
+                    try:
+                        day_lists[i] = day_lists[i].interpolate(method='spline', order=1).astype(int)
+                    except:
+                        day_lists[i] = day_lists[i].interpolate(method='linear', limit_direction='both').astype(int)                    
             day_lists = day_lists.set_index('day')
             print(day_lists)
             return day_lists.to_json(orient="records"), 200
