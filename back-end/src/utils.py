@@ -118,6 +118,8 @@ def insert_label(DATABASE, labels):
         for label in labels:
                 # if label["location_begin"] > label["location_end"]:
                 #     return "Start time cannot be greater than end time!", 400
+            if(not label['Confirm']):
+                continue
             cur.execute(f"INSERT INTO confirmed_labels (patient_id, week, night_id, recorder, label_id, location_begin, location_end, start_index, end_index, start_time, end_time) VALUES {label['patient_id'],label['week'],label['night_id'],label['recorder'],label['label_id'],label['location_begin'],label['location_end'],label['start_index'],label['end_index'],label['Start'],label['End']}")
             cycle = np.floor(label['location_begin'] / 90 / 60 / original_sampling)
             if  (cur_cycle == -1):
@@ -126,7 +128,11 @@ def insert_label(DATABASE, labels):
             elif cycle == cur_cycle:
                 count += 1
             elif (cycle != cur_cycle):
-                cur.execute(f"UPDATE week_summary SET count = {count} WHERE (patient_id={label['patient_id']} AND week={label['week']} AND night_id={label['night_id']} AND cycle={cur_cycle})")
+                cur.execute(f"SELECT type from week_summary WHERE (patient_id={label['patient_id']} AND week={label['week']} AND night_id={label['night_id']} AND cycle={cur_cycle})")
+                type_ind = cur.fetchone()[0]
+                if type_ind != 0:
+                    type_ind = count
+                cur.execute(f"UPDATE week_summary SET count = {count}, type = {type_ind} WHERE (patient_id={label['patient_id']} AND week={label['week']} AND night_id={label['night_id']} AND cycle={cur_cycle})")
                 count = 1
                 cur_cycle = cycle
         
@@ -223,7 +229,7 @@ def predict_events(DATABASE, model, patient_id, week, night_id, recorder):
     df = pd.DataFrame({'MR': MR, 'ML': ML})
 
     index = resample_signal(signal=index, sampling_rate=original_sampling, SAMPLING_RATE=selected_sampling)
-    # print(index[10])
+    print(index[:10])
 
     x = df.iloc[:,:2].copy()
     x_p = np.array(x.values.tolist())
@@ -242,42 +248,52 @@ def predict_events(DATABASE, model, patient_id, week, night_id, recorder):
             cnt = 1;
             for j in range(1, 5*selected_sampling):
                 if(i+j >= len(y_p) or ((index[i+j] - index[i])>5*selected_sampling)):
+                    # print("dur:", cnt/selected_sampling)
                     break;
                 y_sum += y_p[i+j];
                 cnt += 1;
             if y_sum/cnt >= 0.5:
-                if(loc_start == 0 or loc_end-loc_start > 30*selected_sampling):
+                if(loc_start == 0 or loc_end-loc_start > 60*selected_sampling):
                     event += 1
                     loc_start = i
                     loc_end = i+cnt
                     location_begin = index[i]
-                    location_end = index[loc_end]
+                    location_end = index[loc_end-1]
                     params = (patient_id, week, night_id, recorder, event, location_begin, location_end, i, loc_end)
-                    print(params, ' ', location_begin,' ', location_end)
+                    print(params)
                     query = "INSERT INTO predicted_labels (patient_id, week, night_id, recorder, label_id, location_begin, location_end, start_index, end_index) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
                     cur.execute(query, params)
                     
                     cycle = np.floor(location_begin / 90 / 60 / original_sampling);
                     params = (patient_id, week, night_id, cycle)
-                    query = "SELECT count from week_summary WHERE (patient_id=? AND week=? AND night_id=? AND cycle=?)"
+                    query = "SELECT count,type from week_summary WHERE (patient_id=? AND week=? AND night_id=? AND cycle=?)"
                     cur.execute(query, params)
                     count = cur.fetchall()
                     if count:
-                        print(count[0][0])
-                        params = (count[0][0]+1, patient_id, week, night_id, cycle)
-                        query = "UPDATE week_summary SET count = ? WHERE (patient_id=? AND week=? AND night_id=? AND cycle=?)"
+                        # print(count[0][0])
+                        if cycle < cycle_num/2:
+                            type_ind = 0
+                        else:
+                            type_ind = count[0][1] + 1
+                        params = (count[0][0]+1, type_ind, patient_id, week, night_id, cycle)
+                        query = "UPDATE week_summary SET count = ?, type = ? WHERE (patient_id=? AND week=? AND night_id=? AND cycle=?)"
                         cur.execute(query, params)
                     else:
-                        params = (patient_id, week, night_id, cycle, cycle_num, 1)
-                        query = "INSERT INTO week_summary (patient_id, week, night_id, cycle, max_cycle, count) VALUES (?, ?, ?, ?, ?, ?)"
+                        if cycle < cycle_num/2:
+                            type_ind = 0
+                        else:
+                            type_ind = 1
+                        params = (patient_id, week, night_id, cycle, cycle_num, 1, type_ind)
+                        query = "INSERT INTO week_summary (patient_id, week, night_id, cycle, max_cycle, count, type) VALUES (?, ?, ?, ?, ?, ?, ?)"
                         cur.execute(query, params)
-                    print("current end:", loc_end)
+                    print("current end idx:", location_end)
                 elif(y_p_mix[-1] == 10):
-                    params = (index[loc_end+cnt], loc_end+cnt, patient_id, week, night_id, recorder, event)
+                    loc_end += cnt
+                    params = (index[loc_end-1], loc_end, patient_id, week, night_id, recorder, event)
                     query = "UPDATE predicted_labels SET location_end = ?, end_index = ? WHERE (patient_id=? AND week=? AND night_id=? AND recorder=? AND label_id=?)"
                     cur.execute(query, params)
-                    loc_end += cnt
                     print("update end:", loc_end)
+                    print("update end idx:", index[loc_end])
                 y_p_mix.extend([10]*cnt);
             else:
                 loc_start = 0
