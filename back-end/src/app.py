@@ -573,14 +573,17 @@ def create_app(test_config=None):
                 print("DB connected")
                 cur = con.cursor()
                 if(len(patient_id)>1):
-                    cur.execute(f"SELECT patient_id, day_no, SUM(count) AS count FROM week_summary WHERE patient_id IN {patient_id} GROUP BY day_no, patient_id ORDER BY patient_id, day_no")
+                    cur.execute(f"SELECT patient_id, day_no, SUM(count) AS count, AVG(type) AS type FROM week_summary WHERE patient_id IN {patient_id} GROUP BY day_no, patient_id ORDER BY patient_id, day_no")
                 elif(len(patient_id)==1):
-                    cur.execute(f"SELECT patient_id, day_no, SUM(count) AS count FROM week_summary WHERE patient_id={patient_id[0]} GROUP BY day_no, patient_id ORDER BY patient_id, day_no")
+                    cur.execute(f"SELECT patient_id, day_no, SUM(count) AS count, AVG(type) AS type FROM week_summary WHERE patient_id={patient_id[0]} GROUP BY day_no, patient_id ORDER BY patient_id, day_no")
                 data = cur.fetchall()
-                print(data)
-                columns = ['patient_id', 'day', 'count']
+                # print(data)
+                columns = ['patient_id', 'day', 'count', 'type']
                 df = pd.DataFrame(data, columns=columns)
-                print(df)
+                # print(df)
+                df['type'] = df['type'].ge(df['count']/2).astype(int)
+                # print(df)
+                
                 if(len(patient_id)>1):
                     cur.execute(f"SELECT MIN(day_no) AS min_day, MAX(day_no) AS max_day FROM week_summary WHERE patient_id IN {patient_id}")
                 elif(len(patient_id)==1):
@@ -594,23 +597,44 @@ def create_app(test_config=None):
                 day_list['day'] = day_list['day'].interpolate(method='linear', limit_direction='both').astype(int)
                 # print(day_list.index)
                 day_lists = pd.DataFrame(day_list['day'],columns=['day'])
+                type_lists = pd.DataFrame(day_list['day'],columns=['day'])
                 # print(day_lists)
+                
                 for i in patient_id:
                     print(i)
+                    cur.execute(f"SELECT MIN(day_no) AS min_day, MAX(day_no) AS max_day FROM week_summary WHERE patient_id={i}")
+                    day_info = cur.fetchone()
+                    # print(day_info)
                     df_patient = df[df['patient_id']==i]
+                    if(len(df_patient)==0):
+                        day_lists[i] = 0
+                        continue
                     df_patient['date'] = day_list.index[df_patient['day']]
                     # print(df_patient)
                     daily_df = df_patient.set_index('date').resample('D').asfreq()
                     # print(daily_df)
                     # Interpolate the 'count' column
-                    day_lists[i] = daily_df['count']
+                    type_lists[i] = daily_df['type']
+                    type_lists[i] = type_lists[i].fillna(-1)
+                    
+                    # daily_df = daily_df.iloc[day_info[0]:day_info[1]+1]
+                    cnt = daily_df
+                    # print(cnt)
                     try:
-                        day_lists[i] = day_lists[i].interpolate(method='spline', order=1).astype(int)
+                        cnt['count'] = cnt['count'].interpolate(method='spline', order=1).astype(int)
                     except:
-                        day_lists[i] = day_lists[i].interpolate(method='linear', limit_direction='both').astype(int)                    
+                        cnt['count'] = cnt['count'].interpolate(method='linear', limit_direction='both').astype(int)
+                    day_lists[i] = cnt['count']                    
             day_lists = day_lists.set_index('day')
             print(day_lists)
-            return day_lists.to_json(orient="records"), 200
+            type_lists = type_lists.set_index('day')
+            print(type_lists)
+            result = {
+                #TODO: rename 5 min start and end id
+                "day_lists": day_lists.to_json(orient="records"),
+                "type_lists": type_lists.to_json(orient="records"),
+            }
+            return result, 200
         except Exception as e:
             print('Exception raised in getting event trend')
             print(e)
