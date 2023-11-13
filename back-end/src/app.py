@@ -1,6 +1,6 @@
 from flask import Flask, request, make_response, jsonify
 import werkzeug
-import os
+import os, json
 import sqlite3 as sql
 from database import db
 from flask_cors import CORS
@@ -562,7 +562,8 @@ def create_app(test_config=None):
     @app.route('/event-trend', methods=["GET"])
     def get_event_trend():
         try:
-            patient_id = request.json["patient_id"]
+            patient_id = json.loads(request.args.get('patient_id'))
+            print(f"patient_id: {patient_id}")
             # patient_id = [1,2]
             # print("patient id: ",patient_id)
             patient_id = tuple(patient_id)

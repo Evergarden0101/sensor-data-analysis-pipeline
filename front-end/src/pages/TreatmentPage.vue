@@ -24,27 +24,32 @@
         <el-col :span="2">
             Metrics with legend
         </el-col>
-        <el-col :span="9">
+        <el-col :span="5">
             <el-row>
                 <el-col :offset="4">
-                    <el-date-picker
-                        v-model="date"
-                        type="daterange"
-                        range-separator="To"
-                        start-placeholder="Start date"
-                        end-placeholder="End date"
-                        size="default"
-                        @change="updateHeatMaps()"
+                    <p><b>Select the desired weeks</b></p>
+                    <el-select
+                    v-model="selectedWeeks"
+                    multiple
+                    placeholder="Select"
+                    style="width: 240px"
+                    >
+                    <el-option
+                        v-for="week in weeks"
+                        :key="week.value"
+                        :label="week.label"
+                        :value="week.value"
                     />
+                    </el-select>
                 </el-col>
             </el-row>
             <el-row>
                 <el-col>
-                    <div id="currentPatientGlobalHeatMap" style="position: relative; height: 80vh; width: 68vh"></div>
+                    <div id="patientsLinePlot" style="position: relative; height: 80vh; width: 68vh"></div>
                 </el-col>
             </el-row>
         </el-col>
-        <el-col :span="2">
+        <el-col :span="4" :offset="2">
             Metrics
         </el-col>
     </el-row>
@@ -104,6 +109,7 @@
 import Stepper from '@/components/Stepper.vue';
 import * as echarts from 'echarts';
 import { ref } from 'vue';
+import axios from 'axios';
 
 export default {
     name: 'TreatmentPage',
@@ -114,7 +120,10 @@ export default {
     data(){
         return{
             showCohort: ref(false),
-            date: ref(''),
+            eventTrendData: [],
+            nightsNo: 0,
+            selectedWeeks: ref([]),
+            weeks: ref([]),
             patientsCheckBox: {
                 '1' : ref(false),
                 '2': ref(false)
@@ -124,11 +133,27 @@ export default {
             patientAccuracy: this.$store.state.patientAccuracy,
         }
     },
-    mounted() {
+    async mounted() {
+        await this.getEventTrendData();
+        await this.getWeeks();
         this.drawCurrentPatientHeatMap();
-        this.drawGlobalCurrentPatientHeatMap();    
+        this.drawPatientsLinePlot();    
     },
     methods: {
+        getWeeks(){
+            console.log("Getting the weeks")
+
+            let receivedWeeks = [{
+                value: 'Option1',
+                label: 'Option1',
+            },
+            {
+                value: 'Option2',
+                label: 'Option2',
+            }];
+
+            this.weeks = ref(receivedWeeks);
+        },
         updateHeatMaps(){
             console.log("Updating the heatmaps.")
         },
@@ -138,6 +163,90 @@ export default {
                 console.log("ciao")
                 this.drawCohortHeatMap();
             }
+        },
+        async getEventTrendData(){
+            const path = `http://127.0.0.1:5000/event-trend`
+            const headers = {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            };
+
+            let payload = {
+                            params: {
+                                patient_id: JSON.stringify([parseInt(this.$store.state.patientId)]),
+                            }
+                        };
+
+            console.log(payload);
+
+            await axios.get(path, payload, {headers})
+                .then((res) => {
+                    console.log(res.data)
+                    this.eventTrendData = res.data;
+                    this.nightsNo = res.data.length;
+
+                    
+
+                })
+                .catch(err=>{
+                    console.log(err)
+                })
+        },
+        drawPatientsLinePlot(){
+            var dom = document.getElementById("patientsLinePlot");
+            var myChart = echarts.init(dom, null, {
+                renderer: "sgv",
+                useDirtyRect: false
+            });
+            var option;
+
+            var series;
+
+            for (let i = 0; i < this.eventTrendData.length; i++) {
+                for (const key in this.eventTrendData[i]) {
+                    console.log(`${key}: ${user[key]}`);
+                    series.push({name: "Patient ..", type: 'line', stack: 'Total', data: []})
+                }
+            }
+
+
+            option = {
+                title: {
+                    text: 'Stacked Line'
+                },
+                tooltip: {
+                    trigger: 'axis'
+                },
+                legend: {
+                    data: ['Patient 1', 'Patient 2']
+                },
+                grid: {
+                    left: '3%',
+                    right: '4%',
+                    bottom: '3%',
+                    containLabel: true
+                },
+                toolbox: {
+                    feature: {
+                    saveAsImage: {}
+                    }
+                },
+                xAxis: {
+                    type: 'category',
+                    boundaryGap: false,
+                    text: "Day",
+                    data: [...Array(this.nightsNo).keys()],
+                },
+                yAxis: {
+                    type: 'value'
+                },
+                series: series
+            };
+
+            if (option && typeof option === "object") {
+                myChart.setOption(option);
+            }
+            window.addEventListener("resize", myChart.resize);
         },
         drawCurrentPatientHeatMap(){
             var dom = document.getElementById("currentPatientHeatMap");
