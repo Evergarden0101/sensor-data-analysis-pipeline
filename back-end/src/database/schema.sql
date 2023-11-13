@@ -43,6 +43,7 @@ CREATE TABLE week_summary(
   cycle INTEGER NOT NULL,
   max_cycle INTEGER NOT NULL,
   count INTEGER NOT NULL,
+  type INTEGER NOT NULL,
   day_no INTEGER
 );
 
