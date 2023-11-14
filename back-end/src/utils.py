@@ -352,10 +352,6 @@ def run_prediction(DATABASE, patient_id, week, night_id, recorder):
             return f"{e}", 500
 
 
-def custom_serializer(obj):
-    return obj.replace(r'\"', '"')
-
-
 def run_confirmation(DATABASE, model, patient_id, week, night_id, recorder):
     original_sampling = get_original_sampling(DATABASE)
     selected_sampling = get_selected_sampling(DATABASE)
