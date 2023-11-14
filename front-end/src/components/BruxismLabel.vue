@@ -138,11 +138,11 @@
                             <el-divider style="margin-top: 10px;margin-bottom:15px"/>
                         </el-row>
                         <!-- <el-text class="mx-1" type="warning" style="text-align:center;display:block;margin:auto" v-show="loadingLabel">Loading...</el-text> -->
-                        
+                        <el-text class="mx-1" type="warning" style="text-align:center;display:block;margin:auto" v-show="noMoreLabel">End of Events</el-text>
                     </div>
                 </template>
             </el-skeleton>
-            <el-text class="mx-1" type="warning" style="text-align:center;display:block;margin:auto" v-show="noMoreLabel">End of Events</el-text>
+            
             <!-- <el-row v-for="(item,index) in [Labels[currentPage - 1]]" :key="index" > -->
             
             <!-- <el-row>
@@ -394,7 +394,7 @@ export default {
             ]
         },
     },
-    // TODO: loading status
+    // TODO: loading status and sequence
     beforeMount() {
         this.$store.commit('getNightImg','');
         this.$store.commit('getWeekImg', '');

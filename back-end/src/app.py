@@ -12,7 +12,7 @@ import pandas as pd
 # from settings import *
 import os, math
 from datetime import datetime
-
+import json
 
 """Example of possible structure for posting the label data"""
 def create_app(test_config=None):
@@ -109,7 +109,7 @@ def create_app(test_config=None):
             print('Exception raised in confirming labels', e)
             return f"{e}", 400
 
-    #TODO: possibly get labels from specific patient on a specific week?
+
     @app.route("/label-brux/", methods=["GET"], defaults={'patient_id': None})
     @app.route("/label-brux/<int:patient_id>/<string:week>/<string:night_id>/<string:recorder>", methods=["GET"])
     def get_label_brux(patient_id, week, night_id, recorder):
@@ -557,8 +557,7 @@ def create_app(test_config=None):
             print(e)
             return f"{e}", 500
 
-    
-    # TODO: payload input list of patient_id
+
     @app.route('/event-trend', methods=["GET"])
     def get_event_trend():
         try:
@@ -602,17 +601,18 @@ def create_app(test_config=None):
                 
                 for i in patient_id:
                     print(i)
-                    cur.execute(f"SELECT MIN(day_no) AS min_day, MAX(day_no) AS max_day FROM week_summary WHERE patient_id={i}")
-                    day_info = cur.fetchone()
+                    # cur.execute(f"SELECT MIN(day_no) AS min_day, MAX(day_no) AS max_day FROM week_summary WHERE patient_id={i}")
+                    # day_info = cur.fetchone()
                     # print(day_info)
                     df_patient = df[df['patient_id']==i]
-                    if(len(df_patient)==0):
+                    # print(df_patient)
+                    if(df_patient.empty or df_patient.shape[0]==0):
                         day_lists[i] = 0
                         continue
                     df_patient['date'] = day_list.index[df_patient['day']]
                     # print(df_patient)
                     daily_df = df_patient.set_index('date').resample('D').asfreq()
-                    # print(daily_df)
+                    print(daily_df)
                     # Interpolate the 'count' column
                     type_lists[i] = daily_df['type']
                     type_lists[i] = type_lists[i].fillna(-1)
@@ -626,15 +626,16 @@ def create_app(test_config=None):
                         cnt['count'] = cnt['count'].interpolate(method='linear', limit_direction='both').astype(int)
                     day_lists[i] = cnt['count']                    
             day_lists = day_lists.set_index('day')
+            day_lists.columns = pd.to_numeric(day_lists.columns)
             print(day_lists)
             type_lists = type_lists.set_index('day')
+            type_lists.columns = pd.to_numeric(type_lists.columns)
             print(type_lists)
             result = {
-                #TODO: rename 5 min start and end id
-                "day_lists": day_lists.to_json(orient="records"),
-                "type_lists": type_lists.to_json(orient="records"),
+                "day_lists": json.loads(day_lists.to_json(orient="records")),
+                "type_lists": json.loads(type_lists.to_json(orient="records")),
             }
-            return result, 200
+            return json.dumps(result,indent=4), 200
         except Exception as e:
             print('Exception raised in getting event trend')
             print(e)
