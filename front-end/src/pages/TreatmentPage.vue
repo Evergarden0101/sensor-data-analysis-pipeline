@@ -173,7 +173,7 @@ export default {
 
             let payload = {
                             params: {
-                                patient_id: JSON.stringify([parseInt(this.$store.state.patientId)]),
+                                patient_id: JSON.stringify([1, parseInt(this.$store.state.patientId)]),
                             }
                         };
 
@@ -182,8 +182,11 @@ export default {
             await axios.get(path, payload, {headers})
                 .then((res) => {
                     console.log(res.data)
-                    this.eventTrendData = res.data;
-                    this.nightsNo = res.data.length;
+                    this.eventTrendData = res.data.day_lists;
+
+                    this.eventTrendData = JSON.parse(this.eventTrendData.replace('\\', ''));
+
+                    this.nightsNo = this.eventTrendData.length;
 
                     
 
@@ -200,13 +203,34 @@ export default {
             });
             var option;
 
-            var series;
-
+            let series = [];
+            let exist = false;
             for (let i = 0; i < this.eventTrendData.length; i++) {
                 for (const key in this.eventTrendData[i]) {
-                    console.log(`${key}: ${user[key]}`);
-                    series.push({name: "Patient ..", type: 'line', stack: 'Total', data: []})
+                    for (let j = 0; j < series.length; j++) {
+                        if(series[j].name === "Patient " + key){
+                            series[j].data.push(this.eventTrendData[i][key])
+                            exist = true;
+                        }
+                    }
+                    
+                    if (exist === false){
+                        series.push({name: "Patient " + key, 
+                                    type: 'line',
+                                    stack: 'Total',
+                                    data: [this.eventTrendData[i][key]]
+                            
+                                    })
+                        exist = false;
+                    }
                 }
+            }
+
+            let legend = [];
+
+            for (let i=0; i<series.length; i++){
+                legend.push(series[i].name)
+
             }
 
 
@@ -218,7 +242,7 @@ export default {
                     trigger: 'axis'
                 },
                 legend: {
-                    data: ['Patient 1', 'Patient 2']
+                    data: legend
                 },
                 grid: {
                     left: '3%',
@@ -234,11 +258,12 @@ export default {
                 xAxis: {
                     type: 'category',
                     boundaryGap: false,
-                    text: "Day",
+                    name: "Day",
                     data: [...Array(this.nightsNo).keys()],
                 },
                 yAxis: {
-                    type: 'value'
+                    type: 'value',
+                    name: 'Events'
                 },
                 series: series
             };
