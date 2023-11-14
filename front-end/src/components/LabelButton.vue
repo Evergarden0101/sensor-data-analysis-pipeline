@@ -13,7 +13,7 @@ export default{
         }
     },
     methods:  {
-        // TODO: rurun model
+        // TODO: rurun model, refresh image and plots and heatmap
         postLabel(){
             this.load = true;
             const path = `http://127.0.0.1:5000/rerun-model/${this.$store.state.patientId}/${this.$store.state.week}/${this.$store.state.nightId}/${this.$store.state.recorder}`;

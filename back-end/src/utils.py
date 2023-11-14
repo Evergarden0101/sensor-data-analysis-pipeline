@@ -247,7 +247,7 @@ def predict_events(DATABASE, model, patient_id, week, night_id, recorder):
             y_sum = y_p[i];
             cnt = 1;
             for j in range(1, 5*selected_sampling):
-                if(i+j >= len(y_p) or ((index[i+j] - index[i])>5*selected_sampling)):
+                if(i+j >= len(y_p) or ((index[i+j] - index[i])>5*original_sampling)):
                     # print("dur:", cnt/selected_sampling)
                     break;
                 y_sum += y_p[i+j];
@@ -258,7 +258,7 @@ def predict_events(DATABASE, model, patient_id, week, night_id, recorder):
                     loc_start = i
                     loc_end = i+cnt
                     location_begin = index[i]
-                    location_end = index[loc_end-1]
+                    location_end = index[loc_end]
                     params = (patient_id, week, night_id, recorder, event, location_begin, location_end, i, loc_end)
                     print(params)
                     query = "INSERT INTO predicted_labels (patient_id, week, night_id, recorder, label_id, location_begin, location_end, start_index, end_index) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
@@ -289,7 +289,7 @@ def predict_events(DATABASE, model, patient_id, week, night_id, recorder):
                     print("current end idx:", location_end)
                 elif(y_p_mix[-1] == 10):
                     loc_end += cnt
-                    params = (index[loc_end-1], loc_end, patient_id, week, night_id, recorder, event)
+                    params = (index[loc_end], loc_end, patient_id, week, night_id, recorder, event)
                     query = "UPDATE predicted_labels SET location_end = ?, end_index = ? WHERE (patient_id=? AND week=? AND night_id=? AND recorder=? AND label_id=?)"
                     cur.execute(query, params)
                     print("update end:", loc_end)
@@ -307,8 +307,6 @@ def predict_events(DATABASE, model, patient_id, week, night_id, recorder):
     return labels
 
 
-
-"""TODO: check predictions, index should be continuous"""
 def run_prediction(DATABASE, patient_id, week, night_id, recorder):
     print("run_prediction")
     try:
@@ -1083,7 +1081,6 @@ def annotate_heatmap(im, data=None, valfmt="{x:.2f}",
 
 
 """Generate weekly summary image"""
-"""TODO: get len and data"""
 def generate_weekly_sum_img(DATABASE, img_local_path, patient_id, week):
     print("Generating weekly summary image")
     days = list(range(1, 8))
