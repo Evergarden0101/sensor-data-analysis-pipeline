@@ -45,7 +45,7 @@
             </el-row>
             <el-row>
                 <el-col>
-                    <div id="patientsLinePlot" style="position: relative; height: 80vh; width: 68vh"></div>
+                    <div id="patientsLinePlot" style="position: relative; height: 68vh; width: 88vh"></div>
                 </el-col>
             </el-row>
         </el-col>
@@ -121,6 +121,8 @@ export default {
         return{
             showCohort: ref(false),
             eventTrendData: [],
+            eventTrendDataType: [],
+            noPatients: 0,
             nightsNo: 0,
             selectedWeeks: ref([]),
             weeks: ref([]),
@@ -173,7 +175,8 @@ export default {
 
             let payload = {
                             params: {
-                                patient_id: JSON.stringify([1, parseInt(this.$store.state.patientId)]),
+                                //patient_id: JSON.stringify([parseInt(this.$store.state.patientId)]),
+                                patient_id: JSON.stringify([1, 2]),
                             }
                         };
 
@@ -184,7 +187,7 @@ export default {
                     console.log(res.data)
                     this.eventTrendData = res.data.day_lists;
 
-                    this.eventTrendData = JSON.parse(this.eventTrendData.replace('\\', ''));
+                    this.eventTrendDataType = res.data.type_lists;
 
                     this.nightsNo = this.eventTrendData.length;
 
@@ -195,6 +198,19 @@ export default {
                     console.log(err)
                 })
         },
+        getTypeText(type){
+            let text = "";
+            if(type === -1){
+                text = "No event"
+            }
+            if (type === 0) {
+                text = "Night owl"
+            }
+            if (type === 1) {
+                text = "Early Bird"
+            }
+            return text;
+        },
         drawPatientsLinePlot(){
             var dom = document.getElementById("patientsLinePlot");
             var myChart = echarts.init(dom, null, {
@@ -203,13 +219,18 @@ export default {
             });
             var option;
 
+
             let series = [];
+            let texts = [];
             let exist = false;
             for (let i = 0; i < this.eventTrendData.length; i++) {
                 for (const key in this.eventTrendData[i]) {
+                    let type = this.eventTrendDataType[i][key];
+                    let text = this.getTypeText(type);
                     for (let j = 0; j < series.length; j++) {
                         if(series[j].name === "Patient " + key){
                             series[j].data.push(this.eventTrendData[i][key])
+                            series[j].texts.push(text);
                             exist = true;
                         }
                     }
@@ -218,13 +239,14 @@ export default {
                         series.push({name: "Patient " + key, 
                                     type: 'line',
                                     stack: 'Total',
-                                    data: [this.eventTrendData[i][key]]
-                            
+                                    data: [this.eventTrendData[i][key]],
+                                    texts: [text]
                                     })
                         exist = false;
                     }
                 }
             }
+            this.noPatients = series.length;
 
             let legend = [];
 
@@ -233,16 +255,25 @@ export default {
 
             }
 
+            var callback = (args) => {
+                return args.marker + " <b>" + args.seriesName + "</b>: " + args.value + " events <br />" + series[args.seriesIndex].texts[args.dataIndex]
+            }
+
 
             option = {
                 title: {
-                    text: 'Stacked Line'
+                    text: 'Interpolated events trend over days',
+                    textAlign: 'left'
                 },
                 tooltip: {
-                    trigger: 'axis'
+                    trigger: 'item',
+                    formatter: callback,
+                    axisPointer: 'link'
                 },
                 legend: {
-                    data: legend
+                    data: legend,
+                    orient: 'vertical',
+                    align: 'right'
                 },
                 grid: {
                     left: '3%',
