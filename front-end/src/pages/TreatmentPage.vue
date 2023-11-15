@@ -176,7 +176,7 @@ export default {
             let payload = {
                             params: {
                                 //patient_id: JSON.stringify([parseInt(this.$store.state.patientId)]),
-                                patient_id: JSON.stringify([1, 2]),
+                                patient_id: JSON.stringify([1, 2, 3]),
                             }
                         };
 
@@ -221,7 +221,6 @@ export default {
 
 
             let series = [];
-            let texts = [];
             let exist = false;
             for (let i = 0; i < this.eventTrendData.length; i++) {
                 for (const key in this.eventTrendData[i]) {
@@ -238,7 +237,6 @@ export default {
                     if (exist === false){
                         series.push({name: "Patient " + key, 
                                     type: 'line',
-                                    stack: 'Total',
                                     data: [this.eventTrendData[i][key]],
                                     texts: [text]
                                     })
