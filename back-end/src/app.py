@@ -13,6 +13,7 @@ import pandas as pd
 import os, math
 from datetime import datetime
 import json
+import xgboost as xgb
 
 """Example of possible structure for posting the label data"""
 def create_app(test_config=None):
@@ -90,7 +91,7 @@ def create_app(test_config=None):
             "duration": int
         }
     """
-    # TODO: remove predicted label
+    # TODO: update predicted label
     @app.route("/label-brux", methods=["POST"])
     @app.errorhandler(werkzeug.exceptions.BadRequest)
     def post_label_brux():
@@ -100,7 +101,8 @@ def create_app(test_config=None):
                 print(labels)
             except werkzeug.exceptions.BadRequest:
                 return "Please sent a Json package!", 400
-
+            
+            # TODO: update predicted label
             # remove_pred_label(DATABASE, labels)
             insert_label(DATABASE, labels)
             
@@ -513,7 +515,8 @@ def create_app(test_config=None):
             # TODO: update accuracy
             xgbc = xgb.XGBClassifier()
             xgbc.load_model(str(model[0][-1]))
-            patient_accuracy = run_confirmation(DATABASE, xgbc, patient_id, week, night_id, recorder)
+            # patient_accuracy = run_confirmation(DATABASE, str(model[0][-1]), patient_id, week, night_id, recorder, False)
+            patient_accuracy = get_model_accuracy(DATABASE, xgbc, patient_id, week, night_id, recorder, 1)
             
             with sql.connect(DATABASE) as con:
                 print("DB connected")
@@ -521,9 +524,10 @@ def create_app(test_config=None):
                 cur.execute(f"SELECT * FROM models WHERE patient_id={-1}")
                 model = cur.fetchall()
                 cur.close()
+            # study_accuracy = run_confirmation(DATABASE, str(model[0][-1]), patient_id, week, night_id, recorder, True)
             xgbc = xgb.XGBClassifier()
             xgbc.load_model(str(model[0][-1]))
-            study_accuracy = run_confirmation(DATABASE, xgbc, patient_id, week, night_id, recorder)
+            study_accuracy = get_model_accuracy(DATABASE, xgbc, patient_id, week, night_id, recorder, -1)
             
             
             # TODO: study model

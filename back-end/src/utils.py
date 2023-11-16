@@ -352,13 +352,13 @@ def run_prediction(DATABASE, patient_id, week, night_id, recorder):
             return f"{e}", 500
 
 
-def run_confirmation(DATABASE, model, patient_id, week, night_id, recorder):
+def run_confirmation(DATABASE, model_path, patient_id, week, night_id, recorder, study):
     original_sampling = get_original_sampling(DATABASE)
     selected_sampling = get_selected_sampling(DATABASE)
     with sql.connect(DATABASE) as con:
         print("DB connected")
         cur = con.cursor()
-        cur.execute(f"SELECT * FROM confirmed_labels WHERE patient_id={patient_id} AND week={week} AND night_id={night_id} AND recorder={recorder}")
+        cur.execute(f"SELECT * FROM confirmed_labels WHERE patient_id={patient_id} AND week={week} AND night_id={night_id}")
         labels = cur.fetchall()
         cur.close()
     print(labels)
@@ -369,6 +369,9 @@ def run_confirmation(DATABASE, model, patient_id, week, night_id, recorder):
         for i in range(label[6], label[7]):
             bites[i] = 1
     print("add bites")
+    data['Bites'] = bites
+    data.to_csv(get_data_path(DATABASE) + f"p{patient_id}_wk{week}/{night_id}{recorder}Fnorm.csv", encoding='utf-8', index=False)
+    
     MR = get_column_array(get_column_data_from_df(data, "MR"))
     ML = get_column_array(get_column_data_from_df(data, "ML"))
     MR = resample_signal(signal=MR, sampling_rate=original_sampling, SAMPLING_RATE=selected_sampling)
@@ -380,7 +383,7 @@ def run_confirmation(DATABASE, model, patient_id, week, night_id, recorder):
     df = pd.DataFrame({'MR': MR, 'ML': ML, 'Bites': bites})
 
     x = df.iloc[:,:2].copy()
-    y = df.iloc[:,-1].copy()
+    y = df.iloc[:,'Bites'].copy()
     x = np.array(x.values.tolist())
     y = np.array(y.values.tolist())
 
@@ -390,30 +393,57 @@ def run_confirmation(DATABASE, model, patient_id, week, night_id, recorder):
     x_test = pd.DataFrame(SC.transform(x_test))
 
     print("fit model")
-    model.fit(x_train, y_train)
+    model = xgb.XGBClassifier()
+    model.fit(x_train, y_train, xgb_model = model_path)
 
     print("save model")
+    if study:
+        p = -1
+        name = f"general_model.json"
+    else:
+        p = patient_id
+        name = f"p{patient_id}_model.json"
+    
     with sql.connect(DATABASE) as con:
         cur = con.cursor()
-        cur.execute(f"INSERT INTO models (patient_id, model_path, validation_file_path) VALUES {patient_id, get_data_path(DATABASE) + f'p{patient_id}_model.json', get_data_path(DATABASE) + f'p{patient_id}_wk{week}/{night_id}{recorder}Fnorm.csv'}")
-        model.save_model(get_data_path(DATABASE) + f"p{patient_id}_model.json")
+        cur.execute(f"INSERT INTO models (patient_id, model_path, validation_file_path) VALUES {p, get_data_path(DATABASE) + f'p{patient_id}_model.json', get_data_path(DATABASE) + f'p{patient_id}_wk{week}/{night_id}{recorder}Fnorm.csv'}")
+        model.save_model(get_data_path(DATABASE) + name)
         cur.close()
-    return get_model_accuracy(DATABASE, model, patient_id, week, night_id, recorder)
+    return get_model_accuracy(DATABASE, model, patient_id, week, night_id, recorder, p)
 
 
-def get_model_accuracy(DATABASE, model, patient_id, week, night_id, recorder):
+def get_model_accuracy(DATABASE, model, patient_id, week, night_id, recorder, p):
+    original_sampling = get_original_sampling(DATABASE)
+    selected_sampling = get_selected_sampling(DATABASE)
     with sql.connect(DATABASE) as con:
         cur = con.cursor()
-        cur.execute(f"SELECT validation_file_path FROM models WHERE patient_id={patient_id}")
+        cur.execute(f"SELECT validation_file_path FROM models WHERE patient_id={p}")
         path = cur.fetchone()[0]
         cur.close()
     print(path)
     file_path = get_data_path(DATABASE) + f'p{patient_id}_wk{week}/{night_id}{recorder}Fnorm.csv'
-    if file_path == path:
-        return 0;
-    data = open_brux_csv(DATABASE, patient_id, week, night_id, recorder)
-    
-    return 0
+    # if file_path == path:
+    #     return 0;
+    data = pd.read_csv(path)
+    # patient_id = re.search('/p(.*?)_', path).group(1)
+    # night_id = re.search("/[0-9]+", path).group(0)
+    # recorder = re.search('.(?=F)', path).group(0)
+    # week = re.search('wk(.*)/', path).group(1)
+    # print(patient_id, week, night_id, recorder)
+    MR = get_column_array(get_column_data_from_df(data, "MR"))
+    ML = get_column_array(get_column_data_from_df(data, "ML"))
+    Bites = get_column_array(get_column_data_from_df(data, "Bites"))
+    MR = resample_signal(signal=MR, sampling_rate=original_sampling, SAMPLING_RATE=selected_sampling)
+    ML = resample_signal(signal=ML, sampling_rate=original_sampling, SAMPLING_RATE=selected_sampling)
+    Bites = resample_signal(signal=Bites, sampling_rate=original_sampling, SAMPLING_RATE=selected_sampling)
+    df = pd.DataFrame({'MR': MR, 'ML': ML, 'Bites': Bites})
+    x = df.iloc[:,:2].copy()
+    y = df.iloc[:,-1].copy()
+    x = np.array(x.values.tolist())
+    y = np.array(y.values.tolist())
+    print("validation")
+    accuracies = cross_val_score(estimator = model, X = x, y = y, cv = 10)
+    return accuracies.mean()
 
 
 def return_img_stream(img_path):
