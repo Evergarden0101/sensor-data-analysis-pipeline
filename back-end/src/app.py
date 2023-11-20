@@ -13,6 +13,7 @@ import pandas as pd
 import os, math
 from datetime import datetime
 import json
+import xgboost as xgb
 
 """Example of possible structure for posting the label data"""
 def create_app(test_config=None):
@@ -90,7 +91,7 @@ def create_app(test_config=None):
             "duration": int
         }
     """
-    # TODO: remove predicted label
+    # TODO: update predicted label
     @app.route("/label-brux", methods=["POST"])
     @app.errorhandler(werkzeug.exceptions.BadRequest)
     def post_label_brux():
@@ -100,7 +101,8 @@ def create_app(test_config=None):
                 print(labels)
             except werkzeug.exceptions.BadRequest:
                 return "Please sent a Json package!", 400
-
+            
+            # TODO: update predicted label
             # remove_pred_label(DATABASE, labels)
             insert_label(DATABASE, labels)
             
@@ -511,22 +513,22 @@ def create_app(test_config=None):
                 cur.close()
             
             # TODO: update accuracy
-            xgbc = xgb.XGBClassifier()
-            xgbc.load_model(str(model[0][-1]))
-            patient_accuracy = run_confirmation(DATABASE, xgbc, patient_id, week, night_id, recorder)
+            patient_accuracy = run_confirmation(DATABASE, str(model[0][-1]), patient_id, week, night_id, recorder, False)
+            # xgbc = xgb.XGBClassifier()
+            # xgbc.load_model(str(model[0][-1]))
+            # patient_accuracy = get_model_accuracy(DATABASE, xgbc, patient_id, week, night_id, recorder, 1)
             
+            # TODO: study model
             with sql.connect(DATABASE) as con:
                 print("DB connected")
                 cur = con.cursor()
                 cur.execute(f"SELECT * FROM models WHERE patient_id={-1}")
                 model = cur.fetchall()
                 cur.close()
-            xgbc = xgb.XGBClassifier()
-            xgbc.load_model(str(model[0][-1]))
-            study_accuracy = run_confirmation(DATABASE, xgbc, patient_id, week, night_id, recorder)
-            
-            
-            # TODO: study model
+            study_accuracy = run_confirmation(DATABASE, str(model[0][-1]), patient_id, week, night_id, recorder, True)
+            # xgbc = xgb.XGBClassifier()
+            # xgbc.load_model(str(model[0][-1]))
+            # study_accuracy = get_model_accuracy(DATABASE, xgbc, patient_id, week, night_id, recorder, -1)
             
             return jsonify(patient_accuracy=patient_accuracy, study_accuracy=study_accuracy), 200
         except Exception as e:
@@ -562,9 +564,8 @@ def create_app(test_config=None):
     def get_event_trend():
         try:
             patient_id = json.loads(request.args.get('patient_id'))
-            print(f"patient_id: {patient_id}")
-            # patient_id = [1,2]
-            # print("patient id: ",patient_id)
+            # patient_id = request.json["patient_id"]
+            # print(f"patient_id: {patient_id}")
             patient_id = tuple(patient_id)
             print("tuple patient id: ",patient_id)
            
@@ -572,15 +573,16 @@ def create_app(test_config=None):
                 print("DB connected")
                 cur = con.cursor()
                 if(len(patient_id)>1):
-                    cur.execute(f"SELECT patient_id, day_no, SUM(count) AS count, AVG(type) AS type FROM week_summary WHERE patient_id IN {patient_id} GROUP BY day_no, patient_id ORDER BY patient_id, day_no")
+                    cur.execute(f"SELECT patient_id, week, night_id, day_no, SUM(count) AS count, AVG(type) AS type FROM week_summary WHERE patient_id IN {patient_id} GROUP BY day_no, patient_id ORDER BY patient_id, day_no")
                 elif(len(patient_id)==1):
-                    cur.execute(f"SELECT patient_id, day_no, SUM(count) AS count, AVG(type) AS type FROM week_summary WHERE patient_id={patient_id[0]} GROUP BY day_no, patient_id ORDER BY patient_id, day_no")
+                    cur.execute(f"SELECT patient_id, week, night_id, day_no, SUM(count) AS count, AVG(type) AS type FROM week_summary WHERE patient_id={patient_id[0]} GROUP BY day_no, patient_id ORDER BY patient_id, day_no")
                 data = cur.fetchall()
                 # print(data)
-                columns = ['patient_id', 'day', 'count', 'type']
+                columns = ['patient_id', 'week', 'night', 'day', 'count', 'type']
                 df = pd.DataFrame(data, columns=columns)
                 # print(df)
                 df['type'] = df['type'].ge(df['count']/2).astype(int)
+                df['night'] = df['night'].astype(int)
                 # print(df)
                 
                 if(len(patient_id)>1):
@@ -588,7 +590,7 @@ def create_app(test_config=None):
                 elif(len(patient_id)==1):
                     cur.execute(f"SELECT MIN(day_no) AS min_day, MAX(day_no) AS max_day FROM week_summary WHERE patient_id={patient_id[0]}")
                 day_info = cur.fetchone()
-                print(day_info)
+                # print(day_info)
                 day_list = [day_info[0],day_info[1]]
                 day_list = pd.DataFrame(day_list,columns=['day'])
                 day_list['date'] = pd.to_datetime(day_list['day'], unit='D', origin='2023-01-01')
@@ -597,6 +599,7 @@ def create_app(test_config=None):
                 # print(day_list.index)
                 day_lists = pd.DataFrame(day_list['day'],columns=['day'])
                 type_lists = pd.DataFrame(day_list['day'],columns=['day'])
+                result_lists = pd.DataFrame(day_list['day'],columns=['day'])
                 # print(day_lists)
                 
                 for i in patient_id:
@@ -624,18 +627,44 @@ def create_app(test_config=None):
                         cnt['count'] = cnt['count'].interpolate(method='spline', order=1).astype(int)
                     except:
                         cnt['count'] = cnt['count'].interpolate(method='linear', limit_direction='both').astype(int)
-                    day_lists[i] = cnt['count']                    
+                    day_lists[i] = cnt['count']
             day_lists = day_lists.set_index('day')
             day_lists.columns = pd.to_numeric(day_lists.columns)
-            print(day_lists)
+            # print(day_lists)
             type_lists = type_lists.set_index('day')
             type_lists.columns = pd.to_numeric(type_lists.columns)
-            print(type_lists)
-            result = {
-                "day_lists": json.loads(day_lists.to_json(orient="records")),
-                "type_lists": json.loads(type_lists.to_json(orient="records")),
-            }
-            return json.dumps(result,indent=4), 200
+            # print(type_lists)
+            
+            for i in patient_id:
+                night_info = df[df['patient_id']==i]
+                # print(night_info)
+                nights = []
+                for j in range(len(day_lists)):
+                    night = night_info[night_info['day']==j]
+                    # print(night)
+                    if(night.empty or night.shape[0]==0):
+                        week = None
+                        night = None
+                    else:
+                        week = str(night['week'].values[0])
+                        night = int(night['night'].values[0])
+                    obj = {'count':day_lists[i][j], 'type':type_lists[i][j], 'week':week, 'night':night}
+                    # obj['count'] = day_lists[i][j]
+                    # obj['type'] = type_lists[i][j]
+                    # obj['week'] = night_info['week']
+                    # obj['night'] = night_info['night']
+                    # print(obj)
+                    nights.append(obj)
+                result_lists.loc[:, i] = nights
+            result_lists = result_lists.set_index('day')
+            print(result_lists)
+            # result = {
+            #     "day_lists": json.loads(day_lists.to_json(orient="records")),
+            #     "type_lists": json.loads(type_lists.to_json(orient="records")),
+            #     "result_lists": json.loads(result_lists.to_json(orient="records")),
+            # }
+            # return json.dumps(result,indent=4), 200
+            return result_lists.to_json(orient="records"), 200
         except Exception as e:
             print('Exception raised in getting event trend')
             print(e)
