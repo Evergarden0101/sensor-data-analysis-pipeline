@@ -38,7 +38,7 @@ CREATE TABLE bite_records (
 CREATE TABLE week_summary(
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   patient_id INTEGER NOT NULL,
-  week INTEGER NOT NULL,
+  week TEXT NOT NULL,
   night_id INTEGER NOT NULL,
   cycle INTEGER NOT NULL,
   max_cycle INTEGER NOT NULL,

@@ -443,7 +443,7 @@ def get_model_accuracy(DATABASE, model, patient_id, week, night_id, recorder, p)
     y = np.array(y.values.tolist())
     print("validation")
     accuracies = cross_val_score(estimator = model, X = x, y = y, cv = 10)
-    return accuracies.mean()
+    return np.floor(accuracies.mean()*10000)/100
 
 
 def return_img_stream(img_path):
