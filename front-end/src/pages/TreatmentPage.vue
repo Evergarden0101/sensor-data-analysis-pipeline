@@ -26,8 +26,9 @@
         </el-col>
         <el-col :span="5">
             <el-row>
-                <el-col :offset="4">
+                <el-col :offset="4" style="margin-bottom:5%">
                     <p><b>Select the desired weeks</b></p>
+                    <!--
                     <el-select
                     v-model="selectedWeeks"
                     multiple
@@ -41,6 +42,8 @@
                         :value="week.value"
                     />
                     </el-select>
+                -->
+                <el-slider v-model="week" :min="0" :max="Object.keys(weeks).length" range show-stops :marks="weeks" :show-tooltip="false" @change="changeWeekFilter" />
                 </el-col>
             </el-row>
             <el-row>
@@ -108,7 +111,7 @@
 <script>
 import Stepper from '@/components/Stepper.vue';
 import * as echarts from 'echarts';
-import { ref } from 'vue';
+import { ref, reactive } from 'vue';
 import axios from 'axios';
 
 export default {
@@ -121,11 +124,13 @@ export default {
         return{
             showCohort: ref(false),
             eventTrendData: [],
-            eventTrendDataType: [],
+            week: ref([0, 0]),
+            startWeek: ref(''),
+            endWeek: ref(''),
             noPatients: 0,
             nightsNo: 0,
             selectedWeeks: ref([]),
-            weeks: ref([]),
+            weeks: ref({}),
             patientsCheckBox: {
                 '1' : ref(false),
                 '2': ref(false)
@@ -137,24 +142,82 @@ export default {
     },
     async mounted() {
         await this.getEventTrendData();
-        await this.getWeeks();
+        this.getWeeks();
         this.drawCurrentPatientHeatMap();
-        this.drawPatientsLinePlot();    
+        this.drawPatientsLinePlot(this.startWeek, this.endWeek);    
     },
     methods: {
+        removeDuplicates(arr) { 
+            return arr.filter((item, 
+                index) => arr.indexOf(item) === index); 
+        },
         getWeeks(){
             console.log("Getting the weeks")
 
-            let receivedWeeks = [{
-                value: 'Option1',
-                label: 'Option1',
-            },
-            {
-                value: 'Option2',
-                label: 'Option2',
-            }];
+            let weekData = [];
 
-            this.weeks = ref(receivedWeeks);
+            for (let i = 0; i < this.eventTrendData.length; i++) {
+                for(const key in this.eventTrendData[i]) {
+                    let week = this.eventTrendData[i][key]['week'];
+                    if(week !== null){
+                        weekData.push(week)
+                    }
+                } 
+            }
+
+
+            weekData = weekData.sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));  
+            weekData = this.removeDuplicates(weekData);
+            //this.startWeek = weekData[0];
+            //this.endWeek = weekData[weekData.length - 1]
+
+            console.log("weekdata without duplicates")
+            console.log(weekData)
+
+            for (let i=weekData.length-1; i >= 0; i--){
+                if(weekData[i].toLowerCase().indexOf("-") === -1){
+                    console.log("week without -")
+                    console.log(weekData[i])
+                    if(weekData.includes(weekData[i]+"-"+String((parseInt(weekData[i])+1)))){
+                        console.log(String((parseInt(weekData[i])+1)))
+                        weekData.splice(weekData.indexOf(weekData[i]), 1);
+                    }
+                    if(weekData.includes(String((parseInt(weekData[i])-1))+"-"+weekData[i])){
+                        weekData.splice(weekData.indexOf(weekData[i]), 1);
+                    }      
+                }
+            }
+
+            let minWeek = 0;
+            let maxWeek = weekData.length-1;
+            console.log(minWeek)
+            console.log(maxWeek)
+            this.week = ref([minWeek, maxWeek])
+
+            
+            let weekOptions = {};
+    
+            for(let i=0; i<weekData.length; i++){
+                weekOptions[i] = weekData[i];
+            }
+
+            console.log(weekOptions);
+            this.weeks = reactive(weekOptions);
+            console.log("weeks length")
+            console.log(Object.keys(this.weeks).length)
+        },
+        changeWeekFilter(){
+            console.log("changing the line chart according to the weeks")
+            console.log(this.week)
+            this.startWeek = this.weeks[this.week[0]]
+            this.endWeek = this.weeks[this.week[1]]
+
+            this.drawPatientsLinePlot(this.startWeek, this.endWeek);
+
+
+
+            
+            
         },
         updateHeatMaps(){
             console.log("Updating the heatmaps.")
@@ -185,14 +248,8 @@ export default {
             await axios.get(path, payload, {headers})
                 .then((res) => {
                     console.log(res.data)
-                    this.eventTrendData = res.data.day_lists;
-
-                    this.eventTrendDataType = res.data.type_lists;
-
-                    this.nightsNo = this.eventTrendData.length;
-
-                    
-
+                    this.eventTrendData = res.data;
+                    this.nightsNo = this.eventTrendData.length; 
                 })
                 .catch(err=>{
                     console.log(err)
@@ -201,7 +258,7 @@ export default {
         getTypeText(type){
             let text = "";
             if(type === -1){
-                text = "No event"
+                text = ""
             }
             if (type === 0) {
                 text = "Night owl"
@@ -210,8 +267,9 @@ export default {
                 text = "Early Bird"
             }
             return text;
+
         },
-        drawPatientsLinePlot(){
+        drawPatientsLinePlot(startWeek, endWeek){
             var dom = document.getElementById("patientsLinePlot");
             var myChart = echarts.init(dom, null, {
                 renderer: "sgv",
@@ -224,38 +282,235 @@ export default {
             let exist = false;
             for (let i = 0; i < this.eventTrendData.length; i++) {
                 for (const key in this.eventTrendData[i]) {
-                    let type = this.eventTrendDataType[i][key];
+                    let type = this.eventTrendData[i][key]['type'];
                     let text = this.getTypeText(type);
+                    let week = this.eventTrendData[i][key]['week']
+                    let night = this.eventTrendData[i][key]['night']
                     for (let j = 0; j < series.length; j++) {
-                        if(series[j].name === "Patient " + key){
-                            series[j].data.push(this.eventTrendData[i][key])
-                            series[j].texts.push(text);
-                            exist = true;
+                        if(night != null){
+                            if(series[j].name === "Patient " + key){
+                                series[j].data.push(this.eventTrendData[i][key]['count'])
+                                series[j].texts.push(text);
+                                series[j].weeks.push(week);
+                                series[j].nights.push(night);
+
+                                series[j+1].data.push(null)
+                                series[j+1].texts.push(null)
+                                series[j+1].weeks.push(null)
+                                series[j+1].nights.push(null)
+                                exist = true;
+                            }
+                        } else {
+                            if(series[j].name === "Patient " + key + " interpolated"){
+                                series[j].data.push(this.eventTrendData[i][key]['count'])
+                                series[j].texts.push(text);
+                                series[j].weeks.push(week);
+                                series[j].nights.push(night);
+
+                                series[j-1].data.push(null)
+                                series[j-1].texts.push(null)
+                                series[j-1].weeks.push(null)
+                                series[j-1].nights.push(null)
+                                exist = true;
+                            }
                         }
                     }
                     
                     if (exist === false){
                         series.push({name: "Patient " + key, 
-                                    type: 'line',
-                                    data: [this.eventTrendData[i][key]],
-                                    texts: [text]
-                                    })
+                                type: 'line',
+                                showAllSymbol: true,
+                                data: [],
+                                texts: [],
+                                weeks: [],
+                                nights: [],
+                                lineStyle: {
+                                    normal: {
+                                        color: ''
+                                    }
+                                },
+                                itemStyle: {
+                                    color: ''
+                                }
+                            })
+                            
+                        series.push({name: "Patient " + key + " interpolated", 
+                                type: 'line',
+                                showSymbol: false,
+                                data: [],
+                                texts: [],
+                                weeks: [],
+                                nights: [],
+                                lineStyle: {
+                                    normal: {
+                                        type: 'dashed',
+                                        opacity: 50,
+                                        color: ''
+                                    }
+                                },
+                                itemStyle: {
+                                    color: ''
+                                }
+                                })
+                                
+                        if(night !== null){
+                            series[series.length-2].data.push(this.eventTrendData[i][key]['count'])
+                            series[series.length-2].texts.push(text)
+                            series[series.length-2].weeks.push(week)
+                            series[series.length-2].nights.push(night)
+                        } else {
+                            series[series.length-1].data.push(this.eventTrendData[i][key]['count'])
+                            series[series.length-1].texts.push(text)
+                            series[series.length-1].weeks.push(week)
+                            series[series.length-1].nights.push(night)
+                        }
                         exist = false;
                     }
                 }
             }
+
+            let colors = [
+            "#5470c6",
+            "#91cc75",
+            "#fac858",
+            "#ee6666",
+            "#73c0de",
+            "#3ba272",
+            "#fc8452",
+            "#9a60b4",
+            "#ea7ccc"
+        ];
+
+            for(let i=0; i<series.length; i++){
+                if(colors.length > series.length/2){
+                    if((series[i].name.toLowerCase().indexOf("interpolated") === -1)){
+                        series[i].lineStyle.normal.color = colors[i]
+                        series[i].itemStyle.color = colors[i]
+                    } else {
+                        series[i].lineStyle.normal.color = colors[i-1]
+                        series[i].itemStyle.color = 'transparent'
+                    }
+                }
+            }
+
             this.noPatients = series.length;
+
+            /* WEEK FILTER LOGIC: not working yet
+            if(startWeek !== '' && endWeek !== ''){
+                let weeksList = Object.values(this.weeks);
+                console.log("GUARDA QUI")
+                console.log(weeksList.indexOf(startWeek))
+                console.log(weeksList.indexOf(endWeek)+1)
+                let subWeeksList = weeksList.slice(weeksList.indexOf(startWeek), weeksList.indexOf(endWeek)+1)
+
+                console.log(subWeeksList)
+                console.log("UPDATE PARAMETERS")
+                for(let i=0; i<series.length; i++){
+                    let startWeekNr = 0;
+                    let endWeekNr = subWeeksList.length-1;
+                    let weeks = series[i].weeks;
+                    let startIdFound = false;
+                    let endIdFound = false;
+                    let startWeekId;
+                    let endWeekId;
+                    console.log(startWeek);
+                    console.log(endWeek);
+                    
+                    while(startIdFound === false && endIdFound === false){
+                        try{
+                            if(startWeekNr >= subWeeksList.length-1){
+                                break;
+                            }
+                            startWeekId = weeks.indexOf(startWeek)
+                    
+                            if(startWeekId === -1){
+                                startWeekNr ++;
+                                startWeek = subWeeksList[startWeekNr]  
+                            } else {
+                                startIdFound = true;
+                            }
+                            
+                        }
+                        catch(err){
+                            console.log(err)
+                        }
+                        try{
+                            if(endWeekNr <= 0){
+                                break;
+                            }
+                            endWeekId = weeks.lastIndexOf(endWeek);
+
+                            if(endWeekId === -1){
+                                endWeekNr --;
+                                endWeek = subWeeksList[endWeekNr]
+                            } else {
+                                endIdFound = true;
+                            }
+                        }
+                        catch(err) {
+                            console.log(err)
+                        }
+                    }
+
+                    console.log(startIdFound)
+                    console.log(endIdFound)
+                    console.log(startWeekId)
+                    console.log(endWeekId)
+
+                    if(startIdFound === true && endIdFound === true){
+                        console.log("StartId TRUE endId TRUE")
+                        series[i].data = series[i].data.slice(startWeekId, endWeekId+1)
+                        series[i].texts = series[i].texts.slice(startWeekId, endWeekId+1)
+                        series[i].weeks = series[i].weeks.slice(startWeekId, endWeekId+1)
+                        series[i].nights = series[i].nights.slice(startWeekId, endWeekId+1)
+                        
+                        console.log(series[i].data)
+                        console.log(startWeekId)
+                        console.log(endWeekId)
+            
+                    }
+                    if(startIdFound === true && endIdFound === false){
+                        console.log("StartId TRUE endId FALSE")
+                        series[i].data = series[i].data.slice(startWeekId)
+                        series[i].texts = series[i].texts.slice(startWeekId)
+                        series[i].weeks = series[i].weeks.slice(startWeekId)
+                        series[i].nights = series[i].nights.slice(startWeekId)
+                    }
+                    else{
+                        console.log("startId FALSE endId ?")
+                        series[i].data = []
+                        series[i].texts = []
+                        series[i].weeks = []
+                        series[i].nights = []
+                    }           
+                }
+                console.log(series)
+            }
+
+            */
 
             let legend = [];
 
             for (let i=0; i<series.length; i++){
                 legend.push(series[i].name)
 
+                //if(series[i].name.toLowerCase().indexOf("interpolated") === -1) {
+                //    legend.push(series[i].name)
+                //}
             }
 
             var callback = (args) => {
-                return args.marker + " <b>" + args.seriesName + "</b>: " + args.value + " events <br />" + series[args.seriesIndex].texts[args.dataIndex]
+                let nightId = series[args.seriesIndex].nights[args.dataIndex]
+                let week = series[args.seriesIndex].weeks[args.dataIndex]
+                
+                if(nightId !== null && week !== null){
+                    return args.marker + " <b>" + args.seriesName + "</b>: " + args.value + " events <br />" + series[args.seriesIndex].texts[args.dataIndex] + "<br /> Night id: " + nightId + "- Week: " + week
+                }
+                else {
+                    return args.marker + " <b>" + args.seriesName + "</b>: " + args.value + " events <br />" + series[args.seriesIndex].texts[args.dataIndex]
+                }
             }
+        
 
 
             option = {
@@ -270,8 +525,8 @@ export default {
                 },
                 legend: {
                     data: legend,
-                    orient: 'vertical',
-                    align: 'right'
+                    orient: 'horizontal',
+                    right: 'right'
                 },
                 grid: {
                     left: '3%',
@@ -284,6 +539,12 @@ export default {
                     saveAsImage: {}
                     }
                 },
+                dataZoom : {
+                    show : true,
+                    realtime: true,
+                    start : 0,
+                    end : this.nightsNo
+                },
                 xAxis: {
                     type: 'category',
                     boundaryGap: false,
@@ -293,6 +554,7 @@ export default {
                 yAxis: {
                     type: 'value',
                     name: 'Events'
+        
                 },
                 series: series
             };
