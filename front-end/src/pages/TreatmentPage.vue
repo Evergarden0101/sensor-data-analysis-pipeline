@@ -28,22 +28,7 @@
             <el-row>
                 <el-col :offset="4" style="margin-bottom:5%">
                     <p><b>Select the desired weeks</b></p>
-                    <!--
-                    <el-select
-                    v-model="selectedWeeks"
-                    multiple
-                    placeholder="Select"
-                    style="width: 240px"
-                    >
-                    <el-option
-                        v-for="week in weeks"
-                        :key="week.value"
-                        :label="week.label"
-                        :value="week.value"
-                    />
-                    </el-select>
-                -->
-                <el-slider v-model="week" :min="0" :max="Object.keys(weeks).length" range show-stops :marks="weeks" :show-tooltip="false" @change="changeWeekFilter" />
+                <el-slider v-model="week" :min="minWeekId" :max="maxWeekId" range show-stops :marks="weeks" :show-tooltip="false" @change="changeWeekFilter" />
                 </el-col>
             </el-row>
             <el-row>
@@ -127,6 +112,8 @@ export default {
             week: ref([0, 0]),
             startWeek: ref(''),
             endWeek: ref(''),
+            minWeekId: ref(0),
+            maxWeekId: ref(0),
             noPatients: 0,
             nightsNo: 0,
             selectedWeeks: ref([]),
@@ -168,18 +155,10 @@ export default {
 
             weekData = weekData.sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));  
             weekData = this.removeDuplicates(weekData);
-            //this.startWeek = weekData[0];
-            //this.endWeek = weekData[weekData.length - 1]
-
-            console.log("weekdata without duplicates")
-            console.log(weekData)
 
             for (let i=weekData.length-1; i >= 0; i--){
                 if(weekData[i].toLowerCase().indexOf("-") === -1){
-                    console.log("week without -")
-                    console.log(weekData[i])
                     if(weekData.includes(weekData[i]+"-"+String((parseInt(weekData[i])+1)))){
-                        console.log(String((parseInt(weekData[i])+1)))
                         weekData.splice(weekData.indexOf(weekData[i]), 1);
                     }
                     if(weekData.includes(String((parseInt(weekData[i])-1))+"-"+weekData[i])){
@@ -187,24 +166,17 @@ export default {
                     }      
                 }
             }
-
-            let minWeek = 0;
-            let maxWeek = weekData.length-1;
-            console.log(minWeek)
-            console.log(maxWeek)
-            this.week = ref([minWeek, maxWeek])
-
             
             let weekOptions = {};
     
             for(let i=0; i<weekData.length; i++){
-                weekOptions[i] = weekData[i];
+                weekOptions[i+1] = weekData[i];
             }
-
-            console.log(weekOptions);
+            
             this.weeks = reactive(weekOptions);
-            console.log("weeks length")
-            console.log(Object.keys(this.weeks).length)
+            this.minWeekId = parseInt(Object.keys(this.weeks)[0])
+            this.maxWeekId = parseInt(Object.keys(this.weeks)[Object.keys(this.weeks).length-1])
+            this.week = ref([this.minWeekId, this.maxWeekId])
         },
         changeWeekFilter(){
             console.log("changing the line chart according to the weeks")
@@ -225,7 +197,6 @@ export default {
         showCohortHeatMap(){
             console.log(this.showCohort.valueOf());
             if(this.showCohort.valueOf() === true){
-                console.log("ciao")
                 this.drawCohortHeatMap();
             }
         },
@@ -370,25 +341,25 @@ export default {
             }
 
             let colors = [
-            "#5470c6",
-            "#91cc75",
-            "#fac858",
-            "#ee6666",
-            "#73c0de",
-            "#3ba272",
-            "#fc8452",
-            "#9a60b4",
-            "#ea7ccc"
-        ];
+                "#5470c6",
+                "#91cc75",
+                "#fac858",
+                "#ee6666",
+                "#73c0de",
+                "#3ba272",
+                "#fc8452",
+                "#9a60b4",
+                "#ea7ccc"
+            ];
 
             for(let i=0; i<series.length; i++){
                 if(colors.length > series.length/2){
                     if((series[i].name.toLowerCase().indexOf("interpolated") === -1)){
-                        series[i].lineStyle.normal.color = colors[i]
-                        series[i].itemStyle.color = colors[i]
+                        series[i].lineStyle.normal.color = colors[i];
+                        series[i].itemStyle.color = colors[i];
                     } else {
-                        series[i].lineStyle.normal.color = colors[i-1]
-                        series[i].itemStyle.color = 'transparent'
+                        series[i].lineStyle.normal.color = colors[i-1];
+                        series[i].itemStyle.color = 'transparent';
                     }
                 }
             }
@@ -398,7 +369,6 @@ export default {
             /* WEEK FILTER LOGIC: not working yet
             if(startWeek !== '' && endWeek !== ''){
                 let weeksList = Object.values(this.weeks);
-                console.log("GUARDA QUI")
                 console.log(weeksList.indexOf(startWeek))
                 console.log(weeksList.indexOf(endWeek)+1)
                 let subWeeksList = weeksList.slice(weeksList.indexOf(startWeek), weeksList.indexOf(endWeek)+1)
