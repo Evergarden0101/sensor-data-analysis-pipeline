@@ -190,13 +190,23 @@ export default {
                 { color: '#1989fa', percentage: 80 },
                 { color: '#6f7ad3', percentage: 100 },
             ],
-            studyAccuracy: this.$store.state.studyAccuracy,
-            patientAccuracy: this.$store.state.patientAccuracy,
+            // studyAccuracy: this.$store.state.studyAccuracy,
+            // patientAccuracy: this.$store.state.patientAccuracy,
             cycles: [],
             // activeLabel: [],
         }
     },
     computed: {
+        studyAccuracy() {
+            if (this.$store.state.studyAccuracy == null || this.$store.state.studyAccuracy == 0 || this.$store.state.studyAccuracy == undefined || this.$store.state.studyAccuracy == NaN)
+                return '--'
+            return this.$store.state.studyAccuracy
+        },
+        patientAccuracy() {
+            if (this.$store.state.patientAccuracy == null || this.$store.state.patientAccuracy == 0 || this.$store.state.patientAccuracy == undefined || this.$store.state.patientAccuracy == NaN)
+                return '--'
+            return this.$store.state.patientAccuracy
+        },
         activeLabel() {
             // return JSON.parse(this.$store.state.labels).filter((item) => item.Start<this.$store.state.endPoint && item.End>this.$store.state.startPoint)
             return this.Labels.slice(0,this.count)
@@ -350,6 +360,9 @@ export default {
                             message: '<strong>No events detected. Please check the control files, adjust the filter or start with another day to rerun the model.</strong>',
                             type: 'warning'
                         });
+                        this.$store.commit('getNightImg', "http://127.0.0.1:5000/night-pred-img?p=" + this.$store.state.patientId+'&w='+this.$store.state.week+'&n='+this.$store.state.nightId+'&r='+this.$store.state.recorder)
+                        this.$store.commit('getWeekImg', "http://127.0.0.1:5000/weekly-sum-img?p=" + this.$store.state.patientId+'&w='+this.$store.state.week);
+                        this.$store.commit('updateLinePlotKey');
                         return;
                     }
                     // this.$nextTick(() => {
