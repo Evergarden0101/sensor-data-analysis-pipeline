@@ -82,6 +82,7 @@ def create_app(test_config=None):
         except Exception as e:
             return f"{e}", 400
 
+
     """
     request.json format:
         {
@@ -91,7 +92,6 @@ def create_app(test_config=None):
             "duration": int
         }
     """
-    # TODO: update predicted label
     @app.route("/label-brux", methods=["POST"])
     @app.errorhandler(werkzeug.exceptions.BadRequest)
     def post_label_brux():
@@ -102,9 +102,32 @@ def create_app(test_config=None):
             except werkzeug.exceptions.BadRequest:
                 return "Please sent a Json package!", 400
             
-            # TODO: update predicted label
             # remove_pred_label(DATABASE, labels)
             insert_label(DATABASE, labels)
+            
+            img_local_path =  get_data_path(DATABASE)+'p'+str(labels[0]['patient_id'])+'_wk'+str(labels[0]['week'])+f'/'+str(labels[0]['night_id'])+f'.png'
+            print('img_local_path: ',img_local_path)
+            if os.path.exists(img_local_path):
+                # Delete the file
+                os.remove(img_local_path)
+                print(f"Night image deleted.")
+            
+            valid_set = get_data_path(DATABASE)+'p'+str(labels[0]['patient_id'])+'_wk'+str(labels[0]['week'])+f'/'+str(labels[0]['night_id']) +str(labels[0]['recorder'])+f'Fnorm.csv'
+            print('valid_set: ',str(valid_set))
+            with sql.connect(DATABASE) as con:
+                cur = con.cursor()
+                cur.execute(f"SELECT * FROM models WHERE patient_id={labels[0]['patient_id']}")
+                model = cur.fetchone()
+                print(model)
+                if(model[4] == None):
+                    print("update validation set")
+                    cur.execute(f"UPDATE models SET validation_file_path='{valid_set}' WHERE patient_id={labels[0]['patient_id']}")
+                
+                cur.execute(f"SELECT * FROM models WHERE patient_id={-1}")
+                model = cur.fetchone()
+                if(model[4] == None):
+                    print("update validation set")
+                    cur.execute(f"UPDATE models SET validation_file_path='{valid_set}' WHERE patient_id={-1}")
             
             return "Successfuly inserted into Database", 200
         except Exception as e:
@@ -117,7 +140,21 @@ def create_app(test_config=None):
     def get_label_brux(patient_id, week, night_id, recorder):
         try:
             print('get_label_brux')
-            predicted_labels = run_prediction(DATABASE, patient_id, week, night_id, recorder)
+            params = (patient_id, week, night_id, recorder)
+            query = "SELECT * from confirmed_labels WHERE (patient_id=? AND week=? AND night_id=? AND recorder=?)"
+            with sql.connect(DATABASE) as con:
+                print("DB connected")
+                cur = con.cursor()
+                comfirmed_labels = cur.execute(query, params)
+                if comfirmed_labels.fetchall() != None and len(comfirmed_labels.fetchall()) != 0:
+                    columns = [description[0] for description in comfirmed_labels.description]
+                    print(columns)
+                    #df = get_patients_recordings_df(columns, patient_data.fetchall())
+                    predicted_labels_json = get_json_format_from_query(columns=columns, query_results=comfirmed_labels.fetchall(), start_id=1, end_id=9)
+                    print(comfirmed_labels)
+                    return comfirmed_labels, 200
+            
+            run_prediction(DATABASE, patient_id, week, night_id, recorder)
             params = (patient_id, week, night_id, recorder)
             query = "SELECT * from predicted_labels WHERE (patient_id=? AND week=? AND night_id=? AND recorder=?)"
 
@@ -197,6 +234,17 @@ def create_app(test_config=None):
                 print(night_id)
                 post_selected_updates(DATABASE, patient_id, week, night_id, updates)
 
+                with sql.connect(DATABASE) as con:
+                    print("DB connected")
+                    cur = con.cursor()
+                    cur.execute(f"DELETE FROM predicted_labels WHERE patient_id={patient_id} AND week={week} AND night_id={night_id}")
+                    cur.execute(f"DELETE FROM week_summary WHERE patient_id={patient_id} AND week={week} AND night_id={night_id}")
+                    
+                img_local_path =  get_data_path(DATABASE)+'p'+str(patient_id)+'_wk'+str(week)+f'/'+str(night_id)+f'.png'
+                if os.path.exists(img_local_path):
+                    # Delete the file
+                    os.remove(img_local_path)
+                    print(f"Night image deleted.")
                 return "sleep_stage_detection table updated successfully", 200
 
                     
@@ -488,8 +536,8 @@ def create_app(test_config=None):
                 return f"{e}", 500
             
             print(img_f)
-            res = make_response(img_f.read())   # 用flask提供的make_response 方法来自定义自己的response对象
-            res.headers['Content-Type'] = 'image/png'   # 设置response对象的请求头属性'Content-Type'为图片格式
+            res = make_response(img_f.read())
+            res.headers['Content-Type'] = 'image/png'
             img_f.close()
             return res
         except Exception as e:
@@ -533,6 +581,24 @@ def create_app(test_config=None):
             return jsonify(patient_accuracy=patient_accuracy, study_accuracy=study_accuracy), 200
         except Exception as e:
             print('Exception raised in rerunning model')
+            print(e)
+            return f"{e}", 500
+    
+    
+    @app.route('/model-accuracy/<int:patient_id>', methods=["GET"])
+    def get_model_accuracy(patient_id):
+        try:
+            with sql.connect(DATABASE) as con:
+                print("DB connected")
+                cur = con.cursor()
+                cur.execute(f"SELECT accuracy, precision FROM models WHERE patient_id={patient_id}")
+                patient_accuracy = cur.fetchall()
+                cur.execute(f"SELECT accuracy, precision FROM models WHERE patient_id={-1}")
+                study_accuracy = cur.fetchall()
+                cur.close()
+            return jsonify(patient_accuracy=patient_accuracy, study_accuracy=study_accuracy), 200
+        except Exception as e:
+            print('Exception raised in getting model accuracy')
             print(e)
             return f"{e}", 500
 
@@ -603,59 +669,95 @@ def create_app(test_config=None):
                 # print(day_lists)
                 
                 for i in patient_id:
-                    print(i)
+                    # print(i)
                     # cur.execute(f"SELECT MIN(day_no) AS min_day, MAX(day_no) AS max_day FROM week_summary WHERE patient_id={i}")
                     # day_info = cur.fetchone()
                     # print(day_info)
                     df_patient = df[df['patient_id']==i]
                     # print(df_patient)
                     if(df_patient.empty or df_patient.shape[0]==0):
-                        day_lists[i] = 0
-                        continue
-                    df_patient['date'] = day_list.index[df_patient['day']]
-                    # print(df_patient)
-                    daily_df = df_patient.set_index('date').resample('D').asfreq()
-                    print(daily_df)
-                    # Interpolate the 'count' column
-                    type_lists[i] = daily_df['type']
-                    type_lists[i] = type_lists[i].fillna(-1)
+                        day_lists[i] = None
+                    else:
+                        df_patient['date'] = day_list.index[df_patient['day']]
+                        # print(df_patient)
+                        daily_df = df_patient.set_index('date').resample('D').asfreq()
+                        # print(daily_df)
+                        # Interpolate the 'count' column
+                        type_lists[i] = daily_df['type']
+                        type_lists[i] = type_lists[i].fillna(-1)
+                        
+                        # daily_df = daily_df.iloc[day_info[0]:day_info[1]+1]
+                        cnt = daily_df
+                        # print(cnt)
+                        try:
+                            cnt['count'] = cnt['count'].interpolate(method='spline', order=1).astype(int)
+                        except:
+                            cnt['count'] = cnt['count'].interpolate(method='linear', limit_direction='both').astype(int)
+                        day_lists[i] = cnt['count']
+                        # print('day list: ',day_lists[i])
+                        # print(cnt)
                     
-                    # daily_df = daily_df.iloc[day_info[0]:day_info[1]+1]
-                    cnt = daily_df
-                    # print(cnt)
-                    try:
-                        cnt['count'] = cnt['count'].interpolate(method='spline', order=1).astype(int)
-                    except:
-                        cnt['count'] = cnt['count'].interpolate(method='linear', limit_direction='both').astype(int)
-                    day_lists[i] = cnt['count']
-            day_lists = day_lists.set_index('day')
-            day_lists.columns = pd.to_numeric(day_lists.columns)
+                    nights = []
+                    for j in range(len(day_lists)):
+                        if(j>=cnt.shape[0] or pd.isna(day_lists.iloc[j,i])):
+                            nights.append(None)
+                            continue
+                        # print("week1: ",cnt['week'].values[j])
+                        if(not pd.isna(cnt.iloc[j,1])):
+                            week = str(cnt['week'].values[j])
+                            # print('week list: ',week.split('-'))
+                            if('-' in week):
+                                start = int(week.split('-')[0])
+                                end = int(week.split('-')[1])
+                            else:
+                                start = int(week)
+                                end = int(week)
+                            # print('start: ',start)
+                            # print('end: ',end)
+                            # continue
+                        week_no = int(np.floor(j/7)+1)
+                        if(week_no>end):
+                            if(end>start):
+                                week = f"{week_no}-{week_no+1}"
+                            else:
+                                week = week_no
+                        # print('week2: ',week)
+                        cnt['week'].values[j] = str(week)
+                        # print('set week: ',cnt['week'].values[j])
+                        obj = {'count':day_lists[i][j], 'type':type_lists[i][j], 'week':cnt['week'].values[j], 'night':cnt['night'].values[j]}
+                        # print('obj: ',obj)
+                        nights.append(obj)
+                    # print(nights)
+                    result_lists.loc[:, i] = nights
+                    
+                    
+            # day_lists = day_lists.set_index('day')
+            # day_lists.columns = pd.to_numeric(day_lists.columns)
             # print(day_lists)
-            type_lists = type_lists.set_index('day')
-            type_lists.columns = pd.to_numeric(type_lists.columns)
+            # type_lists = type_lists.set_index('day')
+            # type_lists.columns = pd.to_numeric(type_lists.columns)
             # print(type_lists)
             
-            for i in patient_id:
-                night_info = df[df['patient_id']==i]
-                # print(night_info)
-                nights = []
-                for j in range(len(day_lists)):
-                    night = night_info[night_info['day']==j]
-                    # print(night)
-                    if(night.empty or night.shape[0]==0):
-                        week = None
-                        night = None
-                    else:
-                        week = str(night['week'].values[0])
-                        night = int(night['night'].values[0])
-                    obj = {'count':day_lists[i][j], 'type':type_lists[i][j], 'week':week, 'night':night}
-                    # obj['count'] = day_lists[i][j]
-                    # obj['type'] = type_lists[i][j]
-                    # obj['week'] = night_info['week']
-                    # obj['night'] = night_info['night']
-                    # print(obj)
-                    nights.append(obj)
-                result_lists.loc[:, i] = nights
+            # for i in patient_id:
+            #     night_info = df[df['patient_id']==i]
+            #     if(night_info.empty or night_info.shape[0]==0):
+            #         continue
+            #     print(night_info)
+            #     nights = []
+            #     for j in range(len(day_lists)):
+            #         night = night_info[night_info['day']==j]
+            #         print(night)
+            #         if(night.empty or night.shape[0]==0):
+            #             week = None
+            #             night = None
+            #         else:
+            #             week = str(night['week'].values[0])
+            #             night = int(night['night'].values[0])
+            #         obj = {'count':day_lists[i][j], 'type':type_lists[i][j], 'week':week, 'night':night}
+            #         # print(obj)
+            #         nights.append(obj)
+            #     print(nights)
+            #     result_lists.loc[:, i] = nights
             result_lists = result_lists.set_index('day')
             print(result_lists)
             # result = {
