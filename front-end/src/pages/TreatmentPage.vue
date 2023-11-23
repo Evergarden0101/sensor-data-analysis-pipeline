@@ -1,95 +1,107 @@
 <template>
-    <el-row style="margin-bottom: 3%;">
-        <el-col>
-            <h1 style="text-align: center;">This is the Treatment Analysis page!</h1>
-        </el-col>
-    </el-row>
-    <el-row>
-        <el-col align-center :span="12" :offset="6">
-            <Stepper step=4 />
-        </el-col>
-    </el-row>
-    <el-row style="margin-top: 3%;">
-        <el-col :span="18" :offset="6">
-            <router-link :to="'/events-classification/'">
-                <el-button type="primary" plain><el-icon class="el-icon--left"><ArrowLeft /></el-icon> Events Classification</el-button>
-            </router-link>
-        </el-col>
-    </el-row>
+    <div>
+        <el-row style="margin-bottom: 3%;">
+            <el-col>
+                <h1 style="text-align: center;">This is the Treatment Analysis page!</h1>
+            </el-col>
+        </el-row>
+        <el-row>
+            <el-col align-center :span="12" :offset="6">
+                <Stepper step=4 />
+            </el-col>
+        </el-row>
+        <el-row style="margin-top: 3%;">
+            <el-col :span="18" :offset="6">
+                <router-link :to="'/events-classification/'">
+                    <el-button type="primary" plain><el-icon class="el-icon--left"><ArrowLeft /></el-icon> Events Classification</el-button>
+                </router-link>
+            </el-col>
+        </el-row>
 
-    <el-row style="margin-top: 3%;">
-        <el-col :span="7" :offset="4">
-            <div id="currentPatientHeatMap" style="position: relative; height: 70vh; width: 55vh"></div>
-        </el-col>
-        <el-col :span="2">
-            Metrics with legend
-        </el-col>
-        <el-col :span="5">
-            <el-row>
-                <el-col :offset="4" style="margin-bottom:5%">
-                    <p><b>Select the desired weeks</b></p>
-                <el-slider v-model="week" :min="minWeekId" :max="maxWeekId" range show-stops :marks="weeks" :show-tooltip="false" @change="changeWeekFilter" />
-                </el-col>
-            </el-row>
-            <el-row>
-                <el-col>
-                    <div id="patientsLinePlot" style="position: relative; height: 68vh; width: 88vh"></div>
-                </el-col>
-            </el-row>
-        </el-col>
-        <el-col :span="4" :offset="2">
-            Metrics
-        </el-col>
-    </el-row>
-    <el-row style="margin-top: 3%;">
-        <el-checkbox v-model="showCohort" label="Compare to cohort" size="large" border @change="showCohortHeatMap"/>
-    </el-row>
+        <el-row style="margin-top: 3%;">
+            <el-col :span="7" :offset="4">
+                <div v-if="patientsExists" id="currentPatientHeatMap" style="position: relative; height: 70vh; width: 55vh"></div>
+                <div v-else>
+                    <el-empty :image-size="70" description="Select at least a patient to see heatmap"/>
+                </div>
+            </el-col>
+            <el-col :span="2">
+                Metrics with legend
+            </el-col>
+            <el-col :span="5">
+                <el-row>
+                    <el-col :offset="4" style="margin-bottom:5%">
+                        <p><b>Select the desired weeks</b></p>
+                    <el-slider v-model="week" :min="minWeekId" :max="maxWeekId" range show-stops :marks="weeks" :show-tooltip="false" @change="changeWeekFilter" />
+                    </el-col>
+                </el-row>
+                <el-row>
+                    <el-col>
+                        <div v-if="patientsExists" id="patientsLinePlot" style="position: relative; height: 68vh; width: 88vh"></div>
+                        <div v-else>
+                            <el-empty :image-size="200" description="Select at least a patient to see linechart"/>
+                        </div>
+                    </el-col>
+                </el-row>
+            </el-col>
+            <el-col :span="4" :offset="2">
+                Metrics
+            </el-col>
+        </el-row>
+        <el-row style="margin-top: 3%;">
+            <el-checkbox v-model="showCohort" label="Compare to cohort" size="large" border/>
+        </el-row>
 
-    <el-row v-if="showCohort" style="margin-top: 3%;">
-        <el-col :span="6" :offset="4">
-            <el-card>
-                <h3>Select desired patients</h3>
-                <el-checkbox v-model="patientsCheckBox['1']" label="Patient 1" size="large" />
-                <el-checkbox v-model="patientsCheckBox['2']" label="Patient 2" size="large" />
-            </el-card>
-        </el-col>
-        <el-col :span="8" :offset="4">
-            <div id="cohortHeatMap" style="position: relative; height: 80vh; width: 65vh"></div>
-        </el-col>
-        <el-col :span="2">
-            Metrics
-        </el-col>
-    </el-row>
-    <el-row style="margin-top: 2em;">
-        <el-col :offset="4" :span="8">
-            <el-row>
-                <el-progress style="display:block;margin: 0 auto" type="dashboard" :percentage="studyAccuracy" width="80" stroke-width="4" :color="colors" >
-                    <template #default="{ percentage }">
-                        <h3 class="percentage-value">{{ percentage }}%</h3>
-                        <h5 class="percentage-label">Accuracy</h5>
-                    </template>
-                </el-progress>
-            </el-row>
-            <el-row style="text-align:center">
-                <h5 style="display:block; margin: 5px auto">Model Performance for whole Study</h5>
-            </el-row>
-        </el-col>
+        <el-row v-if="showCohort" style="margin-top: 3%;">
+            <el-col :span="6" :offset="4">
+                <el-card>
+                    <h3>Select desired patients</h3>
+                    <el-checkbox v-for="patientId of patientsIds" v-model="patientsCheckBox[patientId]" :label="'Patient '+patientId" size="large" @change="handlePatientsSelection(patientId)"/>
+                </el-card>
+            </el-col>
+            <el-col :span="12">
+                <div v-if="selectedPatients.length >= 3">
+                    <div v-for="patientId in selectedPatients">
+                        <div v-if="patientsExists" :id="'patient'+patientId+'LineChart'" style="position: relative; height: 30vh; width: 60vh"></div>
+                    </div>
+                </div>
+            </el-col>
+            <el-col :span="2">
+                Metrics
+            </el-col>
+        </el-row>
+        <el-row style="margin-top: 2em;">
+            <el-col :offset="4" :span="8">
+                <el-row>
+                    <el-progress style="display:block;margin: 0 auto" type="dashboard" :percentage="studyAccuracy" width="80" stroke-width="4" >
+                        <template #default="{ percentage }">
+                            <h3 class="percentage-value">{{ percentage }}%</h3>
+                            <h5 class="percentage-label">Accuracy</h5>
+                        </template>
+                    </el-progress>
+                </el-row>
+                <el-row style="text-align:center">
+                    <h5 style="display:block; margin: 5px auto">Model Performance for whole Study</h5>
+                </el-row>
+            </el-col>
 
-        <el-col :span="8">
-            <el-row>
-                <el-progress style="display:block; margin: 0 auto" type="dashboard" :percentage="patientAccuracy" width="80" stroke-width="4" :color="colors" >
-                    <template #default="{ percentage }">
-                        <h3 class="percentage-value">{{ percentage }}%</h3>
-                        <h5 class="percentage-label">Accuracy</h5>
-                    </template>
-                </el-progress>
-            </el-row>
+            <el-col :span="8">
+                <el-row>
+                    <el-progress style="display:block; margin: 0 auto" type="dashboard" :percentage="patientAccuracy" width="80" stroke-width="4" >
+                        <template #default="{ percentage }">
+                            <h3 class="percentage-value">{{ percentage }}%</h3>
+                            <h5 class="percentage-label">Accuracy</h5>
+                        </template>
+                    </el-progress>
+                </el-row>
 
-            <el-row style="text-align:center">
-                <h5 style="display:block; margin: 5px auto">Model Performance for Patient {{ this.$store.state.patientId }}</h5>
-            </el-row>
-        </el-col>
-    </el-row>
+                <el-row style="text-align:center">
+                    <h5 style="display:block; margin: 5px auto">Model Performance for Patient {{ this.$store.state.patientId }}</h5>
+                </el-row>
+            </el-col>
+        </el-row>
+    </div>
+    
 </template>
 
 
@@ -107,6 +119,7 @@ export default {
     },
     data(){
         return{
+            patientsExists: ref(false),
             showCohort: ref(false),
             eventTrendData: [],
             week: ref([0, 0]),
@@ -116,19 +129,30 @@ export default {
             maxWeekId: ref(0),
             noPatients: 0,
             nightsNo: 0,
+            patientsIds: ref([]),
+            selectedPatients: ref([parseInt(this.$store.state.patientId)]),
             selectedWeeks: ref([]),
             weeks: ref({}),
-            patientsCheckBox: {
-                '1' : ref(false),
-                '2': ref(false)
-
-            },
+            patientsCheckBox: {},
             studyAccuracy: this.$store.state.studyAccuracy,
             patientAccuracy: this.$store.state.patientAccuracy,
+            patientsColorEncoding:{},
+            colors: [
+                "#5470c6",
+                "#91cc75",
+                "#fac858",
+                "#ee6666",
+                "#73c0de",
+                "#3ba272",
+                "#fc8452",
+                "#9a60b4",
+                "#ea7ccc"
+            ]
         }
     },
     async mounted() {
-        await this.getEventTrendData();
+        await this.getExistingEventTrendPatientIds();
+        await this.getEventTrendData(this.selectedPatients);
         this.getWeeks();
         this.drawCurrentPatientHeatMap();
         this.drawPatientsLinePlot(this.startWeek, this.endWeek);    
@@ -178,29 +202,79 @@ export default {
             this.maxWeekId = parseInt(Object.keys(this.weeks)[Object.keys(this.weeks).length-1])
             this.week = ref([this.minWeekId, this.maxWeekId])
         },
+        async handlePatientsSelection(patientId){
+            if(this.patientsCheckBox[patientId] === true){
+                this.selectedPatients.push(parseInt(patientId))
+                this.patientsExists = ref(true);
+                console.log(this.selectedPatients);
+                await this.getEventTrendData(this.selectedPatients);
+                this.getWeeks();
+                this.drawPatientsLinePlot(this.startWeek, this.endWeek); 
+            } else {
+                let index = this.selectedPatients.indexOf(parseInt(patientId))
+                this.selectedPatients.splice(index);
+                console.log(this.selectedPatients);
+                if(this.selectedPatients.length === 0){
+                    this.patientsExists = ref(false);
+                } else {
+                    await this.getEventTrendData(this.selectedPatients);
+                    this.getWeeks();
+                    this.drawPatientsLinePlot(this.startWeek, this.endWeek); 
+                }    
+            }
+
+            if(this.selectedPatients.length >= 3){
+                for(let i=0; i<this.selectedPatients.length; i++){
+                    console.log(this.selectedPatients[i])
+                   this.drawSinglePatientLineChart(this.selectedPatients[i])
+                } 
+            }
+        },
         changeWeekFilter(){
             console.log("changing the line chart according to the weeks")
             console.log(this.week)
             this.startWeek = this.weeks[this.week[0]]
             this.endWeek = this.weeks[this.week[1]]
 
-            this.drawPatientsLinePlot(this.startWeek, this.endWeek);
-
-
-
-            
-            
+            this.drawPatientsLinePlot(this.startWeek, this.endWeek); 
         },
         updateHeatMaps(){
             console.log("Updating the heatmaps.")
         },
         showCohortHeatMap(){
-            console.log(this.showCohort.valueOf());
             if(this.showCohort.valueOf() === true){
                 this.drawCohortHeatMap();
             }
         },
-        async getEventTrendData(){
+        async getExistingEventTrendPatientIds(){
+            const path = `http://127.0.0.1:5000/event-trend-patients-ids`
+            const headers = {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            };
+
+            await axios.get(path, {headers})
+                .then((res) => {
+                    console.log(res.data);
+                    this.patientsIds = res.data;
+                    if(this.patientsIds.length > 0){
+                        for(let i=0; i<this.patientsIds.length; i++){
+                            if(this.patientsIds[i] === this.$store.state.patientId){
+                                this.patientsCheckBox[this.patientsIds[i]] = ref(true);
+                            } else {
+                                this.patientsCheckBox[this.patientsIds[i]] = ref(false);
+                            }
+                        }
+                        console.log("patientscheckbox")
+                        console.log(this.patientsCheckBox)
+                        this.patientsExists = ref(true);
+                    }
+                })
+                .catch(err=>{
+                    console.log(err)
+                })
+        },
+        async getEventTrendData(patientIds){
             const path = `http://127.0.0.1:5000/event-trend`
             const headers = {
                 'Accept': 'application/json',
@@ -210,7 +284,7 @@ export default {
             let payload = {
                             params: {
                                 //patient_id: JSON.stringify([parseInt(this.$store.state.patientId)]),
-                                patient_id: JSON.stringify([1, 2, 3]),
+                                patient_id: JSON.stringify(patientIds),
                             }
                         };
 
@@ -220,7 +294,9 @@ export default {
                 .then((res) => {
                     console.log(res.data)
                     this.eventTrendData = res.data;
-                    this.nightsNo = this.eventTrendData.length; 
+                    this.nightsNo = this.eventTrendData.length;
+                    console.log("nightsNo")
+                    console.log(this.nightsNo)
                 })
                 .catch(err=>{
                     console.log(err)
@@ -240,27 +316,19 @@ export default {
             return text;
 
         },
-        drawPatientsLinePlot(startWeek, endWeek){
-            var dom = document.getElementById("patientsLinePlot");
-            var myChart = echarts.init(dom, null, {
-                renderer: "sgv",
-                useDirtyRect: false
-            });
-            var option;
-
-
+        getSeries(data){
             let series = [];
             let exist = false;
-            for (let i = 0; i < this.eventTrendData.length; i++) {
-                for (const key in this.eventTrendData[i]) {
-                    let type = this.eventTrendData[i][key]['type'];
+            for (let i = 0; i < data.length; i++) {
+                for (const key in data[i]) {
+                    let type = data[i][key]['type'];
                     let text = this.getTypeText(type);
-                    let week = this.eventTrendData[i][key]['week']
-                    let night = this.eventTrendData[i][key]['night']
+                    let week = data[i][key]['week']
+                    let night = data[i][key]['night']
                     for (let j = 0; j < series.length; j++) {
                         if(night != null){
                             if(series[j].name === "Patient " + key){
-                                series[j].data.push(this.eventTrendData[i][key]['count'])
+                                series[j].data.push(data[i][key]['count'])
                                 series[j].texts.push(text);
                                 series[j].weeks.push(week);
                                 series[j].nights.push(night);
@@ -273,7 +341,7 @@ export default {
                             }
                         } else {
                             if(series[j].name === "Patient " + key + " interpolated"){
-                                series[j].data.push(this.eventTrendData[i][key]['count'])
+                                series[j].data.push(data[i][key]['count'])
                                 series[j].texts.push(text);
                                 series[j].weeks.push(week);
                                 series[j].nights.push(night);
@@ -288,9 +356,12 @@ export default {
                     }
                     
                     if (exist === false){
+                        let seriesIndex = series.length;
                         series.push({name: "Patient " + key, 
                                 type: 'line',
+                                seriesIndex: seriesIndex,
                                 showAllSymbol: true,
+                                patientId: key,
                                 data: [],
                                 texts: [],
                                 weeks: [],
@@ -304,10 +375,12 @@ export default {
                                     color: ''
                                 }
                             })
-                            
+                        seriesIndex = series.length;
                         series.push({name: "Patient " + key + " interpolated", 
                                 type: 'line',
+                                seriesIndex: seriesIndex,
                                 showSymbol: false,
+                                patientId: key,
                                 data: [],
                                 texts: [],
                                 weeks: [],
@@ -325,12 +398,12 @@ export default {
                                 })
                                 
                         if(night !== null){
-                            series[series.length-2].data.push(this.eventTrendData[i][key]['count'])
+                            series[series.length-2].data.push(data[i][key]['count'])
                             series[series.length-2].texts.push(text)
                             series[series.length-2].weeks.push(week)
                             series[series.length-2].nights.push(night)
                         } else {
-                            series[series.length-1].data.push(this.eventTrendData[i][key]['count'])
+                            series[series.length-1].data.push(data[i][key]['count'])
                             series[series.length-1].texts.push(text)
                             series[series.length-1].weeks.push(week)
                             series[series.length-1].nights.push(night)
@@ -339,26 +412,29 @@ export default {
                     }
                 }
             }
+            return series;
+        },
+        drawPatientsLinePlot(startWeek, endWeek){
+            console.log(this.eventTrendData)
+            var dom = document.getElementById("patientsLinePlot");
+            var myChart = echarts.init(dom, null, {
+                renderer: "sgv",
+                useDirtyRect: false
+            });
+            var option;
 
-            let colors = [
-                "#5470c6",
-                "#91cc75",
-                "#fac858",
-                "#ee6666",
-                "#73c0de",
-                "#3ba272",
-                "#fc8452",
-                "#9a60b4",
-                "#ea7ccc"
-            ];
+            let series = this.getSeries(this.eventTrendData);
+            
+            console.log(series)
 
             for(let i=0; i<series.length; i++){
-                if(colors.length > series.length/2){
+                if(this.colors.length > series.length/2){
                     if((series[i].name.toLowerCase().indexOf("interpolated") === -1)){
-                        series[i].lineStyle.normal.color = colors[i];
-                        series[i].itemStyle.color = colors[i];
+                        series[i].lineStyle.normal.color = this.colors[i];
+                        series[i].itemStyle.color = this.colors[i];
+                        this.patientsColorEncoding[series[i].patientId] = this.colors[i];
                     } else {
-                        series[i].lineStyle.normal.color = colors[i-1];
+                        series[i].lineStyle.normal.color = this.colors[i-1];
                         series[i].itemStyle.color = 'transparent';
                     }
                 }
@@ -470,6 +546,10 @@ export default {
             }
 
             var callback = (args) => {
+                console.log(series[args.seriesIndex])
+                console.log(series[args.seriesId])
+                console.log(series)
+                console.log(args)
                 let nightId = series[args.seriesIndex].nights[args.dataIndex]
                 let week = series[args.seriesIndex].weeks[args.dataIndex]
                 
@@ -480,8 +560,6 @@ export default {
                     return args.marker + " <b>" + args.seriesName + "</b>: " + args.value + " events <br />" + series[args.seriesIndex].texts[args.dataIndex]
                 }
             }
-        
-
 
             option = {
                 title: {
@@ -511,9 +589,7 @@ export default {
                 },
                 dataZoom : {
                     show : true,
-                    realtime: true,
-                    start : 0,
-                    end : this.nightsNo
+                    realtime: true
                 },
                 xAxis: {
                     type: 'category',
@@ -530,7 +606,9 @@ export default {
             };
 
             if (option && typeof option === "object") {
-                myChart.setOption(option);
+                console.log("setting options")
+                console.log(option)
+                myChart.setOption(option, true);        
             }
             window.addEventListener("resize", myChart.resize);
         },
@@ -620,7 +698,7 @@ export default {
             };
 
             if (option && typeof option === "object") {
-                myChart.setOption(option);
+                myChart.setOption(option, true);
             }
 
             window.addEventListener("resize", myChart.resize);
@@ -712,102 +790,119 @@ export default {
             };
 
             if (option && typeof option === "object") {
-                myChart.setOption(option);
+                myChart.setOption(option, true);
             }
 
             window.addEventListener("resize", myChart.resize);
 
         },
-        drawCohortHeatMap(){
-            var dom = document.getElementById("cohortHeatMap");
+        drawSinglePatientLineChart(patientId){
+            var dom = document.getElementById("patient"+patientId+"LineChart");
             var myChart = echarts.init(dom, null, {
                 renderer: "sgv",
                 useDirtyRect: false
             });
-            // var app = {};
-
             var option;
 
-            // prettier-ignore
-            const stages = Array.from({length: 7}, (_, i) => i + 1);
-            // prettier-ignore
-            const days = Array.from({length: 7}, (_, i) => i + 1);
-            // prettier-ignore
-            const data = [[0, 0, 5], [0, 1, 1], [0, 2, 0],  [2, 4, 4], [2, 5, 2], [2, 7, 3], [5, 6, 2], [5, 4, 3], [0, 3, 0], [0, 4, 0], [0, 5, 0], [0, 6, 0], [0, 7, 0], [0, 8, 0], [0, 9, 0], [7, 1, 0], [7, 2, 2], [7, 3, 4], [7, 4, 1], [7, 5, 1], [7, 6, 3], [8, 6, 4], [8, 7, 6], [9, 8, 4], [10, 9, 4], [14, 2, 3], [16, 1, 3], [18, 8, 2], [19, 6, 5], [1, 0, 7], [1, 1, 0], [1, 2, 0], [1, 3, 0], [1, 4, 0], [1, 5, 0], [1, 6, 0], [1, 7, 0], [1, 8, 0], [1, 9, 0], [1, 10, 5], [1, 11, 2], [1, 12, 2], [1, 13, 6], [1, 14, 9], [1, 15, 11], [1, 16, 6], [1, 17, 7], [1, 18, 8], [1, 19, 12], [1, 20, 5], [1, 21, 5], [1, 22, 7], [1, 23, 2], [2, 0, 1], [2, 1, 1], [2, 2, 0], [2, 3, 0], [2, 4, 0], [2, 5, 0], [2, 6, 0], [2, 7, 0], [2, 8, 0], [2, 9, 0], [2, 10, 3], [2, 11, 2], [2, 12, 1], [2, 13, 9], [2, 14, 8], [2, 15, 10], [2, 16, 6], [2, 17, 5], [2, 18, 5], [2, 19, 5], [2, 20, 7], [2, 21, 4], [2, 22, 2], [2, 23, 4], [3, 2, 0], [3, 3, 0], [3, 4, 0], [3, 5, 0], [3, 6, 0], [3, 7, 0], [3, 8, 1], [3, 9, 0], [3, 10, 5], [3, 11, 4], [3, 12, 7], [3, 13, 14], [3, 14, 13], [3, 15, 12], [3, 16, 9], [3, 17, 5], [3, 18, 5], [3, 19, 10], [3, 20, 6], [3, 21, 4], [3, 22, 4], [3, 23, 1], [4, 0, 1], [4, 1, 3], [4, 2, 0], [4, 3, 0], [4, 4, 0], [4, 5, 1], [4, 6, 0], [4, 7, 0], [4, 8, 0], [4, 9, 2], [4, 10, 4], [4, 11, 4], [4, 12, 2], [4, 13, 4], [4, 14, 4], [4, 15, 14], [4, 16, 12], [4, 17, 1], [4, 18, 8], [4, 19, 5], [4, 20, 3], [4, 21, 7], [4, 22, 3], [4, 23, 0], [5, 0, 2], [5, 1, 1], [5, 2, 0], [5, 3, 3], [5, 4, 0], [5, 5, 0], [5, 6, 0], [5, 7, 0], [5, 8, 2], [5, 9, 0], [5, 10, 4], [5, 11, 1], [5, 12, 5], [5, 13, 10], [5, 14, 5], [5, 15, 7], [5, 16, 11], [5, 17, 6], [5, 18, 0], [5, 19, 5], [5, 20, 3], [5, 21, 4], [5, 22, 2], [5, 23, 0], [6, 0, 1], [6, 1, 0], [6, 2, 0], [6, 3, 0], [6, 4, 0], [6, 5, 0], [6, 6, 0], [6, 7, 0], [6, 8, 0], [6, 9, 0], [6, 10, 1], [6, 11, 0], [6, 12, 2], [6, 13, 1], [6, 14, 3], [6, 15, 4], [6, 16, 0], [6, 17, 0], [6, 18, 0], [6, 19, 0], [6, 20, 1], [6, 21, 2], [6, 22, 2], [6, 23, 6]]
-                .map(function (item) {
-                return [item[1], item[0], item[2] || '-'];
-            });
+            let data = [];
+
+            for(let i=0; i<this.eventTrendData.length; i++){
+                for(const key in this.eventTrendData[i]){
+                    let o = {};
+                    if(parseInt(key) === patientId){
+                        o[key] = this.eventTrendData[i][key]
+                        data.push(o)
+                    }
+                }
+            }
+
+            console.log(data);
+
+            let series = this.getSeries(data);
+
+            series[0].lineStyle.normal.color = this.patientsColorEncoding[patientId];
+            series[0].itemStyle.color = this.patientsColorEncoding[patientId];
+            series[1].lineStyle.normal.color = this.patientsColorEncoding[patientId];
+            series[1].itemStyle.color = this.patientsColorEncoding[patientId];
+            console.log(series);
+
+            let legend = [];
+
+            for (let i=0; i<series.length; i++){
+                legend.push(series[i].name)
+
+                //if(series[i].name.toLowerCase().indexOf("interpolated") === -1) {
+                //    legend.push(series[i].name)
+                //}
+            }
 
             var callback = (args) => {
-                if (args.value[2] === 1){
-                    return args.seriesName + "<br />" +args.marker + 'day '+parseInt(parseInt(args.value[0])+1) + ": " + args.value[2] + ' event(s)'
-
+                console.log(series[args.seriesIndex])
+                console.log(series[args.seriesId])
+                console.log(series)
+                console.log(args)
+                let nightId = series[args.seriesIndex].nights[args.dataIndex]
+                let week = series[args.seriesIndex].weeks[args.dataIndex]
+                
+                if(nightId !== null && week !== null){
+                    return args.marker + " <b>" + args.seriesName + "</b>: " + args.value + " events <br />" + series[args.seriesIndex].texts[args.dataIndex] + "<br /> Night id: " + nightId + "- Week: " + week
                 }
-                else{
-                    return args.seriesName + "<br />" +args.marker + 'day '+parseInt(parseInt(args.value[0])+1) + ": " + args.value[2] + ' event(s)'
+                else {
+                    return args.marker + " <b>" + args.seriesName + "</b>: " + args.value + " events <br />" + series[args.seriesIndex].texts[args.dataIndex]
                 }
             }
 
             option = {
-                title:{
-                    text: ""
+                title: {
+                    text: 'Interpolated events trend over days of patient' + patientId ,
+                    textAlign: 'left',
                 },
                 tooltip: {
-                    position: 'top',
-                    formatter: callback
+                    trigger: 'item',
+                    formatter: callback,
+                    axisPointer: 'link'
+                },
+                legend: {
+                    data: legend,
+                    orient: 'horizontal',
+                    right: 'right'
                 },
                 grid: {
-                    height: '50%',
-                    top: '5%'
+                    left: '3%',
+                    right: '4%',
+                    bottom: '3%',
+                    containLabel: true
+                },
+                toolbox: {
+                    feature: {
+                    saveAsImage: {}
+                    }
+                },
+                dataZoom : {
+                    show : true,
+                    realtime: true
                 },
                 xAxis: {
                     type: 'category',
-                    name: 'Day',
-                    data: days,
-                    splitArea: {
-                        show: true
-                    },
+                    boundaryGap: false,
+                    name: "Day",
+                    data: [...Array(this.nightsNo).keys()],
                 },
                 yAxis: {
-                    type: 'category',
-                    name: 'Sleep Cycles',
-                    rotate: 30,
-                    data: stages,
-                    splitArea: {
-                        show: true
-                    },
+                    type: 'value',
+                    name: 'Events'
+        
                 },
-                visualMap: {
-                    min: 0,
-                    max: 10,
-                    calculable: true,
-                    orient: 'horizontal',
-                    left: 'center',
-                    bottom: '30%'
-                },
-                series: [
-                {
-                    name: '<b>Details</b>',
-                    type: 'heatmap',
-                    data: data,
-                    label: {
-                        show: true,
-                    },
-                    emphasis: {
-                        itemStyle: {
-                            shadowBlur: 10,
-                            shadowColor: 'rgba(0, 0, 0, 0.5)'
-                        }
-                    }
-                }
-                ]
+                series: series
             };
 
             if (option && typeof option === "object") {
-                myChart.setOption(option);
+                console.log("setting options")
+                console.log(option)
+                myChart.setOption(option, true);        
             }
-
             window.addEventListener("resize", myChart.resize);
+
         }
     }
 }

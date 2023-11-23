@@ -559,6 +559,22 @@ def create_app(test_config=None):
             print(e)
             return f"{e}", 500
 
+    @app.route('/event-trend-patients-ids', methods=["GET"])
+    def get_event_trend_patient_ids():
+        try:
+            with sql.connect(DATABASE) as con:
+                print("DB connected")
+                cur = con.cursor()
+                result = cur.execute("SELECT DISTINCT patient_id FROM week_summary").fetchall()
+                return [str(r[0]) for r in result], 200
+
+        except Exception as e:
+            print('Exception raised in getting event trend')
+            print(e)
+            return f"{e}", 500
+
+
+
 
     @app.route('/event-trend', methods=["GET"])
     def get_event_trend():
