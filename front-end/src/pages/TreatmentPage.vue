@@ -41,14 +41,16 @@
         </el-col>
     </el-row>
 
-    <el-row>
-        <el-col :span="8" :offset="2">
+    <el-row style="border-bottom: solid grey; border-top:solid grey; margin-top: 2%;">
+        <el-col :span="8" :offset="2" style="border-right:solid; border-color: grey">
+            <h2>Patient {{ this.$store.state.patientId }} - Night id: {{ this.$store.state.nightId }}</h2>
             <div v-if="patientsExists" id="currentPatientHeatMap" style="position: relative; height: 70vh; width: 55vh; margin-top:10%"></div>
             <div v-else>
                 <el-empty :image-size="70" description="Select at least a patient to see heatmap"/>
             </div>
         </el-col>
         <el-col :span="8" :offset="1" style="margin-bottom:5%">
+            <h2>Comparison between patients</h2>
             <p><b>Select the desired weeks</b></p>
             <el-slider v-model="week" :min="minWeekId" :max="maxWeekId" range show-stops :marks="weeks" :show-tooltip="false" @change="changeWeekFilter" />
             <div v-if="patientsExists" id="patientsLinePlot" style="position: relative; height: 50vh; width: 70vh; margin-top: 10%;"></div>
@@ -64,6 +66,7 @@
         </el-col>
     </el-row>
     <el-row>
+        <h2>Comparison between patients - Single plots</h2>
         <el-col>
             <div v-if="selectedPatients.length >= 3" style="display: flex; flex-wrap: wrap; padding:50px">
                 <div v-for="patientId in selectedPatients" style="flex-grow: 1; width: 33%; height: 100px;">
@@ -123,10 +126,9 @@ export default {
     async mounted() {
         await this.getExistingEventTrendPatientIds();
         await this.getEventTrendData(this.selectedPatients);
+        await this.getWeeklySummary();
         this.getWeeks();
-        this.drawCurrentPatientHeatMap();
         this.drawPatientsLinePlot(this.startWeek, this.endWeek);
-        this.getWeeklySummary();
     },
     methods: {
         removeDuplicates(arr) {
@@ -649,12 +651,16 @@ export default {
                 },
                 legend: {
                     data: legend,
-                    orient: 'horizontal',
-                    right: 'right'
+                    orient: 'vertical',
+                    right:'-1%',
+                    textStyle: {
+                        fontSize: '10',
+                    }
                 },
                 grid: {
-                    left: '3%',
-                    right: '4%',
+                    width: '90%',
+                    height:'90%',
+                    right: '10%',
                     bottom: '3%',
                     containLabel: true
                 },
@@ -690,14 +696,21 @@ export default {
         },
 
         async getWeeklySummary() {
-          try {
-            const path = `http://127.0.0.1:5000/weekly-summary/${this.$store.state.patientId}/${this.$store.state.week}/`;
-            const response = await axios.get(path);
-            this.weeklySummaryData = response.data;
-            this.drawCurrentPatientHeatMap();
-          } catch (error) {
-            console.error('Error fetching weekly summary data:', error);
-          }
+            const path = `http://127.0.0.1:5000/weekly-summary/${this.$store.state.patientId}/${this.$store.state.week}/`
+            const headers = {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            };
+
+            await axios.get(path, {headers})
+                .then((res) => {
+                    console.log(res.data);
+                    this.weeklySummaryData = res.data;
+                    this.drawCurrentPatientHeatMap();
+                })
+                .catch(err=>{
+                    console.error('Error fetching weekly summary data:', err);
+                })
         },
 
         drawCurrentPatientHeatMap(){
@@ -732,7 +745,7 @@ export default {
 
             option = {
                 title:{
-                    text: ""
+                    text: "Amount of events per sleep cycle"
                 },
                 tooltip: {
                     position: 'top',
