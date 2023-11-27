@@ -43,7 +43,7 @@
 
     <el-row style="border-bottom: solid grey; border-top:solid grey; margin-top: 2%;">
         <el-col :span="8" :offset="2" style="border-right:solid; border-color: grey">
-            <h2>Patient {{ this.$store.state.patientId }} - Night id: {{ this.$store.state.nightId }}</h2>
+            <h2>Patient {{ this.$store.state.patientId }} - All nights</h2>
             <div v-if="patientsExists" id="currentPatientHeatMap" style="position: relative; height: 70vh; width: 55vh; margin-top:10%"></div>
             <div v-else>
                 <el-empty :image-size="70" description="Select at least a patient to see heatmap"/>
@@ -65,10 +65,10 @@
             </el-card>
         </el-col>
     </el-row>
-    <el-row>
+    <el-row v-if="selectedPatients.length >= 3">
         <h2>Comparison between patients - Single plots</h2>
         <el-col>
-            <div v-if="selectedPatients.length >= 3" style="display: flex; flex-wrap: wrap; padding:50px">
+            <div style="display: flex; flex-wrap: wrap; padding:40px">
                 <div v-for="patientId in selectedPatients" style="flex-grow: 1; width: 33%; height: 100px;">
                     <div v-if="patientsExists" :id="'patient'+patientId+'LineChart'" style="position: relative; height: 40vh; width: 60vh; margin-top: 3%;"></div>
                 </div>
@@ -99,7 +99,6 @@ export default {
             endWeek: ref(''),
             minWeekId: ref(0),
             maxWeekId: ref(0),
-            noPatients: 0,
             nightsNo: 0,
             patientsIds: ref([]),
             selectedPatients: [parseInt(this.$store.state.patientId)],
@@ -518,8 +517,6 @@ export default {
                 }
             }
 
-            this.noPatients = series.length;
-
             /* WEEK FILTER LOGIC: not working yet
             if(startWeek !== '' && endWeek !== ''){
                 let weeksList = Object.values(this.weeks);
@@ -925,8 +922,7 @@ export default {
             series[0].lineStyle.normal.color = this.patientsColorEncoding[patientId];
             series[0].itemStyle.color = this.patientsColorEncoding[patientId];
             series[1].lineStyle.normal.color = this.patientsColorEncoding[patientId];
-            series[1].itemStyle.color = this.patientsColorEncoding[patientId];
-            console.log(series);
+            series[1].itemStyle.color = 'transparent';
 
             let legend = [];
 
