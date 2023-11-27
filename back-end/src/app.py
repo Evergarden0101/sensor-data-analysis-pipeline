@@ -656,10 +656,11 @@ def create_app(test_config=None):
                 elif(len(patient_id)==1):
                     cur.execute(f"SELECT MIN(day_no) AS min_day, MAX(day_no) AS max_day FROM week_summary WHERE patient_id={patient_id[0]}")
                 day_info = cur.fetchone()
-                print(day_info)
+                print('day_info: ',day_info) 
                 if(day_info == None or day_info[0]==None or day_info[1]==None):
                     return_list = [{str(i):None} for i in patient_id]
                     return json.dumps(return_list), 200
+                # day_list = [0,day_info[1]]
                 day_list = [day_info[0],day_info[1]]
                 day_list = pd.DataFrame(day_list,columns=['day'])
                 day_list['date'] = pd.to_datetime(day_list['day'], unit='D', origin='2023-01-01')
@@ -683,13 +684,19 @@ def create_app(test_config=None):
                         day_lists[i] = None
                         has_value = False
                     else:
-                        df_patient['date'] = day_list.index[df_patient['day']]
-                        # print(df_patient)
+                        with sql.connect(DATABASE) as con:
+                            cur = con.cursor()
+                            cur.execute(f"SELECT MIN(day_no) AS min_day FROM week_summary WHERE patient_id={patient_id[i]}")
+                            day_range = cur.fetchone()
+                            first_day = day_range[0]
+                            cur.close()
+                        df_patient['date'] = day_list.index[df_patient['day']-day_info[0]]
                         daily_df = df_patient.set_index('date').resample('D').asfreq()
                         # print(daily_df)
                         # Interpolate the 'count' column
                         type_lists[i] = daily_df['type']
                         type_lists[i] = type_lists[i].fillna(-1)
+                        print('typelists: ',type_lists[i])
                         
                         # daily_df = daily_df.iloc[day_info[0]:day_info[1]+1]
                         cnt = daily_df
@@ -701,23 +708,29 @@ def create_app(test_config=None):
                         day_lists[i] = cnt['count']
                         has_value = True
                         # print('day list: ',day_lists[i])
-                        print(cnt)
+                        print('cnt: ',cnt)
                     
                     nights = []
+                    start = 0
+                    end = 0
+                    # first_day = 0
                     for j in range(len(day_lists)):
                         # print('cnt.shape[0]: ',cnt.shape[0])
                         print('patient_id: ',patient_id[i])
                         print('night: ',j)
+                        print('first day: ',first_day)
                         print('week_origin: ', cnt)
                         print('day lists: ',day_lists)
-                        print('day: ',day_lists.iloc[j,i+1])
-                        if((not has_value) or j>=cnt.shape[0] or pd.isna(day_lists.iloc[j,i+1])):
-                            print('No value')
+                        print('count: ',day_lists.iloc[j,i+1])
+                        if((not has_value) or pd.isna(day_lists.iloc[j,i+1]) or j-first_day>=cnt.shape[0] ):
+                            print('No value :', j)
                             nights.append(None)
                             continue
+                        # if(first_day==0):
+                        #     first_day = j
                         # print("week1: ",cnt['week'].values[j])
-                        if(not pd.isna(cnt.iloc[j,1])):
-                            week = str(cnt['week'].values[j])
+                        if(not pd.isna(cnt.iloc[j-first_day,1])):
+                            week = str(cnt['week'].values[j-first_day])
                             # print('week list: ',week.split('-'))
                             if('-' in week):
                                 start = int(week.split('-')[0])
@@ -736,9 +749,9 @@ def create_app(test_config=None):
                             else:
                                 week = week_no
                         print('week2: ',week)
-                        cnt['week'].values[j] = str(week)
-                        # print('set week: ',cnt['week'].values[j])
-                        obj = {'count':day_lists[i][j], 'type':type_lists[i][j], 'week':cnt['week'].values[j], 'night':cnt['night'].values[j]}
+                        cnt['week'].values[j-first_day] = str(week)
+                        # print('night: ',cnt['night'].values)
+                        obj = {'count':day_lists[i][j], 'type':type_lists[i][j], 'week':cnt['week'].values[j-first_day], 'night':cnt['night'].values[j-first_day]}
                         # print('obj: ',obj)
                         nights.append(obj)
                     print(nights)
