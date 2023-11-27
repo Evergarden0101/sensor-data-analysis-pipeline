@@ -9,11 +9,10 @@ import xgboost as xgb
 import seaborn as sns
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import GridSearchCV, learning_curve, train_test_split, StratifiedKFold, RandomizedSearchCV, LeaveOneOut, cross_val_score
+from sklearn import model_selection
+from sklearn.model_selection import train_test_split
 from sklearn.tree import DecisionTreeClassifier as DTC
-from sklearn import tree
-from sklearn.metrics import accuracy_score, confusion_matrix
+from sklearn.metrics import accuracy_score, confusion_matrix, make_scorer, accuracy_score, precision_score, recall_score, f1_score
 import matplotlib
 matplotlib.use('agg')
 sql.register_adapter(np.int64, lambda val: int(val))
@@ -105,7 +104,7 @@ def retrieve_patient_recording(DATABASE, patient_id, week, night_id, range_min, 
 def remove_pred_label(DATABASE, label):
     with sql.connect(DATABASE) as con:
         cur = con.cursor()
-        cur.execute(f"DELETE FROM Predicted_labels WHERE patient_id={label['patient_id']} AND week={label['week']} AND night_id={label['night_id']} AND label_id={label['label_id']}")
+        cur.execute(f"DELETE FROM predicted_labels WHERE patient_id={label['patient_id']} AND week={label['week']} AND night_id={label['night_id']} AND label_id={label['label_id']}")
 
 
 """Insert label for a specific patient in the Database"""
@@ -183,13 +182,13 @@ def generate_model(DATABASE, patient_id, week, night_id, recorder):
     gen_model = False
     with sql.connect(DATABASE) as con:
         cur = con.cursor()
-        cur.execute(f"INSERT INTO models (patient_id, model_path, validation_file_path) VALUES {patient_id, get_data_path(DATABASE) + f'p{patient_id}_model.json', get_data_path(DATABASE) + f'p{patient_id}_wk{week}/{night_id}{recorder}Fnorm.csv'}")
+        cur.execute(f"INSERT INTO models (patient_id, model_path) VALUES {patient_id, get_data_path(DATABASE) + f'p{patient_id}_model.json'}")
         model.save_model(get_data_path(DATABASE) + f"p{patient_id}_model.json")
         
         cur.execute(f"SELECT * FROM models WHERE patient_id = -1")
         general_model = cur.fetchall()
         if not general_model:
-            cur.execute(f"INSERT INTO models (patient_id, model_path, validation_file_path) VALUES {-1, get_data_path(DATABASE) + f'general_model.json', get_data_path(DATABASE) + f'p{patient_id}_wk{week}/{night_id}{recorder}Fnorm.csv'}")
+            cur.execute(f"INSERT INTO models (patient_id, model_path) VALUES {-1, get_data_path(DATABASE) + f'general_model.json'}")
             model.save_model(get_data_path(DATABASE) + f'general_model.json')
             gen_model = True
         cur.close()
@@ -204,12 +203,12 @@ def generate_model(DATABASE, patient_id, week, night_id, recorder):
 
     return labels
 
-"""TODO: check prediction length """
+"""TODO: check prediction length, save 0 predictions """
 def predict_events(DATABASE, model, patient_id, week, night_id, recorder):
     print("predict_events")
-    data = open_brux_csv(DATABASE, patient_id, week, night_id, recorder)
     original_sampling = get_original_sampling(DATABASE)
     selected_sampling =get_selected_sampling(DATABASE)
+    data = open_brux_csv(DATABASE, patient_id, week, night_id, recorder)
     cycle_num = int(np.ceil(data.shape[0] / original_sampling / 90 / 60))
     
     selected = get_selected_intervals(patient_id, week, night_id, DATABASE)
@@ -355,22 +354,28 @@ def run_prediction(DATABASE, patient_id, week, night_id, recorder):
 def run_confirmation(DATABASE, model_path, patient_id, week, night_id, recorder, study):
     original_sampling = get_original_sampling(DATABASE)
     selected_sampling = get_selected_sampling(DATABASE)
-    with sql.connect(DATABASE) as con:
-        print("DB connected")
-        cur = con.cursor()
-        cur.execute(f"SELECT * FROM confirmed_labels WHERE patient_id={patient_id} AND week={week} AND night_id={night_id}")
-        labels = cur.fetchall()
-        cur.close()
-    print(labels)
     data = open_brux_csv(DATABASE, patient_id, week, night_id, recorder)
-    bites = np.zeros(data.shape[0], dtype=int)
-    print("label bites")
-    for label in labels:
-        for i in range(label[6], label[7]):
-            bites[i] = 1
-    print("add bites")
-    data['Bites'] = bites
-    data.to_csv(get_data_path(DATABASE) + f"p{patient_id}_wk{week}/{night_id}{recorder}Fnorm.csv", encoding='utf-8', index=False)
+    
+    if study:
+        bites = data['Bites']
+    else:
+        with sql.connect(DATABASE) as con:
+            print("DB connected")
+            cur = con.cursor()
+            cur.execute(f"SELECT * FROM confirmed_labels WHERE patient_id={patient_id} AND week={week} AND night_id={night_id}")
+            labels = cur.fetchall()
+            cur.close()
+        print(labels)
+        bites = np.zeros(data.shape[0], dtype=int)
+        print("label bites")
+        for label in labels:
+            for i in range(label[6], label[7]):
+                bites[i] = 1
+        print("add bites")
+        data['Bites'] = bites
+    
+        print("save data")
+        data.to_csv(get_data_path(DATABASE) + f"p{patient_id}_wk{week}/{night_id}{recorder}Fnorm.csv", encoding='utf-8', index=False)
     
     MR = get_column_array(get_column_data_from_df(data, "MR"))
     ML = get_column_array(get_column_data_from_df(data, "ML"))
@@ -383,7 +388,7 @@ def run_confirmation(DATABASE, model_path, patient_id, week, night_id, recorder,
     df = pd.DataFrame({'MR': MR, 'ML': ML, 'Bites': bites})
 
     x = df.iloc[:,:2].copy()
-    y = df.iloc[:,'Bites'].copy()
+    y = df.iloc[:,-1].copy()
     x = np.array(x.values.tolist())
     y = np.array(y.values.tolist())
 
@@ -397,18 +402,13 @@ def run_confirmation(DATABASE, model_path, patient_id, week, night_id, recorder,
     model.fit(x_train, y_train, xgb_model = model_path)
 
     print("save model")
+    model.save_model(model_path)
+    
     if study:
         p = -1
-        name = f"general_model.json"
     else:
         p = patient_id
-        name = f"p{patient_id}_model.json"
     
-    with sql.connect(DATABASE) as con:
-        cur = con.cursor()
-        cur.execute(f"INSERT INTO models (patient_id, model_path, validation_file_path) VALUES {p, get_data_path(DATABASE) + f'p{patient_id}_model.json', get_data_path(DATABASE) + f'p{patient_id}_wk{week}/{night_id}{recorder}Fnorm.csv'}")
-        model.save_model(get_data_path(DATABASE) + name)
-        cur.close()
     return get_model_accuracy(DATABASE, model, patient_id, week, night_id, recorder, p)
 
 
@@ -421,9 +421,11 @@ def get_model_accuracy(DATABASE, model, patient_id, week, night_id, recorder, p)
         path = cur.fetchone()[0]
         cur.close()
     print(path)
-    file_path = get_data_path(DATABASE) + f'p{patient_id}_wk{week}/{night_id}{recorder}Fnorm.csv'
-    # if file_path == path:
-    #     return 0;
+    file_path = get_data_path(DATABASE) + f"p{patient_id}_wk{week}/{night_id}{recorder}Fnorm.csv"
+    print(file_path)
+    if file_path == path:
+        return {'accuracy': 0, 'precision': 0};
+    print("open validation file")
     data = pd.read_csv(path)
     # patient_id = re.search('/p(.*?)_', path).group(1)
     # night_id = re.search("/[0-9]+", path).group(0)
@@ -442,8 +444,35 @@ def get_model_accuracy(DATABASE, model, patient_id, week, night_id, recorder, p)
     x = np.array(x.values.tolist())
     y = np.array(y.values.tolist())
     print("validation")
-    accuracies = cross_val_score(estimator = model, X = x, y = y, cv = 10)
-    return np.floor(accuracies.mean()*10000)/100
+    scoring = {'accuracy' : make_scorer(accuracy_score), 
+           'precision' : make_scorer(precision_score),
+        #    'recall' : make_scorer(recall_score), 
+        #    'f1_score' : make_scorer(f1_score)
+           }
+    accuracies = model_selection.cross_validate(estimator = model, X = x, y = y, cv = 10, scoring=scoring)
+    print(accuracies)
+    # accuracies = cross_val_score(estimator = model, X = x, y = y, cv = 10)
+    
+    # TODO: add to db
+    accuracy = np.floor(accuracies['test_accuracy'].mean()*10000)/100
+    precision = np.floor(accuracies['test_precision'].mean()*10000)/100
+    with sql.connect(DATABASE) as con:
+        cur = con.cursor()
+        cur.execute(f"UPDATE models SET accuracy={accuracy}, precision={precision} WHERE patient_id={p}")
+        
+        cur.execute(f"SELECT * FROM predicted_labels WHERE patient_id={patient_id} AND week={week} AND night_id={night_id}")
+        labels = cur.fetchall()
+        p_bites = np.zeros(data.shape[0], dtype=int)
+        print("label bites")
+        for label in labels:
+            for i in range(label[6], label[7]):
+                p_bites[i] = 1
+        p_bites = resample_signal(signal=p_bites, sampling_rate=original_sampling, SAMPLING_RATE=selected_sampling)
+        cm = confusion_matrix(Bites, p_bites)
+        cmn = 100*cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+        cur.execute(f"INSERT INTO accuracy_log (patient_id, week, night_id, accuracy, precision, TN, FP, FN, TP) VALUES {p, week, night_id, accuracy, precision, cmn[0], cmn[1], cmn[2], cmn[3]}")
+        cur.close()
+    return {'accuracy': accuracy, 'precision': precision}
 
 
 def return_img_stream(img_path):
@@ -1206,10 +1235,13 @@ def generate_night_pred_img(DATABASE, patient_id, week, night_id, recorder):
 
     with sql.connect(DATABASE) as con:
         print("DB connected")
-        params = (patient_id, week, night_id, recorder)
-        query = "SELECT DISTINCT * from predicted_labels WHERE (patient_id=? AND week=? AND night_id=? AND recorder=?)"
+        params = (patient_id, week, night_id)
+        query = "SELECT DISTINCT * from confirmed_labels WHERE (patient_id=? AND week=? AND night_id=?)"
         cur = con.cursor()
         predicted_labels = cur.execute(query, params)
+        if predicted_labels.fetchall() == None or len(predicted_labels.fetchall()) == 0:
+            query = "SELECT DISTINCT * from predicted_labels WHERE (patient_id=? AND week=? AND night_id=?)"
+            predicted_labels = cur.execute(query, params)
         columns = [description[0] for description in predicted_labels.description]
         print(columns)
         #df = get_patients_recordings_df(columns, patient_data.fetchall())

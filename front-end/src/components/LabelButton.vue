@@ -31,6 +31,9 @@ export default{
             //     })
             // };
 
+            this.$store.commit('getNightImg', '');
+            this.$store.commit('getWeekImg', '');
+
             const headers = { 
                 'Accept': 'application/json',
                 'Content-Type': 'application/json'
@@ -45,15 +48,23 @@ export default{
                 });
                 console.log(res);
                 // this.$store.commit('clearLabels');
-                // this.load = false;
+                this.load = false;
+
                 // TODO: update accuracy
-                this.$store.commit('updateStudyAccuracy', '--');
-                this.$store.commit('updatePatientAccuracy', '--');
+                this.$store.commit('updateStudyAccuracy', res.data['study_accuracy']['accuracy']);
+                this.$store.commit('updatePatientAccuracy', res.data['patient_accuracy']['accuracy']);
+                this.$store.commit('getNightImg', "http://127.0.0.1:5000/night-pred-img?p=" + this.$store.state.patientId+'&w='+this.$store.state.week+'&n='+this.$store.state.nightId+'&r='+this.$store.state.recorder)
+                this.$store.commit('getWeekImg', "http://127.0.0.1:5000/weekly-sum-img?p=" + this.$store.state.patientId+'&w='+this.$store.state.week);
                 // this.$store.commit('updateBruxLabelKey')
             })
             .catch(err=>{
                 console.log(err)
-                // this.load = false;
+                this.$message({
+                    showClose: true,
+                    message: 'Error occured in Model rerun!',
+                    type: 'error'
+                });
+                this.load = false;
             })
         }
     },

@@ -7,14 +7,30 @@ DROP TABLE IF EXISTS sleep_stage_detection;
 DROP TABLE IF EXISTS settings;
 DROP TABLE IF EXISTS sensors;
 DROP TABLE IF EXISTS week_summary;
+DROP TABLE IF EXISTS accuracy_log;
 
 
 CREATE TABLE models (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   patient_id INTEGER NOT NULL,
   accuracy DECIMAL(6,3),
-  validation_file_path TEXT NOT NULL,
+  precision DECIMAL(6,3),
+  validation_file_path TEXT,
   model_path TEXT NOT NULL
+);
+
+
+CREATE TABLE accuracy_log (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  patient_id INTEGER NOT NULL,
+  week TEXT NOT NULL,
+  night_id INTEGER NOT NULL,
+  accuracy DECIMAL(6,3) NOT NULL,
+  precision DECIMAL(6,3) NOT NULL,
+  TN DECIMAL(6,3) NOT NULL,
+  FP DECIMAL(6,3) NOT NULL,
+  FN DECIMAL(6,3) NOT NULL,
+  TP DECIMAL(6,3) NOT NULL
 );
 
 
