@@ -134,30 +134,38 @@ export default {
         getWeeks(){
             console.log("Getting the weeks")
 
-            let weekData = [];
+            var weekData = [];
 
             for (let i = 0; i < this.eventTrendData.length; i++) {
                 for(const key in this.eventTrendData[i]) {
-                    let week = this.eventTrendData[i][key]['week'];
-                    if(week !== null){
-                        weekData.push(week)
+                    if(this.eventTrendData[i][key] !== null){
+                        let week = this.eventTrendData[i][key].week;
+                        if(week !== null){
+                            weekData.push(week)
+                        }
                     }
                 } 
             }
 
-
-            weekData = weekData.sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));  
             weekData = this.removeDuplicates(weekData);
+            weekData = weekData.sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));  
+            var weekDataCopy = [...weekData];
+            var containsMultiWeek = false;
 
-            for (let i=weekData.length-1; i >= 0; i--){
-                if(weekData[i].toLowerCase().indexOf("-") === -1){
-                    if(weekData.includes(weekData[i]+"-"+String((parseInt(weekData[i])+1)))){
-                        weekData.splice(weekData.indexOf(weekData[i]), 1);
+            for (let i=weekDataCopy.length-1; i >= 0; i--){
+                if(String(weekDataCopy[i]).indexOf("-") === -1){
+                    if(weekDataCopy.includes(weekData[i]+"-"+String((parseInt(weekDataCopy[i])+1)))){
+                        weekDataCopy.splice(weekDataCopy.indexOf(weekDataCopy[i]), 1);
                     }
-                    if(weekData.includes(String((parseInt(weekData[i])-1))+"-"+weekData[i])){
-                        weekData.splice(weekData.indexOf(weekData[i]), 1);
+                    if(weekDataCopy.includes(String((parseInt(weekDataCopy[i])-1))+"-"+weekDataCopy[i])){
+                        weekDataCopy.splice(weekDataCopy.indexOf(weekDataCopy[i]), 1);
                     }      
+                } else {
+                    containsMultiWeek = true;
                 }
+            }
+            if(containsMultiWeek === true){
+                weekData = weekDataCopy;
             }
             
             let weekOptions = {};
@@ -165,7 +173,6 @@ export default {
             for(let i=0; i<weekData.length; i++){
                 weekOptions[i+1] = weekData[i];
             }
-            
             this.weeks = reactive(weekOptions);
             this.minWeekId = parseInt(Object.keys(this.weeks)[0])
             this.maxWeekId = parseInt(Object.keys(this.weeks)[Object.keys(this.weeks).length-1])
@@ -292,99 +299,190 @@ export default {
             return text;
 
         },
-        getSeries(data){
+        getSeries(result){
+            
             let series = [];
-            let exist = false;
-            for (let i = 0; i < data.length; i++) {
-                for (const key in data[i]) {
-                    let type = data[i][key]['type'];
-                    let text = this.getTypeText(type);
-                    let week = data[i][key]['week']
-                    let night = data[i][key]['night']
-                    for (let j = 0; j < series.length; j++) {
-                        if(night != null){
-                            if(series[j].name === "Patient " + key){
-                                series[j].data.push(data[i][key]['count'])
-                                series[j].texts.push(text);
-                                series[j].weeks.push(week);
-                                series[j].nights.push(night);
 
-                                series[j+1].data.push(null)
-                                series[j+1].texts.push(null)
-                                series[j+1].weeks.push(null)
-                                series[j+1].nights.push(null)
-                                exist = true;
-                            }
-                        } else {
-                            if(series[j].name === "Patient " + key + " interpolated"){
-                                series[j].data.push(data[i][key]['count'])
-                                series[j].texts.push(text);
-                                series[j].weeks.push(week);
-                                series[j].nights.push(night);
-
-                                series[j-1].data.push(null)
-                                series[j-1].texts.push(null)
-                                series[j-1].weeks.push(null)
-                                series[j-1].nights.push(null)
-                                exist = true;
+            for(let i=0; i<result.length; i++){
+                for(const key in result[i]){
+                    var exist = false;
+                    
+                    // CHECK IF PATIENT EXIST
+                    for(let j=0; j<series.length; j++){
+                        if(key === series[j].patientId){
+                            exist = true;
+                            if(result[i][key] === null){
+                                //console.log("The data is null", series[j].patientId)
+                                //The data is null
+                                series[j].data.push(null)
+                                series[j].texts.push(null);
+                                series[j].weeks.push(null);
+                                series[j].nights.push(null);
+                            } 
+                            else{
+                                if(result[i][key].night !== null){
+                                    if(series[j].name === "Patient " + key){
+                                        series[j].data.push(result[i][key].count)
+                                        series[j].texts.push(this.getTypeText(result[i][key].type));
+                                        series[j].weeks.push(result[i][key].week);
+                                        series[j].nights.push(result[i][key].night);
+                                        }
+                                    if(series[j].name == "Patient " + key + " interpolated"){
+                                        series[j].data.push(null)
+                                        series[j].texts.push(null);
+                                        series[j].weeks.push(result[i][key].week);
+                                        series[j].nights.push(null);
+                                    }
+                                    
+                                } else {
+                                    if(series[j].name === "Patient " + key){
+                                        series[j].data.push(null)
+                                        series[j].texts.push(this.getTypeText(result[i][key].type));
+                                        series[j].weeks.push(result[i][key].week);
+                                        series[j].nights.push(result[i][key].night);
+                                    }
+                                    if(series[j].name == "Patient " + key + " interpolated"){
+                                        series[j].data.push(result[i][key].count)
+                                        series[j].texts.push(null);
+                                        series[j].weeks.push(result[i][key].week);
+                                        series[j].nights.push(null);
+                                    }
+                                }
                             }
                         }
                     }
                     
-                    if (exist === false){
-                        let seriesIndex = series.length;
-                        series.push({name: "Patient " + key, 
-                                type: 'line',
-                                seriesIndex: seriesIndex,
-                                showAllSymbol: true,
-                                patientId: key,
-                                data: [],
-                                texts: [],
-                                weeks: [],
-                                nights: [],
-                                lineStyle: {
-                                    normal: {
-                                        color: ''
-                                    }
-                                },
-                                itemStyle: {
+                    
+                    // PATIENT STILL DOES NOT EXIST
+                    if(exist === false){
+                        var seriesIndex = series.length;
+                        if(result[i][key] === null){
+                            series.push({
+                            name: "Patient " + key, 
+                            type: 'line',
+                            seriesIndex: seriesIndex,
+                            showAllSymbol: true,
+                            patientId: key,
+                            data: [null],
+                            texts: [null],
+                            weeks: [null],
+                            nights: [null],
+                            lineStyle: {
+                                normal: {
                                     color: ''
                                 }
+                            },
+                            itemStyle: {
+                                color: ''
+                            }
                             })
-                        seriesIndex = series.length;
-                        series.push({name: "Patient " + key + " interpolated", 
-                                type: 'line',
-                                seriesIndex: seriesIndex,
-                                showSymbol: false,
-                                patientId: key,
-                                data: [],
-                                texts: [],
-                                weeks: [],
-                                nights: [],
-                                lineStyle: {
-                                    normal: {
-                                        type: 'dashed',
-                                        opacity: 50,
-                                        color: ''
-                                    }
-                                },
-                                itemStyle: {
+                            series.push({
+                            name: "Patient " + key + " interpolated", 
+                            type: 'line',
+                            seriesIndex: seriesIndex+1,
+                            showSymbol: false,
+                            patientId: key,
+                            data: [null],
+                            texts: [null],
+                            weeks: [null],
+                            nights: [null],
+                            lineStyle: {
+                                normal: {
+                                    type: 'dashed',
+                                    opacity: 50,
                                     color: ''
                                 }
-                                })
-                                
-                        if(night !== null){
-                            series[series.length-2].data.push(data[i][key]['count'])
-                            series[series.length-2].texts.push(text)
-                            series[series.length-2].weeks.push(week)
-                            series[series.length-2].nights.push(night)
-                        } else {
-                            series[series.length-1].data.push(data[i][key]['count'])
-                            series[series.length-1].texts.push(text)
-                            series[series.length-1].weeks.push(week)
-                            series[series.length-1].nights.push(night)
+                            },
+                            itemStyle: {
+                                color: ''
+                            }
+                            })
+                            
                         }
-                        exist = false;
+                        else if(result[i][key].night !== null){
+                            series.push({
+                            name: "Patient " + key, 
+                            type: 'line',
+                            seriesIndex: seriesIndex,
+                            showAllSymbol: true,
+                            patientId: key,
+                            data: [result[i][key].count],
+                            texts: [this.getTypeText(result[i][key].type)],
+                            weeks: [result[i][key].week],
+                            nights: [result[i][key].night],
+                            lineStyle: {
+                                normal: {
+                                    color: ''
+                                }
+                            },
+                            itemStyle: {
+                                color: ''
+                            }
+                            })
+                            series.push({
+                            name: "Patient " + key + " interpolated", 
+                            type: 'line',
+                            seriesIndex: seriesIndex+1,
+                            showSymbol: false,
+                            patientId: key,
+                            data: [null],
+                            texts: [null],
+                            weeks: [result[i][key].week],
+                            nights: [null],
+                            lineStyle: {
+                                normal: {
+                                    type: 'dashed',
+                                    opacity: 50,
+                                    color: ''
+                                }
+                            },
+                            itemStyle: {
+                                color: ''
+                            }
+                            })
+                        }
+                        else if (result[i][key].night === null){
+                            series.push({
+                            name: "Patient " + key, 
+                            type: 'line',
+                            seriesIndex: seriesIndex,
+                            showAllSymbol: true,
+                            patientId: key,
+                            data: [null],
+                            texts: [null],
+                            weeks: [result[i][key].week],
+                            nights: [null],
+                            lineStyle: {
+                                normal: {
+                                    color: ''
+                                }
+                            },
+                            itemStyle: {
+                                color: ''
+                            }
+                            })
+                            series.push({
+                            name: "Patient " + key + " interpolated", 
+                            type: 'line',
+                            seriesIndex: seriesIndex+1,
+                            showSymbol: false,
+                            patientId: key,
+                            data: [result[i][key].count],
+                            texts: [null],
+                            weeks: [result[i][key].week],
+                            nights: [null],
+                            lineStyle: {
+                                normal: {
+                                    type: 'dashed',
+                                    opacity: 50,
+                                    color: ''
+                                }
+                            },
+                            itemStyle: {
+                                color: ''
+                            }
+                            })
+                        }
                     }
                 }
             }
