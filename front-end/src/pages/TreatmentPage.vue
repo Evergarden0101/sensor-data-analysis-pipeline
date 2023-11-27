@@ -1,107 +1,77 @@
 <template>
-    <div>
-        <el-row style="margin-bottom: 3%;">
-            <el-col>
-                <h1 style="text-align: center;">This is the Treatment Analysis page!</h1>
-            </el-col>
-        </el-row>
-        <el-row>
-            <el-col align-center :span="12" :offset="6">
-                <Stepper step=4 />
-            </el-col>
-        </el-row>
-        <el-row style="margin-top: 3%;">
-            <el-col :span="18" :offset="6">
-                <router-link :to="'/events-classification/'">
-                    <el-button type="primary" plain><el-icon class="el-icon--left"><ArrowLeft /></el-icon> Events Classification</el-button>
-                </router-link>
-            </el-col>
-        </el-row>
+    <el-row style="margin-bottom: 3%;">
+        <el-col>
+            <h1 style="text-align: center;">This is the Treatment Analysis page!</h1>
+        </el-col>
+    </el-row>
+    <el-row>
+        <el-col align-center :span="12" :offset="6">
+            <Stepper step=4 />
+        </el-col>
+    </el-row>
+    <el-row style="margin-top: 3%;">
+        <el-col :span="18" :offset="6">
+            <router-link :to="'/events-classification/'">
+                <el-button type="primary" plain><el-icon class="el-icon--left"><ArrowLeft /></el-icon> Events Classification</el-button>
+            </router-link>
+        </el-col>
+    </el-row>
 
-        <el-row style="margin-top: 3%;">
-            <el-col :span="7" :offset="4">
-                <div v-if="patientsExists" id="currentPatientHeatMap" style="position: relative; height: 70vh; width: 55vh"></div>
-                <div v-else>
-                    <el-empty :image-size="70" description="Select at least a patient to see heatmap"/>
+    <el-row style="margin-top: 3%;">
+        <el-col :span="4" :offset="2">
+            <el-progress style="display:block;margin: 0 auto" type="dashboard" :percentage="studyAccuracy" width="80" stroke-width="4" >
+                <template #default="{ percentage }">
+                    <h3 class="percentage-value">{{ percentage }}%</h3>
+                    <h5 class="percentage-label">Accuracy</h5>
+                </template>
+            </el-progress>
+        </el-col>
+        <el-col :span="4" :offset="2">
+            <el-row>
+                <el-progress style="display:block; margin: 0 auto" type="dashboard" :percentage="patientAccuracy" width="80" stroke-width="4" >
+                    <template #default="{ percentage }">
+                        <h3 class="percentage-value">{{ percentage }}%</h3>
+                        <h5 class="percentage-label">Accuracy</h5>
+                    </template>
+                </el-progress>
+            </el-row>
+        </el-col>
+        <el-col :span="10" :offset="2">
+            Other metrics...
+        </el-col>
+    </el-row>
+
+    <el-row>
+        <el-col :span="8" :offset="2">
+            <div v-if="patientsExists" id="currentPatientHeatMap" style="position: relative; height: 70vh; width: 55vh; margin-top:10%"></div>
+            <div v-else>
+                <el-empty :image-size="70" description="Select at least a patient to see heatmap"/>
+            </div>
+        </el-col> 
+        <el-col :span="8" :offset="1" style="margin-bottom:5%">
+            <p><b>Select the desired weeks</b></p>
+            <el-slider v-model="week" :min="minWeekId" :max="maxWeekId" range show-stops :marks="weeks" :show-tooltip="false" @change="changeWeekFilter" />
+            <div v-if="patientsExists" id="patientsLinePlot" style="position: relative; height: 50vh; width: 70vh; margin-top: 10%;"></div>
+            <div v-else>
+                <el-empty :image-size="200" description="Select at least a patient to see linechart"/>
+            </div>
+        </el-col>
+        <el-col :span="4" :offset="1">
+            <el-card>
+                <h3>Select desired patients</h3>
+                <el-checkbox v-for="patientId of patientsIds" v-model="patientsCheckBox[patientId]" :label="'Patient '+patientId" size="large" @change="handlePatientsSelection(patientId)"/>
+            </el-card>
+        </el-col>
+    </el-row>
+    <el-row>
+        <el-col>
+            <div v-if="selectedPatients.length >= 3" style="display: flex; flex-wrap: wrap; padding:50px">
+                <div v-for="patientId in selectedPatients" style="flex-grow: 1; width: 33%; height: 100px;">
+                    <div v-if="patientsExists" :id="'patient'+patientId+'LineChart'" style="position: relative; height: 40vh; width: 60vh; margin-top: 3%;"></div>
                 </div>
-            </el-col>
-            <el-col :span="2">
-                Metrics with legend
-            </el-col>
-            <el-col :span="5">
-                <el-row>
-                    <el-col :offset="4" style="margin-bottom:5%">
-                        <p><b>Select the desired weeks</b></p>
-                    <el-slider v-model="week" :min="minWeekId" :max="maxWeekId" range show-stops :marks="weeks" :show-tooltip="false" @change="changeWeekFilter" />
-                    </el-col>
-                </el-row>
-                <el-row>
-                    <el-col>
-                        <div v-if="patientsExists" id="patientsLinePlot" style="position: relative; height: 68vh; width: 88vh"></div>
-                        <div v-else>
-                            <el-empty :image-size="200" description="Select at least a patient to see linechart"/>
-                        </div>
-                    </el-col>
-                </el-row>
-            </el-col>
-            <el-col :span="4" :offset="2">
-                Metrics
-            </el-col>
-        </el-row>
-        <el-row style="margin-top: 3%;">
-            <el-checkbox v-model="showCohort" label="Compare to cohort" size="large" border/>
-        </el-row>
-
-        <el-row v-if="showCohort" style="margin-top: 3%;">
-            <el-col :span="6" :offset="4">
-                <el-card>
-                    <h3>Select desired patients</h3>
-                    <el-checkbox v-for="patientId of patientsIds" v-model="patientsCheckBox[patientId]" :label="'Patient '+patientId" size="large" @change="handlePatientsSelection(patientId)"/>
-                </el-card>
-            </el-col>
-            <el-col :span="12">
-                <div v-if="selectedPatients.length >= 3">
-                    <div v-for="patientId in selectedPatients">
-                        <div v-if="patientsExists" :id="'patient'+patientId+'LineChart'" style="position: relative; height: 30vh; width: 60vh"></div>
-                    </div>
-                </div>
-            </el-col>
-            <el-col :span="2">
-                Metrics
-            </el-col>
-        </el-row>
-        <el-row style="margin-top: 2em;">
-            <el-col :offset="4" :span="8">
-                <el-row>
-                    <el-progress style="display:block;margin: 0 auto" type="dashboard" :percentage="studyAccuracy" width="80" stroke-width="4" >
-                        <template #default="{ percentage }">
-                            <h3 class="percentage-value">{{ percentage }}%</h3>
-                            <h5 class="percentage-label">Accuracy</h5>
-                        </template>
-                    </el-progress>
-                </el-row>
-                <el-row style="text-align:center">
-                    <h5 style="display:block; margin: 5px auto">Model Performance for whole Study</h5>
-                </el-row>
-            </el-col>
-
-            <el-col :span="8">
-                <el-row>
-                    <el-progress style="display:block; margin: 0 auto" type="dashboard" :percentage="patientAccuracy" width="80" stroke-width="4" >
-                        <template #default="{ percentage }">
-                            <h3 class="percentage-value">{{ percentage }}%</h3>
-                            <h5 class="percentage-label">Accuracy</h5>
-                        </template>
-                    </el-progress>
-                </el-row>
-
-                <el-row style="text-align:center">
-                    <h5 style="display:block; margin: 5px auto">Model Performance for Patient {{ this.$store.state.patientId }}</h5>
-                </el-row>
-            </el-col>
-        </el-row>
-    </div>
-    
+            </div>
+        </el-col>
+    </el-row>
 </template>
 
 
@@ -120,7 +90,6 @@ export default {
     data(){
         return{
             patientsExists: ref(false),
-            showCohort: ref(false),
             eventTrendData: [],
             week: ref([0, 0]),
             startWeek: ref(''),
@@ -130,7 +99,7 @@ export default {
             noPatients: 0,
             nightsNo: 0,
             patientsIds: ref([]),
-            selectedPatients: ref([parseInt(this.$store.state.patientId)]),
+            selectedPatients: [parseInt(this.$store.state.patientId)],
             selectedWeeks: ref([]),
             weeks: ref({}),
             patientsCheckBox: {},
@@ -203,20 +172,29 @@ export default {
             this.week = ref([this.minWeekId, this.maxWeekId])
         },
         async handlePatientsSelection(patientId){
+            console.log(typeof this.selectedPatients)
             if(this.patientsCheckBox[patientId] === true){
                 this.selectedPatients.push(parseInt(patientId))
+                this.selectedPatients = this.selectedPatients.sort(function(a,b){return a-b});
                 this.patientsExists = ref(true);
+                console.log("SELECTED PATIENTS")
                 console.log(this.selectedPatients);
                 await this.getEventTrendData(this.selectedPatients);
                 this.getWeeks();
                 this.drawPatientsLinePlot(this.startWeek, this.endWeek); 
             } else {
+                console.log("REMOVE")
                 let index = this.selectedPatients.indexOf(parseInt(patientId))
-                this.selectedPatients.splice(index);
+                this.selectedPatients.splice(index, 1);
+                console.log(index)
+                console.log("SELECTED PATIENTS")
                 console.log(this.selectedPatients);
                 if(this.selectedPatients.length === 0){
+                    console.log("SELECTED PATIENTS")
+                    console.log(this.selectedPatients)
                     this.patientsExists = ref(false);
                 } else {
+                    this.selectedPatients = this.selectedPatients.sort(function(a,b){return a-b});
                     await this.getEventTrendData(this.selectedPatients);
                     this.getWeeks();
                     this.drawPatientsLinePlot(this.startWeek, this.endWeek); 
@@ -224,6 +202,9 @@ export default {
             }
 
             if(this.selectedPatients.length >= 3){
+                this.selectedPatients = this.selectedPatients.sort(function(a,b){return a-b});
+                console.log("SORTED")
+                console.log(this.selectedPatients)
                 for(let i=0; i<this.selectedPatients.length; i++){
                     console.log(this.selectedPatients[i])
                    this.drawSinglePatientLineChart(this.selectedPatients[i])
@@ -240,11 +221,6 @@ export default {
         },
         updateHeatMaps(){
             console.log("Updating the heatmaps.")
-        },
-        showCohortHeatMap(){
-            if(this.showCohort.valueOf() === true){
-                this.drawCohortHeatMap();
-            }
         },
         async getExistingEventTrendPatientIds(){
             const path = `http://127.0.0.1:5000/event-trend-patients-ids`
@@ -819,7 +795,7 @@ export default {
             console.log(data);
 
             let series = this.getSeries(data);
-
+ 
             series[0].lineStyle.normal.color = this.patientsColorEncoding[patientId];
             series[0].itemStyle.color = this.patientsColorEncoding[patientId];
             series[1].lineStyle.normal.color = this.patientsColorEncoding[patientId];
@@ -855,7 +831,7 @@ export default {
             option = {
                 title: {
                     text: 'Interpolated events trend over days of patient' + patientId ,
-                    textAlign: 'left',
+                    textAlign: 'left'
                 },
                 tooltip: {
                     trigger: 'item',
@@ -865,7 +841,8 @@ export default {
                 legend: {
                     data: legend,
                     orient: 'horizontal',
-                    right: 'right'
+                    right: 'right',
+                    top: 20
                 },
                 grid: {
                     left: '3%',
@@ -880,7 +857,7 @@ export default {
                 },
                 dataZoom : {
                     show : true,
-                    realtime: true
+                    realtime: true,
                 },
                 xAxis: {
                     type: 'category',
