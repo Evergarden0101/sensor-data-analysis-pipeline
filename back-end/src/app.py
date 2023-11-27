@@ -664,34 +664,39 @@ def create_app(test_config=None):
                 # print(df)
                 df['type'] = df['type'].ge(df['count']/2).astype(int)
                 df['night'] = df['night'].astype(int)
-                # print(df)
+                print('df: ',df)
                 
                 if(len(patient_id)>1):
                     cur.execute(f"SELECT MIN(day_no) AS min_day, MAX(day_no) AS max_day FROM week_summary WHERE patient_id IN {patient_id}")
                 elif(len(patient_id)==1):
                     cur.execute(f"SELECT MIN(day_no) AS min_day, MAX(day_no) AS max_day FROM week_summary WHERE patient_id={patient_id[0]}")
                 day_info = cur.fetchone()
-                # print(day_info)
+                print(day_info)
+                if(day_info == None or day_info[0]==None or day_info[1]==None):
+                    return_list = [{str(i):None} for i in patient_id]
+                    return json.dumps(return_list), 200
                 day_list = [day_info[0],day_info[1]]
                 day_list = pd.DataFrame(day_list,columns=['day'])
                 day_list['date'] = pd.to_datetime(day_list['day'], unit='D', origin='2023-01-01')
                 day_list = day_list.set_index('date').resample('D').asfreq()
                 day_list['day'] = day_list['day'].interpolate(method='linear', limit_direction='both').astype(int)
-                # print(day_list.index)
+                print(day_list.index)
                 day_lists = pd.DataFrame(day_list['day'],columns=['day'])
                 type_lists = pd.DataFrame(day_list['day'],columns=['day'])
                 result_lists = pd.DataFrame(day_list['day'],columns=['day'])
-                # print(day_lists)
-                
-                for i in patient_id:
-                    # print(i)
+                print(day_lists)
+                patient_no = len(patient_id)
+                for i in range(patient_no):
+                    print(i)
                     # cur.execute(f"SELECT MIN(day_no) AS min_day, MAX(day_no) AS max_day FROM week_summary WHERE patient_id={i}")
                     # day_info = cur.fetchone()
                     # print(day_info)
-                    df_patient = df[df['patient_id']==i]
-                    # print(df_patient)
+                    df_patient = df[df['patient_id']==patient_id[i]]
+                    print('df_patient: ',df_patient)
                     if(df_patient.empty or df_patient.shape[0]==0):
+                        print('empty')
                         day_lists[i] = None
+                        has_value = False
                     else:
                         df_patient['date'] = day_list.index[df_patient['day']]
                         # print(df_patient)
@@ -704,17 +709,25 @@ def create_app(test_config=None):
                         # daily_df = daily_df.iloc[day_info[0]:day_info[1]+1]
                         cnt = daily_df
                         # print(cnt)
-                        try:
-                            cnt['count'] = cnt['count'].interpolate(method='spline', order=1).astype(int)
-                        except:
-                            cnt['count'] = cnt['count'].interpolate(method='linear', limit_direction='both').astype(int)
+                        # try:
+                        #     cnt['count'] = cnt['count'].interpolate(method='spline', order=1).astype(int)
+                        # except:
+                        cnt['count'] = cnt['count'].interpolate(method='linear', limit_direction='both').astype(int)
                         day_lists[i] = cnt['count']
+                        has_value = True
                         # print('day list: ',day_lists[i])
-                        # print(cnt)
+                        print(cnt)
                     
                     nights = []
                     for j in range(len(day_lists)):
-                        if(j>=cnt.shape[0] or pd.isna(day_lists.iloc[j,i])):
+                        # print('cnt.shape[0]: ',cnt.shape[0])
+                        print('patient_id: ',patient_id[i])
+                        print('night: ',j)
+                        print('week_origin: ', cnt)
+                        print('day lists: ',day_lists)
+                        print('day: ',day_lists.iloc[j,i+1])
+                        if((not has_value) or j>=cnt.shape[0] or pd.isna(day_lists.iloc[j,i+1])):
+                            print('No value')
                             nights.append(None)
                             continue
                         # print("week1: ",cnt['week'].values[j])
@@ -731,19 +744,20 @@ def create_app(test_config=None):
                             # print('end: ',end)
                             # continue
                         week_no = int(np.floor(j/7)+1)
+                        print('week_no: ',week_no)
                         if(week_no>end):
                             if(end>start):
                                 week = f"{week_no}-{week_no+1}"
                             else:
                                 week = week_no
-                        # print('week2: ',week)
+                        print('week2: ',week)
                         cnt['week'].values[j] = str(week)
                         # print('set week: ',cnt['week'].values[j])
                         obj = {'count':day_lists[i][j], 'type':type_lists[i][j], 'week':cnt['week'].values[j], 'night':cnt['night'].values[j]}
                         # print('obj: ',obj)
                         nights.append(obj)
-                    # print(nights)
-                    result_lists.loc[:, i] = nights
+                    print(nights)
+                    result_lists.loc[:, patient_id[i]] = nights
                     
                     
             # day_lists = day_lists.set_index('day')
