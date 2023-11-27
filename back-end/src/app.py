@@ -603,27 +603,42 @@ def create_app(test_config=None):
             return f"{e}", 500
 
 
-    # TODO: heatmap data
     @app.route('/weekly-summary/<int:patient_id>/<string:week>/', methods=["GET"])
     def get_weekly_summary(patient_id, week):
         try:
-            # params = (patient_id, week, night_id, labelId)
-            # query = "SELECT * from bite_records WHERE (patient_id=? AND week=? AND night_id=? AND labelId=?)"
+            with sql.connect(DATABASE) as con:
+                cur = con.cursor()
 
-            # with sql.connect(DATABASE) as con:
-            #     print("DB connected")
-            #     cur = con.cursor()
-            #     bite_records = cur.execute(query, params)
-            #     columns = [description[0] for description in bite_records.description]
-            #     print(columns)
-            #     #df = get_patients_recordings_df(columns, patient_data.fetchall())
-            #     bite_records_json = get_json_format_from_query(columns=columns, query_results=bite_records.fetchall()) #, start_id=1, end_id=14)
-                
-            return None, 200
+                query = """SELECT id, patient_id, week, night_id, cycle,
+                           max_cycle, count, type, day_no
+                           FROM week_summary
+                           WHERE patient_id = ? AND week = ?;"""
+
+
+                cur.execute(query, (patient_id, week))
+
+                rows = cur.fetchall()
+
+                week_summaries = [
+                    {
+                        'id': row[0],
+                        'patient_id': row[1],
+                        'week': row[2],
+                        'night_id': row[3],
+                        'cycle': row[4],
+                        'max_cycle': row[5],
+                        'count': row[6],
+                        'type': row[7],
+                        'day_no': row[8]
+                    } for row in rows
+                ]
+
+                return jsonify(week_summaries), 200
+
         except Exception as e:
-            print('Exception raised in getting week summary')
-            print(e)
-            return f"{e}", 500
+            print('Exception raised in getting week summary:', e)
+            return jsonify({'error': str(e)}), 500
+
 
 
     @app.route('/event-trend', methods=["GET"])

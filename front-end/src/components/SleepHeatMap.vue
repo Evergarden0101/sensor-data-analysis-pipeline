@@ -320,7 +320,8 @@ export default {
                 name: 'Sleep cycles',
                 splitArea: {
                     show: true
-                }
+                },
+                inverse: true
             },
             visualMap: [{
                 min: this.getMinSD(remDataJson, nremDataJson, "SD"),
