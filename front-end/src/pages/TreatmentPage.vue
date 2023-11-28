@@ -43,7 +43,7 @@
 
     <el-row style="border-bottom: solid grey; border-top:solid grey; margin-top: 2%;">
         <el-col :span="8" :offset="2" style="border-right:solid; border-color: grey">
-            <h2>Patient {{ this.$store.state.patientId }} - All nights</h2>
+            <h2>Patient {{ this.$store.state.patientId }} - Weekly summary for week {{ this.$store.state.week }}</h2>
             <div v-if="patientsExists" id="currentPatientHeatMap" style="position: relative; height: 70vh; width: 55vh; margin-top:10%"></div>
             <div v-else>
                 <el-empty :image-size="70" description="Select at least a patient to see heatmap"/>
@@ -919,10 +919,19 @@ export default {
 
             let series = this.getSeries(data);
 
-            series[0].lineStyle.normal.color = this.patientsColorEncoding[patientId];
-            series[0].itemStyle.color = this.patientsColorEncoding[patientId];
-            series[1].lineStyle.normal.color = this.patientsColorEncoding[patientId];
-            series[1].itemStyle.color = 'transparent';
+            if(series.length > 0){
+                if(series.length ===2){
+                    series[0].lineStyle.normal.color = this.patientsColorEncoding[patientId];
+                    series[0].itemStyle.color = this.patientsColorEncoding[patientId];
+                    series[1].lineStyle.normal.color = this.patientsColorEncoding[patientId];
+                    series[1].itemStyle.color = 'transparent';
+                }
+                if(series.length===1){
+                    series[0].lineStyle.normal.color = this.patientsColorEncoding[patientId];
+                    series[0].itemStyle.color = this.patientsColorEncoding[patientId];
+                }
+            }
+
 
             let legend = [];
 
