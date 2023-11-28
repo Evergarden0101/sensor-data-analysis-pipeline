@@ -153,6 +153,7 @@ def create_app(test_config=None):
                     predicted_labels_json = get_json_format_from_query(columns=columns, query_results=comfirmed_labels.fetchall(), start_id=1, end_id=9)
                     print(comfirmed_labels)
                     return comfirmed_labels, 200
+                cur.close()
             
             run_prediction(DATABASE, patient_id, week, night_id, recorder)
             params = (patient_id, week, night_id, recorder)
@@ -504,8 +505,17 @@ def create_app(test_config=None):
             return res
         except Exception as e:
             print('Exception raised in getting weekly summary image')
-            print(e)
-            return f"{e}", 500
+            img_local_path =  get_data_path(DATABASE) +"p"+str(patient_id)+"_wk"+str(week)+ f"/summary.png"
+            
+            try:
+                img_f = open(img_local_path, 'rb')
+                res = make_response(img_f.read())   # 用flask提供的make_response 方法来自定义自己的response对象
+                res.headers['Content-Type'] = 'image/png'   # 设置response对象的请求头属性'Content-Type'为图片格式
+                img_f.close()
+                return res
+            except:
+                print(e)
+                return f"{e}", 500
 
 
     @app.route('/night-pred-img', methods=["GET"])
