@@ -537,22 +537,33 @@ def create_app(test_config=None):
             img_local_path =  get_data_path(DATABASE)+'p'+str(patient_id)+'_wk'+str(week)+f'/'+str(night)+f'.png'
             print('img_local_path: ',img_local_path)
             
-            try:
-                img_f = open(img_local_path, 'rb')
-            except FileNotFoundError:
-                generate_night_pred_img(DATABASE, patient_id, week, night, recorder)
-                img_f = open(img_local_path, 'rb')
-            except Exception as e:
-                return f"{e}", 500
+            if os.path.exists(img_local_path) and os.path.getsize(img_local_path) < 50:
+                print(f"File size is {file_size} bytes. Deleting file.")
+                os.remove(img_local_path)
             
+            if not os.path.exists(img_local_path):
+                generate_night_pred_img(DATABASE, patient_id, week, night, recorder)
+                
+            img_f = open(img_local_path, 'rb')
             print(img_f)
             res = make_response(img_f.read())
             res.headers['Content-Type'] = 'image/png'
             img_f.close()
+            
+            # Check if the file size is below the threshold
+            file_size = os.path.getsize(img_local_path)
+            if file_size < 50:
+                # Delete the file
+                print(f"File size is {file_size} bytes. Deleting file.")
+                os.remove(img_local_path)
             return res
         except Exception as e:
             print('Exception raised in getting night prediction image')
             print(e)
+            
+            img_local_path =  get_data_path(DATABASE)+'p'+str(patient_id)+'_wk'+str(week)+f'/'+str(night)+f'.png'
+            if os.path.exists(img_local_path):
+                os.remove(img_local_path)
             return f"{e}", 500
 
 
