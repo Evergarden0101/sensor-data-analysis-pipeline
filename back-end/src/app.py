@@ -153,6 +153,7 @@ def create_app(test_config=None):
                     predicted_labels_json = get_json_format_from_query(columns=columns, query_results=comfirmed_labels.fetchall(), start_id=1, end_id=9)
                     print(comfirmed_labels)
                     return comfirmed_labels, 200
+                cur.close()
             
             run_prediction(DATABASE, patient_id, week, night_id, recorder)
             params = (patient_id, week, night_id, recorder)
@@ -504,8 +505,17 @@ def create_app(test_config=None):
             return res
         except Exception as e:
             print('Exception raised in getting weekly summary image')
-            print(e)
-            return f"{e}", 500
+            img_local_path =  get_data_path(DATABASE) +"p"+str(patient_id)+"_wk"+str(week)+ f"/summary.png"
+            
+            try:
+                img_f = open(img_local_path, 'rb')
+                res = make_response(img_f.read())   # 用flask提供的make_response 方法来自定义自己的response对象
+                res.headers['Content-Type'] = 'image/png'   # 设置response对象的请求头属性'Content-Type'为图片格式
+                img_f.close()
+                return res
+            except:
+                print(e)
+                return f"{e}", 500
 
 
     @app.route('/night-pred-img', methods=["GET"])
@@ -527,22 +537,33 @@ def create_app(test_config=None):
             img_local_path =  get_data_path(DATABASE)+'p'+str(patient_id)+'_wk'+str(week)+f'/'+str(night)+f'.png'
             print('img_local_path: ',img_local_path)
             
-            try:
-                img_f = open(img_local_path, 'rb')
-            except FileNotFoundError:
-                generate_night_pred_img(DATABASE, patient_id, week, night, recorder)
-                img_f = open(img_local_path, 'rb')
-            except Exception as e:
-                return f"{e}", 500
+            if os.path.exists(img_local_path) and os.path.getsize(img_local_path) < 50:
+                print(f"File size is {file_size} bytes. Deleting file.")
+                os.remove(img_local_path)
             
+            if not os.path.exists(img_local_path):
+                generate_night_pred_img(DATABASE, patient_id, week, night, recorder)
+                
+            img_f = open(img_local_path, 'rb')
             print(img_f)
             res = make_response(img_f.read())
             res.headers['Content-Type'] = 'image/png'
             img_f.close()
+            
+            # Check if the file size is below the threshold
+            file_size = os.path.getsize(img_local_path)
+            if file_size < 50:
+                # Delete the file
+                print(f"File size is {file_size} bytes. Deleting file.")
+                os.remove(img_local_path)
             return res
         except Exception as e:
             print('Exception raised in getting night prediction image')
             print(e)
+            
+            img_local_path =  get_data_path(DATABASE)+'p'+str(patient_id)+'_wk'+str(week)+f'/'+str(night)+f'.png'
+            if os.path.exists(img_local_path):
+                os.remove(img_local_path)
             return f"{e}", 500
 
 

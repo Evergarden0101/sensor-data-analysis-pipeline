@@ -14,6 +14,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.tree import DecisionTreeClassifier as DTC
 from sklearn.metrics import accuracy_score, confusion_matrix, make_scorer, accuracy_score, precision_score, recall_score, f1_score
 import matplotlib
+import shutil
 matplotlib.use('agg')
 sql.register_adapter(np.int64, lambda val: int(val))
 sql.register_adapter(np.int32, lambda val: int(val))
@@ -318,7 +319,7 @@ def run_prediction(DATABASE, patient_id, week, night_id, recorder):
             if labels:
                 print("Labels already exist")
                 return labels
-
+            
             cur.execute(f"SELECT * FROM models WHERE patient_id={patient_id}")
             model = cur.fetchall()
             cur.close()
@@ -328,20 +329,35 @@ def run_prediction(DATABASE, patient_id, week, night_id, recorder):
             xgbc.load_model(str(model[0][-1]))
             labels = predict_events(DATABASE, xgbc, patient_id, week, night_id, recorder)
         else:
-            print("Model does not exist")
-            # loc_file = get_data_path(DATABASE) + f"p{patient_id}_w{week}/{night_id}clocation_Bites.csv"
-            # loc = pd.read_csv(loc_file)
-            # print(loc)
-            # for i,row in loc.iterrows():
+            # init_model_path =  get_data_path(DATABASE)+'models/initial/p'+str(patient_id)+'model.json'
+            init_model_path = '../models/initial/p'+str(patient_id)+'model.json'
+            init_general_model_path = '../models/initial/general_model.json'
+            print('init_model_path: ',init_model_path)
+            
+            if os.path.exists(init_model_path):
+                print("Initial Model exists")
+                shutil.copy2(init_model_path, get_data_path(DATABASE))
+                model_path = get_data_path(DATABASE) + f"p{patient_id}_model.json"
 
-            #     params = (patient_id, week, night_id, i+1, row['Location Begin'],row['Location end'])
-            #     query = "INSERT INTO predicted_labels (patient_id, week, night_id, label_id, location_begin, location_end) VALUES (?, ?, ?, ?, ?, ?)"
-            #     with sql.connect(DATABASE) as con:
-            #         cur = con.cursor()
-            #         cur.execute(query, params)
-            #         cur.close()
-            #     print(f"{i} out of {loc.index[-1]}")
-            labels = generate_model(DATABASE, patient_id, week, night_id, recorder)
+                with sql.connect(DATABASE) as con:
+                    cur = con.cursor()
+                    cur.execute(f"INSERT INTO models (patient_id, model_path) VALUES {patient_id, model_path}")
+                    cur.execute(f"SELECT * FROM models WHERE patient_id= -1")
+                    model = cur.fetchall()
+                    cur.close()
+                if not model:
+                    if os.path.exists(init_general_model_path):
+                        print("General model exists")
+                        init_model_path = init_general_model_path
+                    shutil.copy2(init_model_path, get_data_path(DATABASE) + f"general_model.json")
+                    cur.execute(f"INSERT INTO models (patient_id, model_path) VALUES {-1, get_data_path(DATABASE) + f'general_model.json'}")
+                
+                xgbc = xgb.XGBClassifier()
+                xgbc.load_model(init_model_path)
+                labels = predict_events(DATABASE, xgbc, patient_id, week, night_id, recorder)
+            else:
+                print("Model does not exist")
+                labels = generate_model(DATABASE, patient_id, week, night_id, recorder)
             # predict_events(DATABASE, model,patient_id, week, night_id, recorder)
         
         return labels
@@ -574,11 +590,13 @@ def get_existing_patients_data(DATABASE):
     for folder in os.listdir(get_data_path(DATABASE)):
         if not os.path.isdir(get_data_path(DATABASE) + folder):
             continue
+        if not re.search('p(.*?)_', folder):
+            continue
         patient_id = re.search('p(.*?)_', folder).group(1)
 
         patient_week_folder = get_data_path(DATABASE) + folder
 
-        csv_files = [f for f in os.listdir(patient_week_folder) if f.endswith(".csv")]
+        csv_files = [f for f in os.listdir(patient_week_folder) if f.endswith("Fnorm.csv")]
 
         night_id_list= []
         night_id_recorder = {}
