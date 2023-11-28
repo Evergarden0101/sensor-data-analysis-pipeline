@@ -41,6 +41,7 @@
         </el-col>
     </el-row>
 
+
     <el-row style="border-bottom: solid grey; border-top:solid grey; margin-top: 2%;">
         <el-col :span="8" :offset="2" style="border-right:solid; border-color: grey">
             <h2>Patient {{ this.$store.state.patientId }} - Weekly summary for week {{ this.$store.state.week }}</h2>
@@ -48,7 +49,16 @@
             <div v-else>
                 <el-empty :image-size="70" description="Select at least a patient to see heatmap"/>
             </div>
+
+          <el-col style="margin-top: -25%; margin-right: 40%">
+            <div class="kpi-container">
+              <div><strong>Average Events per Cycle:</strong> {{ averageEventsPerCycle.toFixed(2) }}</div>
+              <div><strong>Total Events:</strong> {{ totalEvents }}</div>
+            </div>
+          </el-col>
+
         </el-col>
+
         <el-col :span="8" :offset="1" style="margin-bottom:5%">
             <h2>Comparison between patients</h2>
             <p><b>Select the desired weeks</b></p>
@@ -75,6 +85,8 @@
             </div>
         </el-col>
     </el-row>
+
+
 </template>
 
 
@@ -120,6 +132,8 @@ export default {
                 "#ea7ccc"
             ],
             weeklySummaryData: [],
+            averageEventsPerCycle: 0,
+            totalEvents: 0,
         }
     },
     async mounted() {
@@ -693,24 +707,31 @@ export default {
         },
 
         async getWeeklySummary() {
-            const path = `http://127.0.0.1:5000/weekly-summary/${this.$store.state.patientId}/${this.$store.state.week}/`
-            const headers = {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json'
-            };
+          try {
+            const path = `http://127.0.0.1:5000/weekly-summary/${this.$store.state.patientId}/${this.$store.state.week}/`;
+            const response = await axios.get(path);
+            this.weeklySummaryData = response.data;
 
-            await axios.get(path, {headers})
-                .then((res) => {
-                    console.log(res.data);
-                    this.weeklySummaryData = res.data;
-                    this.drawCurrentPatientHeatMap();
-                })
-                .catch(err=>{
-                    console.error('Error fetching weekly summary data:', err);
-                })
+            let totalEvents = 0;
+            let cycleCounts = {};
+
+            // Iterate over the fetched data to calculate total events and events per cycle
+            this.weeklySummaryData.forEach(item => {
+              totalEvents += item.count;
+              cycleCounts[item.cycle] = (cycleCounts[item.cycle] || 0) + item.count;
+            });
+
+            // Calculate average events per cycle
+            this.averageEventsPerCycle = Object.values(cycleCounts).reduce((a, b) => a + b, 0) / Object.keys(cycleCounts).length;
+            this.totalEvents = totalEvents;
+
+            this.drawCurrentPatientHeatMap();  // Call to draw the heatmap
+          } catch (error) {
+            console.error('Error fetching weekly summary data:', error);
+          }
         },
 
-        drawCurrentPatientHeatMap(){
+      drawCurrentPatientHeatMap(){
             var dom = document.getElementById("currentPatientHeatMap");
             var myChart = echarts.init(dom, null, {
               renderer: "svg",
@@ -1015,3 +1036,17 @@ export default {
     }
 }
 </script>
+
+<style scoped>
+.kpi-container {
+  text-align: center;
+  padding: 20px;
+  background-color: #f5f5f5;
+  border-radius: 8px;
+  margin: 20px 0;
+}
+.kpi-container > div {
+  margin: 10px 0;
+}
+</style>
+
