@@ -18,7 +18,7 @@
         </el-col>
         <el-col :span="7" :offset="5">
             <router-link :to="'/treatment/'">
-                <el-button type="primary" plain>
+                <el-button type="primary" plain :disabled="!monitoringAllowed">
                     Treatment Analysis<el-icon class="el-icon--right"><ArrowRight /></el-icon>
                 </el-button>
             </router-link>
@@ -84,6 +84,7 @@ import LinePlot from '../components/LinePlot.vue'
 import TreatHeatMap from '../components/TreatHeatMap.vue'
 // import { Orange } from '@element-plus/icons-vue'
 import BruxismLabel from '@/components/BruxismLabel.vue';
+import axios from 'axios';
 
 export default {
     name: 'EventsClassificationPage',
@@ -97,6 +98,7 @@ export default {
         return {
             weekSummaryVisible: false,
             isShow: true,
+            monitoringAllowed: false
             // imgsrc: require("@/assets/summary.png"),
             // week_sum_imgsrc: '',
             // night_pred_imgsrc: '',
@@ -116,7 +118,8 @@ export default {
             return this.week_sum_imgsrc == ''
         }
     },
-    mounted(){
+    async mounted(){
+        await this.isMonitoringAllowed();
         // this.week_sum_imgsrc= "http://127.0.0.1:5000/weekly-sum-img?p=" + this.$store.state.patientId+'&w='+this.$store.state.week;
         // this.night_pred_imgsrc = "http://127.0.0.1:5000/night-pred-img?p=" + this.$store.state.patientId+'&w='+this.$store.state.week+'&n='+this.$store.state.nightId+'&r='+this.$store.state.recorder;
     },
@@ -127,6 +130,20 @@ export default {
             this.$nextTick(() => {
                 this.isShow = true;
             });
+        },
+        async isMonitoringAllowed(){
+            const path = `http://127.0.0.1:5000/monitoring-allowed/${this.$store.state.patientId}/${this.$store.state.week}/`;
+            const headers = { 
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            };
+            await axios.get(path, {headers})
+            .then((res) => {
+                this.monitoringAllowed = res.data.is_allowed;
+            })
+            .catch(err=>{
+                console.log(err)
+            })
         }
     }
 };

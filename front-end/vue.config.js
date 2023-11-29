@@ -9,7 +9,7 @@ module.exports = defineConfig({
       proxy: {
         '': {
             target: 'http://127.0.0.1:5000/',
-            // ws: true,
+            ws: true,
             changeOrigin: true
         },
         '^/api': {
