@@ -139,6 +139,7 @@ def insert_label(DATABASE, labels):
 
 def generate_model(DATABASE, patient_id, week, night_id, recorder):
     print("generate_model")
+    print("week: ", week)
     data = open_brux_csv(DATABASE, patient_id, week, night_id, recorder)
     loc = open_brux_loc_csv(DATABASE, patient_id, week, night_id, recorder)
     original_sampling = get_original_sampling(DATABASE)
@@ -207,6 +208,7 @@ def generate_model(DATABASE, patient_id, week, night_id, recorder):
 """TODO: check prediction length, save 0 predictions """
 def predict_events(DATABASE, model, patient_id, week, night_id, recorder):
     print("predict_events")
+    print("week: ", week)
     original_sampling = get_original_sampling(DATABASE)
     selected_sampling =get_selected_sampling(DATABASE)
     data = open_brux_csv(DATABASE, patient_id, week, night_id, recorder)
@@ -246,7 +248,7 @@ def predict_events(DATABASE, model, patient_id, week, night_id, recorder):
         while i < len(y_p):
             y_sum = y_p[i];
             cnt = 1;
-            for j in range(1, 5*selected_sampling):
+            for j in range(1, 5*selected_sampling+1):
                 if(i+j >= len(y_p) or ((index[i+j] - index[i])>5*original_sampling)):
                     # print("dur:", cnt/selected_sampling)
                     break;
@@ -256,7 +258,7 @@ def predict_events(DATABASE, model, patient_id, week, night_id, recorder):
                 if(loc_start == 0 or loc_end-loc_start > 60*selected_sampling):
                     event += 1
                     loc_start = i
-                    loc_end = i+cnt
+                    loc_end = i+cnt-1
                     location_begin = index[i]
                     location_end = index[loc_end]
                     params = (patient_id, week, night_id, recorder, event, location_begin, location_end, i, loc_end)
@@ -288,7 +290,7 @@ def predict_events(DATABASE, model, patient_id, week, night_id, recorder):
                         cur.execute(query, params)
                     print("current end idx:", location_end)
                 elif(y_p_mix[-1] == 10):
-                    loc_end += cnt
+                    loc_end += cnt-1
                     params = (index[loc_end], loc_end, patient_id, week, night_id, recorder, event)
                     query = "UPDATE predicted_labels SET location_end = ?, end_index = ? WHERE (patient_id=? AND week=? AND night_id=? AND recorder=? AND label_id=?)"
                     cur.execute(query, params)
@@ -393,12 +395,15 @@ def run_confirmation(DATABASE, model_path, patient_id, week, night_id, recorder,
         print("save data")
         data.to_csv(get_data_path(DATABASE) + f"p{patient_id}_wk{week}/{night_id}{recorder}Fnorm.csv", encoding='utf-8', index=False)
     
-    MR = get_column_array(get_column_data_from_df(data, "MR"))
-    ML = get_column_array(get_column_data_from_df(data, "ML"))
+    selected = get_selected_intervals(patient_id, week, night_id, DATABASE)
+    df = pd.DataFrame()
+    for i in range(len(selected)):
+        df = df._append(data.iloc[selected[i]['start_id']:selected[i]['end_id'],:])
+    
+    MR = get_column_array(get_column_data_from_df(df, "MR"))
+    ML = get_column_array(get_column_data_from_df(df, "ML"))
     MR = resample_signal(signal=MR, sampling_rate=original_sampling, SAMPLING_RATE=selected_sampling)
     ML = resample_signal(signal=ML, sampling_rate=original_sampling, SAMPLING_RATE=selected_sampling)
-
-    # df = resample_whole_df(data,original_sampling,selected_sampling)
     bites = resample_signal(signal=bites, sampling_rate=original_sampling, SAMPLING_RATE=selected_sampling)
     # df.loc[:,'Bites'] = bites
     df = pd.DataFrame({'MR': MR, 'ML': ML, 'Bites': bites})
@@ -425,10 +430,25 @@ def run_confirmation(DATABASE, model_path, patient_id, week, night_id, recorder,
     else:
         p = patient_id
     
-    return get_model_accuracy(DATABASE, model, patient_id, week, night_id, recorder, p)
+    return calc_model_accuracy(DATABASE, model, patient_id, week, night_id, recorder, p)
 
+def false_positive(y_true, y_pred):
+    # false positive
+    return ((y_pred == 1) & (y_true == 0)).sum()
+    
+def false_negative(y_true, y_pred):
+    # false negative
+    return ((y_pred == 0) & (y_true == 1)).sum()
 
-def get_model_accuracy(DATABASE, model, patient_id, week, night_id, recorder, p):
+def true_positive(y_true, y_pred):
+    # true positive
+    return ((y_pred == 1) & (y_true == 1)).sum()
+
+def true_negative(y_true, y_pred):
+    # true negative
+    return ((y_pred == 0) & (y_true == 0)).sum()
+
+def calc_model_accuracy(DATABASE, model, patient_id, week, night_id, recorder, p):
     original_sampling = get_original_sampling(DATABASE)
     selected_sampling = get_selected_sampling(DATABASE)
     with sql.connect(DATABASE) as con:
@@ -437,20 +457,31 @@ def get_model_accuracy(DATABASE, model, patient_id, week, night_id, recorder, p)
         path = cur.fetchone()[0]
         cur.close()
     print(path)
-    file_path = get_data_path(DATABASE) + f"p{patient_id}_wk{week}/{night_id}{recorder}Fnorm.csv"
-    print(file_path)
+    # file_path = get_data_path(DATABASE) + f"p{patient_id}_wk{week}/{night_id}{recorder}Fnorm.csv"
+    # print(file_path)
     # if file_path == path:
     #     return {'accuracy': 0, 'precision': 0};
+    print("get selected intervals")
+    pp = re.search('/p(.*?)_', path).group(1)
+    print('pp: ', pp)
+    nn = re.search("/[0-9]+", path).group(0)
+    if not nn[0].isnumeric():
+        nn = nn[1:]
+    print('nn: ', nn)
+    ww = re.search('wk(.*)/', path).group(1)
+    print('ww: ', ww)
+    selected = get_selected_intervals(pp, ww, nn, DATABASE)
+    
     print("open validation file")
     data = pd.read_csv(path)
-    # patient_id = re.search('/p(.*?)_', path).group(1)
-    # night_id = re.search("/[0-9]+", path).group(0)
-    # recorder = re.search('.(?=F)', path).group(0)
-    # week = re.search('wk(.*)/', path).group(1)
-    # print(patient_id, week, night_id, recorder)
-    MR = get_column_array(get_column_data_from_df(data, "MR"))
-    ML = get_column_array(get_column_data_from_df(data, "ML"))
-    Bites = get_column_array(get_column_data_from_df(data, "Bites"))
+    
+    df = pd.DataFrame()
+    for i in range(len(selected)):
+        df = df._append(data.iloc[selected[i]['start_id']:selected[i]['end_id'],:])
+    print("resample validation file")
+    MR = get_column_array(get_column_data_from_df(df, "MR"))
+    ML = get_column_array(get_column_data_from_df(df, "ML"))
+    Bites = get_column_array(get_column_data_from_df(df, "Bites"))
     MR = resample_signal(signal=MR, sampling_rate=original_sampling, SAMPLING_RATE=selected_sampling)
     ML = resample_signal(signal=ML, sampling_rate=original_sampling, SAMPLING_RATE=selected_sampling)
     Bites = resample_signal(signal=Bites, sampling_rate=original_sampling, SAMPLING_RATE=selected_sampling)
@@ -461,44 +492,58 @@ def get_model_accuracy(DATABASE, model, patient_id, week, night_id, recorder, p)
     y = np.array(y.values.tolist())
     print("validation")
     scoring = {'accuracy' : make_scorer(accuracy_score), 
-           'precision' : make_scorer(precision_score),
+            'precision' : make_scorer(precision_score),
+            'fn' : make_scorer(false_negative),
+            'fp' : make_scorer(false_positive),
+            'tp' : make_scorer(true_positive),
+            'tn' : make_scorer(true_negative)
         #    'recall' : make_scorer(recall_score), 
         #    'f1_score' : make_scorer(f1_score)
            }
     accuracies = model_selection.cross_validate(estimator = model, X = x, y = y, cv = 10, scoring=scoring)
     print(accuracies)
-    # accuracies = cross_val_score(estimator = model, X = x, y = y, cv = 10)
     
     # TODO: add to db
     accuracy = np.floor(accuracies['test_accuracy'].mean()*10000)/100
     precision = np.floor(accuracies['test_precision'].mean()*10000)/100
     print('accuracy: ', accuracy)
     print('precision: ', precision)
+    
+    cm = np.array([[accuracies['test_tn'].mean(), accuracies['test_fp'].mean()], [accuracies['test_fn'].mean(), accuracies['test_tp'].mean()]])
+    print('cm: ', cm)
+    cmn = cm.astype('float') / cm.sum(axis=0)[np.newaxis,:]
+    cmn = np.floor(cmn*10000)/100
+    print('cmn 100: ', cmn)
+    
     with sql.connect(DATABASE) as con:
         cur = con.cursor()
         cur.execute(f"UPDATE models SET accuracy={accuracy}, precision={precision} WHERE patient_id={p}")
         
-        cur.execute(f"SELECT location_begin, location_end FROM predicted_labels WHERE patient_id={patient_id} AND week={week} AND night_id={night_id}")
-        labels = cur.fetchall()
+        # cur.execute(f"SELECT location_begin, location_end FROM predicted_labels WHERE patient_id={patient_id} AND week={week} AND night_id={night_id}")
+        # labels = cur.fetchall()
         
-        # TODO: can add day_no to log if need
-        # cur.execute(f"SELECT day_no FROM week_summary WHERE patient_id={patient_id} AND week={week} AND night_id={night_id}")
-        # day_no = cur.fetchone()[0]
+        # # TODO: can add day_no to log if need
+        # # cur.execute(f"SELECT day_no FROM week_summary WHERE patient_id={patient_id} AND week={week} AND night_id={night_id}")
+        # # day_no = cur.fetchone()[0]
         
-        p_bites = np.zeros(data.shape[0], dtype=int)
-        print("label bites")
-        for label in labels:
-            print('label: ', label)
-            for i in range(label[0], label[1]+1):
-                p_bites[i] = 1
-        p_bites = resample_signal(signal=p_bites.tolist(), sampling_rate=original_sampling, SAMPLING_RATE=selected_sampling)
-        # print('p_bites: ', p_bites[:10])
-        cm = confusion_matrix(Bites, p_bites)
-        print('cm: ', cm)
-        cmn = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+        # p_bites = np.zeros(data.shape[0], dtype=int)
+        # print("label bites")
+        # for label in labels:
+        #     print('label: ', label)
+        #     for i in range(label[0], label[1]+1):
+        #         p_bites[i] = 1
+        # print("select bites")
+        # p_bites = p_bites[df.index]
+        # print("resample bites")
+        # p_bites = resample_signal(signal=p_bites, sampling_rate=original_sampling, SAMPLING_RATE=selected_sampling)
+        # print('p_bites: ', p_bites.shape)
+        # print('Bites: ', Bites.shape)
+        # cm = confusion_matrix(Bites, p_bites)
+        # print('cm: ', cm)
+        # cmn = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
         # print('cmn: ', cmn)
-        cmn = cmn*100
-        print('cmn 100: ', cmn)
+        # cmn = cmn*100
+        # print('cmn 100: ', cmn)
         cur.execute(f"INSERT INTO accuracy_log (patient_id, week, night_id, accuracy, precision, TN, FP, FN, TP) VALUES {p, week, night_id, accuracy, precision, cmn[0][0], cmn[0][1], cmn[1][0], cmn[1][1]}")
         cur.close()
     return {'accuracy': accuracy, 'precision': precision}
