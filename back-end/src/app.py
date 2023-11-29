@@ -123,11 +123,11 @@ def create_app(test_config=None):
                     print("update validation set")
                     cur.execute(f"UPDATE models SET validation_file_path='{valid_set}' WHERE patient_id={labels[0]['patient_id']}")
                 
-                cur.execute(f"SELECT * FROM models WHERE patient_id={-1}")
+                cur.execute(f"SELECT * FROM models WHERE patient_id= -1")
                 model = cur.fetchone()
                 if(model[4] == None):
                     print("update validation set")
-                    cur.execute(f"UPDATE models SET validation_file_path='{valid_set}' WHERE patient_id={-1}")
+                    cur.execute(f"UPDATE models SET validation_file_path='{valid_set}' WHERE patient_id= -1")
             
             return "Successfuly inserted into Database", 200
         except Exception as e:
@@ -582,7 +582,10 @@ def create_app(test_config=None):
                 cur.close()
             
             # TODO: update accuracy
-            patient_accuracy = run_confirmation(DATABASE, str(model[0][-1]), patient_id, week, night_id, recorder, False)
+            try:
+                patient_accuracy = run_confirmation(DATABASE, str(model[0][-1]), patient_id, week, night_id, recorder, False)
+            except Exception as e:
+                patient_accuracy = {'accuracy': None, 'precision': None}
             # xgbc = xgb.XGBClassifier()
             # xgbc.load_model(str(model[0][-1]))
             # patient_accuracy = get_model_accuracy(DATABASE, xgbc, patient_id, week, night_id, recorder, 1)
@@ -594,10 +597,15 @@ def create_app(test_config=None):
                 cur.execute(f"SELECT * FROM models WHERE patient_id={-1}")
                 model = cur.fetchall()
                 cur.close()
-            study_accuracy = run_confirmation(DATABASE, str(model[0][-1]), patient_id, week, night_id, recorder, True)
+            try:
+                study_accuracy = run_confirmation(DATABASE, str(model[0][-1]), patient_id, week, night_id, recorder, True)
+            except Exception as es:
+                study_accuracy = {'accuracy': None, 'precision': None}
             # xgbc = xgb.XGBClassifier()
             # xgbc.load_model(str(model[0][-1]))
             # study_accuracy = get_model_accuracy(DATABASE, xgbc, patient_id, week, night_id, recorder, -1)
+            if(patient_accuracy['precision'] == None and study_accuracy['precision'] == None):
+                return f"{e}\n{es}", 500
             
             return jsonify(patient_accuracy=patient_accuracy, study_accuracy=study_accuracy), 200
         except Exception as e:
@@ -845,7 +853,7 @@ def create_app(test_config=None):
             #     "result_lists": json.loads(result_lists.to_json(orient="records")),
             # }
             # return json.dumps(result,indent=4), 200
-            return result_lists.to_json(orient="records"), 200
+            return json.loads(result_lists.to_json(orient="records")), 200
         except Exception as e:
             print('Exception raised in getting event trend')
             print(e)

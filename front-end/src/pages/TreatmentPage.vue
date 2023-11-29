@@ -19,19 +19,19 @@
 
     <el-row style="margin-top: 3%;">
         <el-col :span="4" :offset="2">
-            <el-progress style="display:block;margin: 0 auto" type="dashboard" :percentage="studyAccuracy" width="80" stroke-width="4" >
+            <el-progress style="display:block;margin: 0 auto" type="dashboard" :percentage="studyPrecision" width="80" stroke-width="4" >
                 <template #default="{ percentage }">
                     <h3 class="percentage-value">{{ percentage }}%</h3>
-                    <h5 class="percentage-label">Accuracy</h5>
+                    <h5 class="percentage-label">Precision</h5>
                 </template>
             </el-progress>
         </el-col>
         <el-col :span="4" :offset="2">
             <el-row>
-                <el-progress style="display:block; margin: 0 auto" type="dashboard" :percentage="patientAccuracy" width="80" stroke-width="4" >
+                <el-progress style="display:block; margin: 0 auto" type="dashboard" :percentage="patientPrecision" width="80" stroke-width="4" >
                     <template #default="{ percentage }">
                         <h3 class="percentage-value">{{ percentage }}%</h3>
-                        <h5 class="percentage-label">Accuracy</h5>
+                        <h5 class="percentage-label">Precision</h5>
                     </template>
                 </el-progress>
             </el-row>
@@ -117,8 +117,8 @@ export default {
             selectedWeeks: ref([]),
             weeks: ref({}),
             patientsCheckBox: {},
-            studyAccuracy: this.$store.state.studyAccuracy,
-            patientAccuracy: this.$store.state.patientAccuracy,
+            studyPrecision: this.$store.state.studyPrecision,
+            patientPrecision: this.$store.state.patientPrecision,
             patientsColorEncoding:{},
             colors: [
                 "#5470c6",

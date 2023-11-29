@@ -372,8 +372,8 @@ def run_confirmation(DATABASE, model_path, patient_id, week, night_id, recorder,
     selected_sampling = get_selected_sampling(DATABASE)
     data = open_brux_csv(DATABASE, patient_id, week, night_id, recorder)
     
-    if study:
-        bites = data['Bites']
+    if study and 'Bites' in data.columns:
+        bites = get_column_array(get_column_data_from_df(data, "Bites"))
     else:
         with sql.connect(DATABASE) as con:
             print("DB connected")
@@ -439,8 +439,8 @@ def get_model_accuracy(DATABASE, model, patient_id, week, night_id, recorder, p)
     print(path)
     file_path = get_data_path(DATABASE) + f"p{patient_id}_wk{week}/{night_id}{recorder}Fnorm.csv"
     print(file_path)
-    if file_path == path:
-        return {'accuracy': 0, 'precision': 0};
+    # if file_path == path:
+    #     return {'accuracy': 0, 'precision': 0};
     print("open validation file")
     data = pd.read_csv(path)
     # patient_id = re.search('/p(.*?)_', path).group(1)
@@ -472,21 +472,34 @@ def get_model_accuracy(DATABASE, model, patient_id, week, night_id, recorder, p)
     # TODO: add to db
     accuracy = np.floor(accuracies['test_accuracy'].mean()*10000)/100
     precision = np.floor(accuracies['test_precision'].mean()*10000)/100
+    print('accuracy: ', accuracy)
+    print('precision: ', precision)
     with sql.connect(DATABASE) as con:
         cur = con.cursor()
         cur.execute(f"UPDATE models SET accuracy={accuracy}, precision={precision} WHERE patient_id={p}")
         
-        cur.execute(f"SELECT * FROM predicted_labels WHERE patient_id={patient_id} AND week={week} AND night_id={night_id}")
+        cur.execute(f"SELECT location_begin, location_end FROM predicted_labels WHERE patient_id={patient_id} AND week={week} AND night_id={night_id}")
         labels = cur.fetchall()
+        
+        # TODO: can add day_no to log if need
+        # cur.execute(f"SELECT day_no FROM week_summary WHERE patient_id={patient_id} AND week={week} AND night_id={night_id}")
+        # day_no = cur.fetchone()[0]
+        
         p_bites = np.zeros(data.shape[0], dtype=int)
         print("label bites")
         for label in labels:
-            for i in range(label[6], label[7]):
+            print('label: ', label)
+            for i in range(label[0], label[1]+1):
                 p_bites[i] = 1
-        p_bites = resample_signal(signal=p_bites, sampling_rate=original_sampling, SAMPLING_RATE=selected_sampling)
+        p_bites = resample_signal(signal=p_bites.tolist(), sampling_rate=original_sampling, SAMPLING_RATE=selected_sampling)
+        # print('p_bites: ', p_bites[:10])
         cm = confusion_matrix(Bites, p_bites)
-        cmn = 100*cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
-        cur.execute(f"INSERT INTO accuracy_log (patient_id, week, night_id, accuracy, precision, TN, FP, FN, TP) VALUES {p, week, night_id, accuracy, precision, cmn[0], cmn[1], cmn[2], cmn[3]}")
+        print('cm: ', cm)
+        cmn = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+        # print('cmn: ', cmn)
+        cmn = cmn*100
+        print('cmn 100: ', cmn)
+        cur.execute(f"INSERT INTO accuracy_log (patient_id, week, night_id, accuracy, precision, TN, FP, FN, TP) VALUES {p, week, night_id, accuracy, precision, cmn[0][0], cmn[0][1], cmn[1][0], cmn[1][1]}")
         cur.close()
     return {'accuracy': accuracy, 'precision': precision}
 
