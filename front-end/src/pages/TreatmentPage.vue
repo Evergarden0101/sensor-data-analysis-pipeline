@@ -52,7 +52,7 @@
         <el-col :span="8" :offset="1" style="margin-bottom:5%">
             <h2>Comparison between patients</h2>
             <p><b>Select the desired weeks</b></p>
-            <el-slider v-model="week" :min="minWeekId" :max="maxWeekId" range show-stops :marks="weeks" :show-tooltip="false" @change="changeWeekFilter" />
+            <el-slider :v-model="week" :min="minWeekId" :max="maxWeekId" range show-stops :marks="weeks" :show-tooltip="false" @change="changeWeekFilter" />
             <div v-if="patientsExists" id="patientsLinePlot" style="position: relative; height: 50vh; width: 70vh; margin-top: 10%;"></div>
             <div v-else>
                 <el-empty :image-size="200" description="Select at least a patient to see linechart"/>
@@ -126,7 +126,7 @@ export default {
         await this.getExistingEventTrendPatientIds();
         await this.getEventTrendData(this.selectedPatients);
         await this.getWeeklySummary();
-        this.getWeeks();
+        await this.getWeeks();
         this.drawPatientsLinePlot(this.startWeek, this.endWeek);
     },
     methods: {
@@ -134,7 +134,7 @@ export default {
             return arr.filter((item,
                 index) => arr.indexOf(item) === index);
         },
-        getWeeks(){
+        async getWeeks(){
             console.log("Getting the weeks")
 
             var weekData = [];
@@ -174,11 +174,14 @@ export default {
             let weekOptions = {};
 
             for(let i=0; i<weekData.length; i++){
-                weekOptions[i+1] = weekData[i];
+                weekOptions[i+1] = String(weekData[i]);
             }
             this.weeks = reactive(weekOptions);
+            console.log(this.weeks)
+            console.log("MIN AND MAX WEEK ID")
             this.minWeekId = parseInt(Object.keys(this.weeks)[0])
             this.maxWeekId = parseInt(Object.keys(this.weeks)[Object.keys(this.weeks).length-1])
+            console.log(this.minWeekId, this.maxWeekId)
             this.week = ref([this.minWeekId, this.maxWeekId])
         },
         async handlePatientsSelection(patientId){
@@ -190,7 +193,7 @@ export default {
                 console.log("SELECTED PATIENTS")
                 console.log(this.selectedPatients);
                 await this.getEventTrendData(this.selectedPatients);
-                this.getWeeks();
+                await this.getWeeks();
                 this.drawPatientsLinePlot(this.startWeek, this.endWeek);
             } else {
                 console.log("REMOVE")
@@ -206,7 +209,7 @@ export default {
                 } else {
                     this.selectedPatients = this.selectedPatients.sort(function(a,b){return a-b});
                     await this.getEventTrendData(this.selectedPatients);
-                    this.getWeeks();
+                    await this.getWeeks();
                     this.drawPatientsLinePlot(this.startWeek, this.endWeek);
                 }
             }
