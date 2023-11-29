@@ -57,10 +57,10 @@
                             <el-row style="">
                                 <el-col :offset="1" :span="10">
                                     <el-row>
-                                        <el-progress style="display:block;margin: 0 auto" type="dashboard" :percentage="studyAccuracy" width="80" stroke-width="4" :color="colors" >
+                                        <el-progress style="display:block;margin: 0 auto" type="dashboard" :percentage="studyPrecision" width="80" stroke-width="4" :color="colors" >
                                             <template #default="{ percentage }">
                                                 <h3 class="percentage-value">{{ percentage }}%</h3>
-                                                <h5 class="percentage-label">Accuracy</h5>
+                                                <h5 class="percentage-label">Precision</h5>
                                             </template>
                                         </el-progress>
                                     </el-row>
@@ -71,10 +71,10 @@
 
                                 <el-col :span="10" :offset="2">
                                     <el-row>
-                                        <el-progress style="display:block; margin: 0 auto" type="dashboard" :percentage="patientAccuracy" width="80" stroke-width="4" :color="colors" >
+                                        <el-progress style="display:block; margin: 0 auto" type="dashboard" :percentage="patientPrecision" width="80" stroke-width="4" :color="colors" >
                                             <template #default="{ percentage }">
                                                 <h3 class="percentage-value">{{ percentage }}%</h3>
-                                                <h5 class="percentage-label">Accuracy</h5>
+                                                <h5 class="percentage-label">Precision</h5>
                                             </template>
                                         </el-progress>
                                     </el-row>
@@ -190,22 +190,20 @@ export default {
                 { color: '#1989fa', percentage: 80 },
                 { color: '#6f7ad3', percentage: 100 },
             ],
-            // studyAccuracy: this.$store.state.studyAccuracy,
-            // patientAccuracy: this.$store.state.patientAccuracy,
             cycles: [],
             // activeLabel: [],
         }
     },
     computed: {
-        studyAccuracy() {
-            if (this.$store.state.studyAccuracy == null || this.$store.state.studyAccuracy == 0 || this.$store.state.studyAccuracy == undefined || this.$store.state.studyAccuracy == NaN)
+        studyPrecision() {
+            if (this.$store.state.studyPrecision == null || this.$store.state.studyPrecision == 0 || this.$store.state.studyPrecision == undefined || this.$store.state.studyPrecision == NaN)
                 return '--'
-            return this.$store.state.studyAccuracy
+            return this.$store.state.studyPrecision
         },
-        patientAccuracy() {
-            if (this.$store.state.patientAccuracy == null || this.$store.state.patientAccuracy == 0 || this.$store.state.patientAccuracy == undefined || this.$store.state.patientAccuracy == NaN)
+        patientPrecision() {
+            if (this.$store.state.patientPrecision == null || this.$store.state.patientPrecision == 0 || this.$store.state.patientPrecision == undefined || this.$store.state.patientPrecision == NaN)
                 return '--'
-            return this.$store.state.patientAccuracy
+            return this.$store.state.patientPrecision
         },
         activeLabel() {
             // return JSON.parse(this.$store.state.labels).filter((item) => item.Start<this.$store.state.endPoint && item.End>this.$store.state.startPoint)
@@ -257,8 +255,6 @@ export default {
                 console.log(res);
                 // this.$store.commit('clearLabels');
                 // this.load = false;
-                // this.$store.commit('updateStudyAccuracy', '--');
-                // this.$store.commit('updatePatientAccuracy', '--');
                 // this.$store.commit('updateBruxLabelKey')
             })
             .catch(err=>{
