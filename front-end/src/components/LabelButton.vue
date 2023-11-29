@@ -13,6 +13,62 @@ export default{
         }
     },
     methods:  {
+        async loadWeekImg(){
+            const path = `http://127.0.0.1:5000/weekly-sum-img`
+            const headers = {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*',
+                    'Access-Control-Allow-Methods': 'GET',
+                    'Access-Control-Max-Age': "3600",
+                    'Access-Control-Allow-Credentials': "true",
+                    'Access-Control-Allow-Headers': 'Content-Type'
+            };
+            let payload = {
+                params: {
+                    p: this.$store.state.patientId,
+                    w: this.$store.state.week,
+                }
+            };
+            await axios.get(path, payload, {headers})
+                .then((res) => {
+                    console.log("week img received");
+                    // console.log(res.data);
+                    this.$store.commit('getWeekImg', "http://127.0.0.1:5000/weekly-sum-img?p=" + this.$store.state.patientId+'&w='+this.$store.state.week);
+                })
+                .catch(err=>{
+                    console.log(err)
+                })
+        },
+        async loadNightImg(){
+            const path = `http://127.0.0.1:5000/night-pred-img`
+            const headers = {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*',
+                    'Access-Control-Allow-Methods': 'GET',
+                    'Access-Control-Max-Age': "3600",
+                    'Access-Control-Allow-Credentials': "true",
+                    'Access-Control-Allow-Headers': 'Content-Type'
+            };
+            let payload = {
+                params: {
+                    p: this.$store.state.patientId,
+                    w: this.$store.state.week,
+                    n: this.$store.state.nightId,
+                    r: this.$store.state.recorder
+                }
+            };
+            await axios.get(path, payload, {headers})
+                .then((res) => {
+                    console.log("night img received");
+                    // console.log(res.data);
+                    this.$store.commit('getNightImg', "http://127.0.0.1:5000/night-pred-img?p=" + this.$store.state.patientId+'&w='+this.$store.state.week+'&n='+this.$store.state.nightId+'&r='+this.$store.state.recorder)
+                })
+                .catch(err=>{
+                    console.log(err)
+                })
+        },
         // TODO: rurun model, refresh image and plots and heatmap
         postLabel(){
             this.load = true;
@@ -31,8 +87,8 @@ export default{
             //     })
             // };
 
-            this.$store.commit('getNightImg', '');
-            this.$store.commit('getWeekImg', '');
+            // this.$store.commit('getNightImg', '');
+            // this.$store.commit('getWeekImg', '');
 
             const headers = { 
                 'Accept': 'application/json',
@@ -51,10 +107,15 @@ export default{
                 this.load = false;
 
                 // TODO: update accuracy
-                this.$store.commit('updateStudyAccuracy', res.data['study_accuracy']['accuracy']);
-                this.$store.commit('updatePatientAccuracy', res.data['patient_accuracy']['accuracy']);
-                this.$store.commit('getNightImg', "http://127.0.0.1:5000/night-pred-img?p=" + this.$store.state.patientId+'&w='+this.$store.state.week+'&n='+this.$store.state.nightId+'&r='+this.$store.state.recorder)
-                this.$store.commit('getWeekImg', "http://127.0.0.1:5000/weekly-sum-img?p=" + this.$store.state.patientId+'&w='+this.$store.state.week);
+                this.$store.commit('updateStudyPrecision', res.data['study_accuracy']['precision']);
+                this.$store.commit('updatePatientPrecision', res.data['patient_accuracy']['precision']);
+                this.$message({
+                    showClose: true,
+                    message: 'Model rerun successed!',
+                    type: 'success'
+                });
+                this.losadNightImg();
+                this.loadWeekImg();
                 // this.$store.commit('updateBruxLabelKey')
             })
             .catch(err=>{

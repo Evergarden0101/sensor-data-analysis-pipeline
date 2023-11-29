@@ -14,6 +14,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.tree import DecisionTreeClassifier as DTC
 from sklearn.metrics import accuracy_score, confusion_matrix, make_scorer, accuracy_score, precision_score, recall_score, f1_score
 import matplotlib
+import shutil
 matplotlib.use('agg')
 sql.register_adapter(np.int64, lambda val: int(val))
 sql.register_adapter(np.int32, lambda val: int(val))
@@ -318,7 +319,7 @@ def run_prediction(DATABASE, patient_id, week, night_id, recorder):
             if labels:
                 print("Labels already exist")
                 return labels
-
+            
             cur.execute(f"SELECT * FROM models WHERE patient_id={patient_id}")
             model = cur.fetchall()
             cur.close()
@@ -328,20 +329,35 @@ def run_prediction(DATABASE, patient_id, week, night_id, recorder):
             xgbc.load_model(str(model[0][-1]))
             labels = predict_events(DATABASE, xgbc, patient_id, week, night_id, recorder)
         else:
-            print("Model does not exist")
-            # loc_file = get_data_path(DATABASE) + f"p{patient_id}_w{week}/{night_id}clocation_Bites.csv"
-            # loc = pd.read_csv(loc_file)
-            # print(loc)
-            # for i,row in loc.iterrows():
+            # init_model_path =  get_data_path(DATABASE)+'models/initial/p'+str(patient_id)+'model.json'
+            init_model_path = '../models/initial/p'+str(patient_id)+'model.json'
+            init_general_model_path = '../models/initial/general_model.json'
+            print('init_model_path: ',init_model_path)
+            
+            if os.path.exists(init_model_path):
+                print("Initial Model exists")
+                shutil.copy2(init_model_path, get_data_path(DATABASE))
+                model_path = get_data_path(DATABASE) + f"p{patient_id}_model.json"
 
-            #     params = (patient_id, week, night_id, i+1, row['Location Begin'],row['Location end'])
-            #     query = "INSERT INTO predicted_labels (patient_id, week, night_id, label_id, location_begin, location_end) VALUES (?, ?, ?, ?, ?, ?)"
-            #     with sql.connect(DATABASE) as con:
-            #         cur = con.cursor()
-            #         cur.execute(query, params)
-            #         cur.close()
-            #     print(f"{i} out of {loc.index[-1]}")
-            labels = generate_model(DATABASE, patient_id, week, night_id, recorder)
+                with sql.connect(DATABASE) as con:
+                    cur = con.cursor()
+                    cur.execute(f"INSERT INTO models (patient_id, model_path) VALUES {patient_id, model_path}")
+                    cur.execute(f"SELECT * FROM models WHERE patient_id= -1")
+                    model = cur.fetchall()
+                    cur.close()
+                if not model:
+                    if os.path.exists(init_general_model_path):
+                        print("General model exists")
+                        init_model_path = init_general_model_path
+                    shutil.copy2(init_model_path, get_data_path(DATABASE) + f"general_model.json")
+                    cur.execute(f"INSERT INTO models (patient_id, model_path) VALUES {-1, get_data_path(DATABASE) + f'general_model.json'}")
+                
+                xgbc = xgb.XGBClassifier()
+                xgbc.load_model(init_model_path)
+                labels = predict_events(DATABASE, xgbc, patient_id, week, night_id, recorder)
+            else:
+                print("Model does not exist")
+                labels = generate_model(DATABASE, patient_id, week, night_id, recorder)
             # predict_events(DATABASE, model,patient_id, week, night_id, recorder)
         
         return labels
@@ -356,8 +372,8 @@ def run_confirmation(DATABASE, model_path, patient_id, week, night_id, recorder,
     selected_sampling = get_selected_sampling(DATABASE)
     data = open_brux_csv(DATABASE, patient_id, week, night_id, recorder)
     
-    if study:
-        bites = data['Bites']
+    if study and 'Bites' in data.columns:
+        bites = get_column_array(get_column_data_from_df(data, "Bites"))
     else:
         with sql.connect(DATABASE) as con:
             print("DB connected")
@@ -423,8 +439,8 @@ def get_model_accuracy(DATABASE, model, patient_id, week, night_id, recorder, p)
     print(path)
     file_path = get_data_path(DATABASE) + f"p{patient_id}_wk{week}/{night_id}{recorder}Fnorm.csv"
     print(file_path)
-    if file_path == path:
-        return {'accuracy': 0, 'precision': 0};
+    # if file_path == path:
+    #     return {'accuracy': 0, 'precision': 0};
     print("open validation file")
     data = pd.read_csv(path)
     # patient_id = re.search('/p(.*?)_', path).group(1)
@@ -456,21 +472,34 @@ def get_model_accuracy(DATABASE, model, patient_id, week, night_id, recorder, p)
     # TODO: add to db
     accuracy = np.floor(accuracies['test_accuracy'].mean()*10000)/100
     precision = np.floor(accuracies['test_precision'].mean()*10000)/100
+    print('accuracy: ', accuracy)
+    print('precision: ', precision)
     with sql.connect(DATABASE) as con:
         cur = con.cursor()
         cur.execute(f"UPDATE models SET accuracy={accuracy}, precision={precision} WHERE patient_id={p}")
         
-        cur.execute(f"SELECT * FROM predicted_labels WHERE patient_id={patient_id} AND week={week} AND night_id={night_id}")
+        cur.execute(f"SELECT location_begin, location_end FROM predicted_labels WHERE patient_id={patient_id} AND week={week} AND night_id={night_id}")
         labels = cur.fetchall()
+        
+        # TODO: can add day_no to log if need
+        # cur.execute(f"SELECT day_no FROM week_summary WHERE patient_id={patient_id} AND week={week} AND night_id={night_id}")
+        # day_no = cur.fetchone()[0]
+        
         p_bites = np.zeros(data.shape[0], dtype=int)
         print("label bites")
         for label in labels:
-            for i in range(label[6], label[7]):
+            print('label: ', label)
+            for i in range(label[0], label[1]+1):
                 p_bites[i] = 1
-        p_bites = resample_signal(signal=p_bites, sampling_rate=original_sampling, SAMPLING_RATE=selected_sampling)
+        p_bites = resample_signal(signal=p_bites.tolist(), sampling_rate=original_sampling, SAMPLING_RATE=selected_sampling)
+        # print('p_bites: ', p_bites[:10])
         cm = confusion_matrix(Bites, p_bites)
-        cmn = 100*cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
-        cur.execute(f"INSERT INTO accuracy_log (patient_id, week, night_id, accuracy, precision, TN, FP, FN, TP) VALUES {p, week, night_id, accuracy, precision, cmn[0], cmn[1], cmn[2], cmn[3]}")
+        print('cm: ', cm)
+        cmn = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+        # print('cmn: ', cmn)
+        cmn = cmn*100
+        print('cmn 100: ', cmn)
+        cur.execute(f"INSERT INTO accuracy_log (patient_id, week, night_id, accuracy, precision, TN, FP, FN, TP) VALUES {p, week, night_id, accuracy, precision, cmn[0][0], cmn[0][1], cmn[1][0], cmn[1][1]}")
         cur.close()
     return {'accuracy': accuracy, 'precision': precision}
 
@@ -574,11 +603,13 @@ def get_existing_patients_data(DATABASE):
     for folder in os.listdir(get_data_path(DATABASE)):
         if not os.path.isdir(get_data_path(DATABASE) + folder):
             continue
+        if not re.search('p(.*?)_', folder):
+            continue
         patient_id = re.search('p(.*?)_', folder).group(1)
 
         patient_week_folder = get_data_path(DATABASE) + folder
 
-        csv_files = [f for f in os.listdir(patient_week_folder) if f.endswith(".csv")]
+        csv_files = [f for f in os.listdir(patient_week_folder) if f.endswith("Fnorm.csv")]
 
         night_id_list= []
         night_id_recorder = {}

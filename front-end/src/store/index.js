@@ -30,8 +30,8 @@ const store = createStore({
       labels: null,
       samplingRate: 1000,
       bruxLabelKey: 0,
-      studyAccuracy: '--',
-      patientAccuracy: '--',
+      studyPrecision: '--',
+      patientPrecision: '--',
       nightImg: '',
       weekImg: '',
       selectedEvent: null,
@@ -80,11 +80,11 @@ const store = createStore({
     clearLabels(state){
       state.labels = null;
     },
-    updateStudyAccuracy(state, payload){
-      state.studyAccuracy = payload;
+    updateStudyPrecision(state, payload){
+      state.studyPrecision= payload;
     },
-    updatePatientAccuracy(state, payload){
-      state.patientAccuracy = payload;
+    updatePatientPrecision(state, payload){
+      state.patientPrecision = payload;
     },
     getNightImg(state, payload){
       state.nightImg = payload;

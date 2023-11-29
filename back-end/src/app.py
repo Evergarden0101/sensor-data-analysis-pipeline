@@ -128,11 +128,11 @@ def create_app(test_config=None):
                     print("update validation set")
                     cur.execute(f"UPDATE models SET validation_file_path='{valid_set}' WHERE patient_id={labels[0]['patient_id']}")
                 
-                cur.execute(f"SELECT * FROM models WHERE patient_id={-1}")
+                cur.execute(f"SELECT * FROM models WHERE patient_id= -1")
                 model = cur.fetchone()
                 if(model[4] == None):
                     print("update validation set")
-                    cur.execute(f"UPDATE models SET validation_file_path='{valid_set}' WHERE patient_id={-1}")
+                    cur.execute(f"UPDATE models SET validation_file_path='{valid_set}' WHERE patient_id= -1")
             
             return "Successfuly inserted into Database", 200
         except Exception as e:
@@ -158,6 +158,7 @@ def create_app(test_config=None):
                     predicted_labels_json = get_json_format_from_query(columns=columns, query_results=comfirmed_labels.fetchall(), start_id=1, end_id=9)
                     print(comfirmed_labels)
                     return comfirmed_labels, 200
+                cur.close()
             
             run_prediction(DATABASE, patient_id, week, night_id, recorder)
             params = (patient_id, week, night_id, recorder)
@@ -526,8 +527,17 @@ def create_app(test_config=None):
             return res
         except Exception as e:
             print('Exception raised in getting weekly summary image')
-            print(e)
-            return f"{e}", 500
+            img_local_path =  get_data_path(DATABASE) +"p"+str(patient_id)+"_wk"+str(week)+ f"/summary.png"
+            
+            try:
+                img_f = open(img_local_path, 'rb')
+                res = make_response(img_f.read())   # 用flask提供的make_response 方法来自定义自己的response对象
+                res.headers['Content-Type'] = 'image/png'   # 设置response对象的请求头属性'Content-Type'为图片格式
+                img_f.close()
+                return res
+            except:
+                print(e)
+                return f"{e}", 500
 
 
     @app.route('/night-pred-img', methods=["GET"])
@@ -549,22 +559,33 @@ def create_app(test_config=None):
             img_local_path =  get_data_path(DATABASE)+'p'+str(patient_id)+'_wk'+str(week)+f'/'+str(night)+f'.png'
             print('img_local_path: ',img_local_path)
             
-            try:
-                img_f = open(img_local_path, 'rb')
-            except FileNotFoundError:
-                generate_night_pred_img(DATABASE, patient_id, week, night, recorder)
-                img_f = open(img_local_path, 'rb')
-            except Exception as e:
-                return f"{e}", 500
+            if os.path.exists(img_local_path) and os.path.getsize(img_local_path) < 50:
+                print(f"File size is {file_size} bytes. Deleting file.")
+                os.remove(img_local_path)
             
+            if not os.path.exists(img_local_path):
+                generate_night_pred_img(DATABASE, patient_id, week, night, recorder)
+                
+            img_f = open(img_local_path, 'rb')
             print(img_f)
             res = make_response(img_f.read())
             res.headers['Content-Type'] = 'image/png'
             img_f.close()
+            
+            # Check if the file size is below the threshold
+            file_size = os.path.getsize(img_local_path)
+            if file_size < 50:
+                # Delete the file
+                print(f"File size is {file_size} bytes. Deleting file.")
+                os.remove(img_local_path)
             return res
         except Exception as e:
             print('Exception raised in getting night prediction image')
             print(e)
+            
+            img_local_path =  get_data_path(DATABASE)+'p'+str(patient_id)+'_wk'+str(week)+f'/'+str(night)+f'.png'
+            if os.path.exists(img_local_path):
+                os.remove(img_local_path)
             return f"{e}", 500
 
 
@@ -583,7 +604,10 @@ def create_app(test_config=None):
                 cur.close()
             
             # TODO: update accuracy
-            patient_accuracy = run_confirmation(DATABASE, str(model[0][-1]), patient_id, week, night_id, recorder, False)
+            try:
+                patient_accuracy = run_confirmation(DATABASE, str(model[0][-1]), patient_id, week, night_id, recorder, False)
+            except Exception as e:
+                patient_accuracy = {'accuracy': None, 'precision': None}
             # xgbc = xgb.XGBClassifier()
             # xgbc.load_model(str(model[0][-1]))
             # patient_accuracy = get_model_accuracy(DATABASE, xgbc, patient_id, week, night_id, recorder, 1)
@@ -595,10 +619,15 @@ def create_app(test_config=None):
                 cur.execute(f"SELECT * FROM models WHERE patient_id={-1}")
                 model = cur.fetchall()
                 cur.close()
-            study_accuracy = run_confirmation(DATABASE, str(model[0][-1]), patient_id, week, night_id, recorder, True)
+            try:
+                study_accuracy = run_confirmation(DATABASE, str(model[0][-1]), patient_id, week, night_id, recorder, True)
+            except Exception as es:
+                study_accuracy = {'accuracy': None, 'precision': None}
             # xgbc = xgb.XGBClassifier()
             # xgbc.load_model(str(model[0][-1]))
             # study_accuracy = get_model_accuracy(DATABASE, xgbc, patient_id, week, night_id, recorder, -1)
+            if(patient_accuracy['precision'] == None and study_accuracy['precision'] == None):
+                return f"{e}\n{es}", 500
             
             return jsonify(patient_accuracy=patient_accuracy, study_accuracy=study_accuracy), 200
         except Exception as e:
@@ -846,7 +875,7 @@ def create_app(test_config=None):
             #     "result_lists": json.loads(result_lists.to_json(orient="records")),
             # }
             # return json.dumps(result,indent=4), 200
-            return result_lists.to_json(orient="records"), 200
+            return json.loads(result_lists.to_json(orient="records")), 200
         except Exception as e:
             print('Exception raised in getting event trend')
             print(e)
