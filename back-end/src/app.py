@@ -1,5 +1,6 @@
 from flask import Flask, request, make_response, jsonify
 import werkzeug
+from werkzeug.middleware.proxy_fix import ProxyFix
 import os, json
 import sqlite3 as sql
 from database import db
@@ -22,6 +23,10 @@ def create_app(test_config=None):
     app.config.from_mapping(
         SECRET_KEY='dev',
         DATABASE=os.path.join(app.instance_path, 'brux-db.sqlite'),
+        SESSION_COOKIE_SAMESITE = None
+    )
+    app.wsgi_app = ProxyFix(
+        app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1
     )
 
     if test_config is None:
@@ -287,6 +292,23 @@ def create_app(test_config=None):
 
             return patient_data_json, 200
         
+        except Exception as e:
+            print('Exception raised')
+            print(e)
+            return f"{e}"
+
+    @app.route("/monitoring-allowed/<int:patient_id>/<string:week>/")
+    def is_monitoring_allowed(patient_id, week):
+        try:
+            with sql.connect(DATABASE) as con:
+                print("DB connected")
+                cur = con.cursor()
+                params = (patient_id, week)
+                query = "SELECT * FROM week_summary WHERE (patient_id=? AND week=?)"
+                result = cur.execute(query, params).fetchall()
+
+                return {'is_allowed': 1} if len(result)>0 else {'is_allowed': 0}, 200
+
         except Exception as e:
             print('Exception raised')
             print(e)

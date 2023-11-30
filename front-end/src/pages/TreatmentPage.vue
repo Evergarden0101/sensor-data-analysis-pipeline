@@ -59,16 +59,18 @@
 
         </el-col>
 
-        <el-col :span="8" :offset="1" style="margin-bottom:5%">
+        <el-col :span="9" :offset="1" style="margin-bottom:5%">
             <h2>Comparison between patients</h2>
             <p><b>Select the desired weeks</b></p>
-            <el-slider v-model="week" :min="minWeekId" :max="maxWeekId" range show-stops :marks="weeks" :show-tooltip="false" @change="changeWeekFilter" />
+            <div style="display: flex;align-items: center;">
+                <el-slider v-model="week" :min="minWeekId" :max="maxWeekId" range show-stops :marks="weekMarks" :format-tooltip="formatTooltip" @change="changeWeekFilter" />
+            </div>        
             <div v-if="patientsExists" id="patientsLinePlot" style="position: relative; height: 50vh; width: 70vh; margin-top: 10%;"></div>
             <div v-else>
                 <el-empty :image-size="200" description="Select at least a patient to see linechart"/>
             </div>
         </el-col>
-        <el-col :span="4" :offset="1">
+        <el-col :span="2" :offset="1">
             <el-card>
                 <h3>Select desired patients</h3>
                 <el-checkbox v-for="patientId of patientsIds" v-model="patientsCheckBox[patientId]" :label="'Patient '+patientId" size="large" @change="handlePatientsSelection(patientId)"/>
@@ -116,6 +118,7 @@ export default {
             selectedPatients: [parseInt(this.$store.state.patientId)],
             selectedWeeks: ref([]),
             weeks: ref({}),
+            weekMarks: ref({}),
             patientsCheckBox: {},
             studyPrecision: this.$store.state.studyPrecision,
             patientPrecision: this.$store.state.patientPrecision,
@@ -140,60 +143,118 @@ export default {
         await this.getExistingEventTrendPatientIds();
         await this.getEventTrendData(this.selectedPatients);
         await this.getWeeklySummary();
-        this.getWeeks();
+        await this.getWeeks();
         this.drawPatientsLinePlot(this.startWeek, this.endWeek);
     },
     methods: {
+        formatTooltip(val){
+            return this.weeks[val]
+        },
         removeDuplicates(arr) {
             return arr.filter((item,
                 index) => arr.indexOf(item) === index);
         },
-        getWeeks(){
+        async getWeeks(){
             console.log("Getting the weeks")
 
-            var weekData = [];
+            var weeks = [];
 
             for (let i = 0; i < this.eventTrendData.length; i++) {
                 for(const key in this.eventTrendData[i]) {
                     if(this.eventTrendData[i][key] !== null){
                         let week = this.eventTrendData[i][key].week;
                         if(week !== null){
-                            weekData.push(week)
+                            weeks.push(week)
                         }
                     }
                 }
             }
 
-            weekData = this.removeDuplicates(weekData);
-            weekData = weekData.sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
-            var weekDataCopy = [...weekData];
-            var containsMultiWeek = false;
+            weeks = [...new Set(weeks)]
+            var weeksOrdered = weeks.sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
 
-            for (let i=weekDataCopy.length-1; i >= 0; i--){
-                if(String(weekDataCopy[i]).indexOf("-") === -1){
-                    if(weekDataCopy.includes(weekData[i]+"-"+String((parseInt(weekDataCopy[i])+1)))){
-                        weekDataCopy.splice(weekDataCopy.indexOf(weekDataCopy[i]), 1);
+            const swapElements = (array, index1, index2) => {
+                let temp = array[index1];
+                array[index1] = array[index2];
+                array[index2] = temp;
+            };
+
+            for(const i in weeksOrdered){
+                if(String(weeksOrdered[i]).indexOf("-") !== -1){
+                    const beforeSymbol = weeksOrdered[i].substring(0, weeksOrdered[i].indexOf("-"));
+                    if(beforeSymbol === weeksOrdered[i-1]){
+                        swapElements(weeksOrdered, i, i-1)
                     }
-                    if(weekDataCopy.includes(String((parseInt(weekDataCopy[i])-1))+"-"+weekDataCopy[i])){
-                        weekDataCopy.splice(weekDataCopy.indexOf(weekDataCopy[i]), 1);
-                    }
-                } else {
-                    containsMultiWeek = true;
                 }
             }
-            if(containsMultiWeek === true){
-                weekData = weekDataCopy;
+            console.log(weeksOrdered)
+
+            let weekListOrder = {}
+
+            var id = 0;
+            for(let i=0; i<weeksOrdered.length; i++){
+                if(String(weeksOrdered[i]).indexOf("-") !== -1){
+                    weekListOrder[id] = [];
+                    weekListOrder[id].push(weeksOrdered[i]);
+                    
+                    const beforeSymbol = String(weeksOrdered[i].split('-')[0]);
+                    const afterSymbol = String(weeksOrdered[i].split('-')[1]);
+                    
+                    if(weeksOrdered.includes(beforeSymbol)){
+                        weekListOrder[id].push(beforeSymbol)
+                    }
+                    if(weeksOrdered.includes(afterSymbol)){
+                        weekListOrder[id].push(afterSymbol)
+                    }
+                    id++;
+                } else {
+                    var inList = false;
+                    for(const key in weekListOrder){
+                        if(weekListOrder[key].includes(weeksOrdered[i]) === true){
+                            inList = true;
+                        }
+                    }
+                    console.log(inList)
+                    if(inList===false){
+                        console.log("inside if")
+                        console.log(weeksOrdered[i])
+                        weekListOrder[id] = [];
+                        weekListOrder[id].push(weeksOrdered[i])
+                        id++;
+                        console.log(weekListOrder)
+                    }      
+                }
             }
 
-            let weekOptions = {};
+            console.log(weekListOrder)
 
-            for(let i=0; i<weekData.length; i++){
-                weekOptions[i+1] = weekData[i];
+            var weekOptions = {};
+            var weekMarks = {};
+
+            for(const key in weekListOrder){
+                weekOptions[key] = String(weekListOrder[key][0]);
             }
+            
+            for(const i in weekOptions){
+                if(i % 2 === 0){
+                    weekMarks[i] = weekOptions[i]
+                }
+            }
+
+            console.log("SLIDER OPTIONS")
+            console.log(weekOptions)
+            console.log(weekMarks)
+            console.log(typeof Object.keys(weekOptions)[0])
+            console.log(typeof weekOptions[0])
+
             this.weeks = reactive(weekOptions);
-            this.minWeekId = parseInt(Object.keys(this.weeks)[0])
-            this.maxWeekId = parseInt(Object.keys(this.weeks)[Object.keys(this.weeks).length-1])
-            this.week = ref([this.minWeekId, this.maxWeekId])
+            this.weekMarks = reactive(weekMarks);
+            console.log(this.weeks)
+            console.log("MIN AND MAX WEEK ID")
+            this.minWeekId = parseInt(Object.keys(weekOptions)[0])
+            this.maxWeekId = parseInt(Object.keys(weekOptions)[Object.keys(weekOptions).length-1])
+
+            this.week = ref([parseInt(this.minWeekId), parseInt(this.maxWeekId)])
         },
         async handlePatientsSelection(patientId){
             console.log(typeof this.selectedPatients)
@@ -204,7 +265,7 @@ export default {
                 console.log("SELECTED PATIENTS")
                 console.log(this.selectedPatients);
                 await this.getEventTrendData(this.selectedPatients);
-                this.getWeeks();
+                await this.getWeeks();
                 this.drawPatientsLinePlot(this.startWeek, this.endWeek);
             } else {
                 console.log("REMOVE")
@@ -220,7 +281,7 @@ export default {
                 } else {
                     this.selectedPatients = this.selectedPatients.sort(function(a,b){return a-b});
                     await this.getEventTrendData(this.selectedPatients);
-                    this.getWeeks();
+                    await this.getWeeks();
                     this.drawPatientsLinePlot(this.startWeek, this.endWeek);
                 }
             }
