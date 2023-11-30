@@ -140,6 +140,7 @@ def create_app(test_config=None):
     def get_label_brux(patient_id, week, night_id, recorder):
         try:
             print('get_label_brux')
+            print("week: ", week)
             params = (patient_id, week, night_id, recorder)
             query = "SELECT * from confirmed_labels WHERE (patient_id=? AND week=? AND night_id=? AND recorder=?)"
             with sql.connect(DATABASE) as con:
@@ -584,26 +585,28 @@ def create_app(test_config=None):
             # TODO: update accuracy
             try:
                 patient_accuracy = run_confirmation(DATABASE, str(model[0][-1]), patient_id, week, night_id, recorder, False)
+                # xgbc = xgb.XGBClassifier()
+                # xgbc.load_model(str(model[0][-1]))
+                # patient_accuracy = calc_model_accuracy(DATABASE, xgbc, patient_id, week, night_id, recorder, patient_id)
             except Exception as e:
+                print(e)
                 patient_accuracy = {'accuracy': None, 'precision': None}
-            # xgbc = xgb.XGBClassifier()
-            # xgbc.load_model(str(model[0][-1]))
-            # patient_accuracy = get_model_accuracy(DATABASE, xgbc, patient_id, week, night_id, recorder, 1)
+            
             
             # TODO: study model
             with sql.connect(DATABASE) as con:
                 print("DB connected")
                 cur = con.cursor()
-                cur.execute(f"SELECT * FROM models WHERE patient_id={-1}")
+                cur.execute(f"SELECT * FROM models WHERE patient_id=-1")
                 model = cur.fetchall()
                 cur.close()
             try:
                 study_accuracy = run_confirmation(DATABASE, str(model[0][-1]), patient_id, week, night_id, recorder, True)
+                # xgbc = xgb.XGBClassifier()
+                # xgbc.load_model(str(model[0][-1]))
+                # study_accuracy = calc_model_accuracy(DATABASE, xgbc, patient_id, week, night_id, recorder, -1)
             except Exception as es:
                 study_accuracy = {'accuracy': None, 'precision': None}
-            # xgbc = xgb.XGBClassifier()
-            # xgbc.load_model(str(model[0][-1]))
-            # study_accuracy = get_model_accuracy(DATABASE, xgbc, patient_id, week, night_id, recorder, -1)
             if(patient_accuracy['precision'] == None and study_accuracy['precision'] == None):
                 return f"{e}\n{es}", 500
             
@@ -622,7 +625,7 @@ def create_app(test_config=None):
                 cur = con.cursor()
                 cur.execute(f"SELECT accuracy, precision FROM models WHERE patient_id={patient_id}")
                 patient_accuracy = cur.fetchall()
-                cur.execute(f"SELECT accuracy, precision FROM models WHERE patient_id={-1}")
+                cur.execute(f"SELECT accuracy, precision FROM models WHERE patient_id=-1")
                 study_accuracy = cur.fetchall()
                 cur.close()
             return jsonify(patient_accuracy=patient_accuracy, study_accuracy=study_accuracy), 200
@@ -721,7 +724,10 @@ def create_app(test_config=None):
                     return_list = [{str(i):None} for i in patient_id]
                     return json.dumps(return_list), 200
                 # day_list = [0,day_info[1]]
-                day_list = [day_info[0],day_info[1]]
+                if day_info[0] == day_info[1]:
+                    day_list = [day_info[0]]
+                else:
+                    day_list = [day_info[0],day_info[1]]
                 day_list = pd.DataFrame(day_list,columns=['day'])
                 day_list['date'] = pd.to_datetime(day_list['day'], unit='D', origin='2023-01-01')
                 day_list = day_list.set_index('date').resample('D').asfreq()
@@ -782,15 +788,15 @@ def create_app(test_config=None):
                         print('week_origin: ', cnt)
                         print('day lists: ',day_lists)
                         print('count: ',day_lists.iloc[j,i+1])
-                        if((not has_value) or pd.isna(day_lists.iloc[j,i+1]) or j-first_day>=cnt.shape[0] ):
+                        if((not has_value) or pd.isna(day_lists.iloc[j,i+1]) or j-first_day+day_info[0]>=cnt.shape[0] ):
                             print('No value :', j)
                             nights.append(None)
                             continue
                         # if(first_day==0):
                         #     first_day = j
                         # print("week1: ",cnt['week'].values[j])
-                        if(not pd.isna(cnt.iloc[j-first_day,1])):
-                            week = str(cnt['week'].values[j-first_day])
+                        if(not pd.isna(cnt.iloc[j-first_day+day_info[0],1])):
+                            week = str(cnt['week'].values[j-first_day+day_info[0]])
                             # print('week list: ',week.split('-'))
                             if('-' in week):
                                 start = int(week.split('-')[0])
@@ -801,7 +807,7 @@ def create_app(test_config=None):
                             # print('start: ',start)
                             # print('end: ',end)
                             # continue
-                        week_no = int(np.floor(j/7)+1)
+                        week_no = int(np.floor((j+day_info[0])/7)+1)
                         print('week_no: ',week_no)
                         if(week_no>end):
                             if(end>start):
@@ -809,9 +815,9 @@ def create_app(test_config=None):
                             else:
                                 week = week_no
                         print('week2: ',week)
-                        cnt['week'].values[j-first_day] = str(week)
+                        cnt['week'].values[j-first_day+day_info[0]] = str(week)
                         # print('night: ',cnt['night'].values)
-                        obj = {'count':day_lists[i][j], 'type':type_lists[i][j], 'week':cnt['week'].values[j-first_day], 'night':cnt['night'].values[j-first_day]}
+                        obj = {'day':j+day_info[0],'count':day_lists[i][j], 'type':type_lists[i][j], 'week':cnt['week'].values[j-first_day+day_info[0]], 'night':cnt['night'].values[j-first_day+day_info[0]]}
                         # print('obj: ',obj)
                         nights.append(obj)
                     print(nights)

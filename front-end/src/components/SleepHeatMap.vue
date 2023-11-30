@@ -194,6 +194,13 @@ export default {
                 this.clicked = [];
                 this.selectedPosted = true;
                 //this.$router.push('/events-classification/');
+                
+                this.$store.commit('clearLabels');
+                this.$store.commit('getNightImg', '');
+                this.$store.commit('getWeekImg', '');
+                this.$store.commit('setPredFinish', false);
+                this.$store.commit('setEventNo', 1);
+                console.log('repredict')
 
             })
             .catch(err=>{
