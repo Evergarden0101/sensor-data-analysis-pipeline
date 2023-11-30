@@ -109,8 +109,8 @@ export default {
             patientsExists: ref(false),
             eventTrendData: [],
             week: ref([0, 0]),
-            startWeek: ref(''),
-            endWeek: ref(''),
+            startWeek: ref(-1),
+            endWeek: ref(-1),
             minWeekId: ref(0),
             maxWeekId: ref(0),
             nightsNo: 0,
@@ -118,6 +118,7 @@ export default {
             selectedPatients: [parseInt(this.$store.state.patientId)],
             selectedWeeks: ref([]),
             weeks: ref({}),
+            completeWeekList: ref({}),
             weekMarks: ref({}),
             patientsCheckBox: {},
             studyPrecision: this.$store.state.studyPrecision,
@@ -144,9 +145,18 @@ export default {
         await this.getEventTrendData(this.selectedPatients);
         await this.getWeeklySummary();
         await this.getWeeks();
-        this.drawPatientsLinePlot(this.startWeek, this.endWeek);
+        await this.drawPatientsLinePlot(this.startWeek, this.endWeek);
     },
     methods: {
+        findWeekIndex(weeks, value){
+            var index=-1;
+            for(const key in weeks){
+                if(weeks[key].includes(value)){
+                    index = key;
+                }
+            }
+            return index;
+        },
         formatTooltip(val){
             return this.weeks[val]
         },
@@ -214,19 +224,17 @@ export default {
                             inList = true;
                         }
                     }
-                    console.log(inList)
                     if(inList===false){
-                        console.log("inside if")
-                        console.log(weeksOrdered[i])
                         weekListOrder[id] = [];
                         weekListOrder[id].push(weeksOrdered[i])
                         id++;
-                        console.log(weekListOrder)
                     }      
                 }
             }
 
             console.log(weekListOrder)
+
+            this.completeWeekList = reactive(weekListOrder)
 
             var weekOptions = {};
             var weekMarks = {};
@@ -241,48 +249,33 @@ export default {
                 }
             }
 
-            console.log("SLIDER OPTIONS")
-            console.log(weekOptions)
-            console.log(weekMarks)
-            console.log(typeof Object.keys(weekOptions)[0])
-            console.log(typeof weekOptions[0])
-
             this.weeks = reactive(weekOptions);
             this.weekMarks = reactive(weekMarks);
-            console.log(this.weeks)
-            console.log("MIN AND MAX WEEK ID")
             this.minWeekId = parseInt(Object.keys(weekOptions)[0])
             this.maxWeekId = parseInt(Object.keys(weekOptions)[Object.keys(weekOptions).length-1])
 
             this.week = ref([parseInt(this.minWeekId), parseInt(this.maxWeekId)])
         },
         async handlePatientsSelection(patientId){
-            console.log(typeof this.selectedPatients)
             if(this.patientsCheckBox[patientId] === true){
                 this.selectedPatients.push(parseInt(patientId))
                 this.selectedPatients = this.selectedPatients.sort(function(a,b){return a-b});
                 this.patientsExists = ref(true);
-                console.log("SELECTED PATIENTS")
-                console.log(this.selectedPatients);
                 await this.getEventTrendData(this.selectedPatients);
                 await this.getWeeks();
-                this.drawPatientsLinePlot(this.startWeek, this.endWeek);
+                await this.drawPatientsLinePlot(this.startWeek, this.endWeek);
             } else {
                 console.log("REMOVE")
                 let index = this.selectedPatients.indexOf(parseInt(patientId))
                 this.selectedPatients.splice(index, 1);
-                console.log(index)
-                console.log("SELECTED PATIENTS")
-                console.log(this.selectedPatients);
+                
                 if(this.selectedPatients.length === 0){
-                    console.log("SELECTED PATIENTS")
-                    console.log(this.selectedPatients)
                     this.patientsExists = ref(false);
                 } else {
                     this.selectedPatients = this.selectedPatients.sort(function(a,b){return a-b});
                     await this.getEventTrendData(this.selectedPatients);
                     await this.getWeeks();
-                    this.drawPatientsLinePlot(this.startWeek, this.endWeek);
+                    await this.drawPatientsLinePlot(this.startWeek, this.endWeek);
                 }
             }
 
@@ -296,16 +289,12 @@ export default {
                 }
             }
         },
-        changeWeekFilter(){
+        async changeWeekFilter(){
             console.log("changing the line chart according to the weeks")
-            console.log(this.week)
-            this.startWeek = this.weeks[this.week[0]]
-            this.endWeek = this.weeks[this.week[1]]
+            this.startWeek = this.week[0]
+            this.endWeek = this.week[1]
 
-            this.drawPatientsLinePlot(this.startWeek, this.endWeek);
-        },
-        updateHeatMaps(){
-            console.log("Updating the heatmaps.")
+            await this.drawPatientsLinePlot(this.startWeek, this.endWeek);
         },
         async getExistingEventTrendPatientIds(){
             const path = `http://127.0.0.1:5000/event-trend-patients-ids`
@@ -348,8 +337,6 @@ export default {
                                 patient_id: JSON.stringify(patientIds),
                             }
                         };
-
-            console.log(payload);
 
             await axios.get(path, payload, {headers})
                 .then((res) => {
@@ -396,6 +383,7 @@ export default {
                                 series[j].texts.push(null);
                                 series[j].weeks.push(null);
                                 series[j].nights.push(null);
+                                series[j].days.push(null);
                             }
                             else{
                                 if(result[i][key].night !== null){
@@ -404,12 +392,14 @@ export default {
                                         series[j].texts.push(this.getTypeText(result[i][key].type));
                                         series[j].weeks.push(result[i][key].week);
                                         series[j].nights.push(result[i][key].night);
+                                        series[j].days.push(result[i][key].day);
                                         }
                                     if(series[j].name == "Patient " + key + " interpolated"){
                                         series[j].data.push(null)
                                         series[j].texts.push(null);
                                         series[j].weeks.push(result[i][key].week);
                                         series[j].nights.push(null);
+                                        series[j].days.push(result[i][key].day);
                                     }
 
                                 } else {
@@ -418,12 +408,14 @@ export default {
                                         series[j].texts.push(this.getTypeText(result[i][key].type));
                                         series[j].weeks.push(result[i][key].week);
                                         series[j].nights.push(result[i][key].night);
+                                        series[j].days.push(result[i][key].day);
                                     }
                                     if(series[j].name == "Patient " + key + " interpolated"){
                                         series[j].data.push(result[i][key].count)
                                         series[j].texts.push(null);
                                         series[j].weeks.push(result[i][key].week);
                                         series[j].nights.push(null);
+                                        series[j].days.push(result[i][key].day);
                                     }
                                 }
                             }
@@ -445,6 +437,7 @@ export default {
                             texts: [null],
                             weeks: [null],
                             nights: [null],
+                            days: [null],
                             lineStyle: {
                                 normal: {
                                     color: ''
@@ -464,6 +457,7 @@ export default {
                             texts: [null],
                             weeks: [null],
                             nights: [null],
+                            days: [null],
                             lineStyle: {
                                 normal: {
                                     type: 'dashed',
@@ -488,6 +482,7 @@ export default {
                             texts: [this.getTypeText(result[i][key].type)],
                             weeks: [result[i][key].week],
                             nights: [result[i][key].night],
+                            days: [result[i][key].day],
                             lineStyle: {
                                 normal: {
                                     color: ''
@@ -507,6 +502,7 @@ export default {
                             texts: [null],
                             weeks: [result[i][key].week],
                             nights: [null],
+                            days: [result[i][key].day],
                             lineStyle: {
                                 normal: {
                                     type: 'dashed',
@@ -530,6 +526,7 @@ export default {
                             texts: [null],
                             weeks: [result[i][key].week],
                             nights: [null],
+                            days: [result[i][key].day],
                             lineStyle: {
                                 normal: {
                                     color: ''
@@ -549,6 +546,7 @@ export default {
                             texts: [null],
                             weeks: [result[i][key].week],
                             nights: [null],
+                            days: [result[i][key].day],
                             lineStyle: {
                                 normal: {
                                     type: 'dashed',
@@ -566,8 +564,68 @@ export default {
             }
             return series;
         },
-        drawPatientsLinePlot(startWeek, endWeek){
-            console.log(this.eventTrendData)
+        getFilteredSeries(startWeek, endWeek, series){
+            var startWeekIndex = -1;
+            var endWeekIndex = -1;
+            var seriesToRemove = [];
+
+            for(let i=0; i<series.length; i=i+2){
+                var toInclude = [];
+                for(let j=0; j<series[i].weeks.length; j++){
+                    var curWeekId = this.findWeekIndex(this.completeWeekList, series[i].weeks[j])
+                    if(curWeekId !== -1){
+                        if((startWeek <= curWeekId) && (endWeek >= curWeekId)){
+                            toInclude.push(series[i].weeks[j])
+                        }
+                    }
+                }
+                if(toInclude.length === 0){
+                    seriesToRemove.push(i)
+                    seriesToRemove.push(i+1)
+                } else {
+                    startWeekIndex = series[i].weeks.indexOf(toInclude[0])
+                    endWeekIndex = series[i].weeks.lastIndexOf(toInclude[toInclude.length-1])
+                    
+                    series[i].data = series[i].data.slice(startWeekIndex, endWeekIndex+1)
+                    series[i].texts = series[i].texts.slice(startWeekIndex, endWeekIndex+1)
+                    series[i].weeks = series[i].weeks.slice(startWeekIndex, endWeekIndex+1)
+                    series[i].nights = series[i].nights.slice(startWeekIndex, endWeekIndex+1)
+                    series[i].days = series[i].days.slice(startWeekIndex, endWeekIndex+1)
+                    
+                    series[i+1].data = series[i+1].data.slice(startWeekIndex, endWeekIndex+1)
+                    series[i+1].texts = series[i+1].texts.slice(startWeekIndex, endWeekIndex+1)
+                    series[i+1].weeks = series[i+1].weeks.slice(startWeekIndex, endWeekIndex+1)
+                    series[i+1].nights = series[i+1].nights.slice(startWeekIndex, endWeekIndex+1)
+                    series[i+1].days = series[i+1].days.slice(startWeekIndex, endWeekIndex+1)
+                }
+            }
+
+            if(seriesToRemove.length > 0){
+                for (const i of seriesToRemove.reverse()) {
+                    series.splice(i, 1);
+                }
+            }
+            console.log("NEW SERIES");
+            console.log(series)
+            return series;
+        },
+        getMinAndMaxDayNo(series){
+            var minDay = parseInt(series[0].days[0]);
+            var maxDay = parseInt(series[0].days[0]);
+
+            for(let i=0; i<series.length; i++){
+                for(let j=0; j<series[i].days.length; j++){
+                    if(parseInt(series[i].days[j]) < minDay){
+                        minDay = parseInt(series[i].days[j]);
+                    }
+                    if(parseInt(series[i].days[j]) > maxDay){
+                        maxDay = parseInt(series[i].days[j]);
+                    }
+                }
+            }
+            return [minDay, maxDay];
+        },
+        async drawPatientsLinePlot(startWeek, endWeek){
             var dom = document.getElementById("patientsLinePlot");
             var myChart = echarts.init(dom, null, {
                 renderer: "sgv",
@@ -575,9 +633,8 @@ export default {
             });
             var option;
 
-            let series = this.getSeries(this.eventTrendData);
-
-            console.log(series)
+            var series = this.getSeries(this.eventTrendData);
+            var xAxisData = [...Array(this.nightsNo).keys()]
 
             for(let i=0; i<series.length; i++){
                 if(this.colors.length > series.length/2){
@@ -592,98 +649,12 @@ export default {
                 }
             }
 
-            /* WEEK FILTER LOGIC: not working yet
-            if(startWeek !== '' && endWeek !== ''){
-                let weeksList = Object.values(this.weeks);
-                console.log(weeksList.indexOf(startWeek))
-                console.log(weeksList.indexOf(endWeek)+1)
-                let subWeeksList = weeksList.slice(weeksList.indexOf(startWeek), weeksList.indexOf(endWeek)+1)
-
-                console.log(subWeeksList)
-                console.log("UPDATE PARAMETERS")
-                for(let i=0; i<series.length; i++){
-                    let startWeekNr = 0;
-                    let endWeekNr = subWeeksList.length-1;
-                    let weeks = series[i].weeks;
-                    let startIdFound = false;
-                    let endIdFound = false;
-                    let startWeekId;
-                    let endWeekId;
-                    console.log(startWeek);
-                    console.log(endWeek);
-
-                    while(startIdFound === false && endIdFound === false){
-                        try{
-                            if(startWeekNr >= subWeeksList.length-1){
-                                break;
-                            }
-                            startWeekId = weeks.indexOf(startWeek)
-
-                            if(startWeekId === -1){
-                                startWeekNr ++;
-                                startWeek = subWeeksList[startWeekNr]
-                            } else {
-                                startIdFound = true;
-                            }
-
-                        }
-                        catch(err){
-                            console.log(err)
-                        }
-                        try{
-                            if(endWeekNr <= 0){
-                                break;
-                            }
-                            endWeekId = weeks.lastIndexOf(endWeek);
-
-                            if(endWeekId === -1){
-                                endWeekNr --;
-                                endWeek = subWeeksList[endWeekNr]
-                            } else {
-                                endIdFound = true;
-                            }
-                        }
-                        catch(err) {
-                            console.log(err)
-                        }
-                    }
-
-                    console.log(startIdFound)
-                    console.log(endIdFound)
-                    console.log(startWeekId)
-                    console.log(endWeekId)
-
-                    if(startIdFound === true && endIdFound === true){
-                        console.log("StartId TRUE endId TRUE")
-                        series[i].data = series[i].data.slice(startWeekId, endWeekId+1)
-                        series[i].texts = series[i].texts.slice(startWeekId, endWeekId+1)
-                        series[i].weeks = series[i].weeks.slice(startWeekId, endWeekId+1)
-                        series[i].nights = series[i].nights.slice(startWeekId, endWeekId+1)
-
-                        console.log(series[i].data)
-                        console.log(startWeekId)
-                        console.log(endWeekId)
-
-                    }
-                    if(startIdFound === true && endIdFound === false){
-                        console.log("StartId TRUE endId FALSE")
-                        series[i].data = series[i].data.slice(startWeekId)
-                        series[i].texts = series[i].texts.slice(startWeekId)
-                        series[i].weeks = series[i].weeks.slice(startWeekId)
-                        series[i].nights = series[i].nights.slice(startWeekId)
-                    }
-                    else{
-                        console.log("startId FALSE endId ?")
-                        series[i].data = []
-                        series[i].texts = []
-                        series[i].weeks = []
-                        series[i].nights = []
-                    }
-                }
-                console.log(series)
+            if(startWeek !== -1 || endWeek !== -1){
+                console.log("Week filter logic")
+                series = this.getFilteredSeries(startWeek, endWeek, series);
+                var minAndMaxDay = this.getMinAndMaxDayNo(series);
+                xAxisData = Array.from({length: minAndMaxDay[1] - minAndMaxDay[0] + 1}, (_, i) => i + minAndMaxDay[0])
             }
-
-            */
 
             let legend = [];
 
@@ -741,15 +712,17 @@ export default {
                     saveAsImage: {}
                     }
                 },
+                /*
                 dataZoom : {
                     show : true,
                     realtime: true
                 },
+                */
                 xAxis: {
                     type: 'category',
                     boundaryGap: false,
                     name: "Day",
-                    data: [...Array(this.nightsNo).keys()],
+                    data: xAxisData,
                 },
                 yAxis: {
                     type: 'value',
@@ -762,6 +735,7 @@ export default {
             if (option && typeof option === "object") {
                 console.log("setting options")
                 console.log(option)
+                myChart.clear();
                 myChart.setOption(option, true);
             }
             window.addEventListener("resize", myChart.resize);
