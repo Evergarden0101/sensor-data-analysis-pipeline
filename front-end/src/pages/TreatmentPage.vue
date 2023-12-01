@@ -1,16 +1,12 @@
 <template>
-    <el-row style="margin-bottom: 3%;">
-        <el-col>
-            <h1 style="text-align: center;">This is the Treatment Analysis page!</h1>
-        </el-col>
-    </el-row>
-    <el-row>
-        <el-col align-center :span="12" :offset="6">
+    <h1 style="text-align: center; margin-bottom: 2%;"><el-icon :size="default"><DataLine /></el-icon> Treatment Analysis</h1>
+    <el-row style="margin-bottom: 1%;">
+        <el-col align-center :span="16" :offset="4">
             <Stepper step=4 />
         </el-col>
     </el-row>
     <el-row style="margin-top: 3%;">
-        <el-col :span="18" :offset="6">
+        <el-col :span="14" :offset="5">
             <router-link :to="'/events-classification/'">
                 <el-button type="primary" plain><el-icon class="el-icon--left"><ArrowLeft /></el-icon> Events Classification</el-button>
             </router-link>
@@ -42,8 +38,8 @@
     </el-row>
 
 
-    <el-row style="border-bottom: solid grey; border-top:solid grey; margin-top: 2%;">
-        <el-col :span="8" :offset="2" style="border-right:solid; border-color: grey">
+    <el-row style=" margin-top: 2%;">
+        <el-col :span="8" :offset="2">
             <h2>Patient {{ this.$store.state.patientId }} - Weekly summary for week {{ this.$store.state.week }}</h2>
             <div v-if="patientsExists" id="currentPatientHeatMap" style="position: relative; height: 70vh; width: 55vh; margin-top:10%"></div>
             <div v-else>
@@ -56,10 +52,9 @@
               <div><strong>Total Events:</strong> {{ totalEvents }}</div>
             </div>
           </el-col>
-
         </el-col>
 
-        <el-col :span="9" :offset="1" style="margin-bottom:5%">
+        <el-col :span="8" :offset="1" style="margin-bottom:5%">
             <h2>Comparison between patients</h2>
             <p><b>Select the desired weeks</b></p>
             <div style="display: flex;align-items: center;">
@@ -70,7 +65,7 @@
                 <el-empty :image-size="200" description="Select at least a patient to see linechart"/>
             </div>
         </el-col>
-        <el-col :span="2" :offset="1">
+        <el-col :span="3" :offset="1">
             <el-card>
                 <h3>Select desired patients</h3>
                 <el-checkbox v-for="patientId of patientsIds" v-model="patientsCheckBox[patientId]" :label="'Patient '+patientId" size="large" @change="handlePatientsSelection(patientId)"/>

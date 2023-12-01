@@ -1,24 +1,23 @@
 <template>
+<h1 style="text-align: center;"><el-icon :size="default"><Filter /></el-icon> Filtering</h1>
+<h2 style="text-align: center;">Sleep Stage Detection</h2>
+<el-row style="margin-bottom: 1%;">
+    <el-col align-center :span="16" :offset="4">
+        <Stepper step=2 />
+    </el-col>
+</el-row>
 
 <div class="common-layout">
     <el-container>
       <el-container>
-        <el-header style="margin-bottom: 22%;">
-            <h1 style="text-align: center;">This is the Filtering page!</h1>
-            <el-row style="margin-top: 2%;">
-                <el-col :span="14" :offset="6">
-                   <Stepper step=2 /> 
-                </el-col>
-                
-            </el-row>
-            <h2 align="center" style="margin-top: 3%;">Patient: {{ this.$store.state.patientId }}, Week: {{ this.$store.state.week }}, Night id: {{ this.$store.state.nightId }}</h2>
-            <h3 align="center">Sleep Stage Detection</h3>
+        <el-header style="margin-bottom: 2%;">
+                <h2 align="center" style="margin-top: 3%; text-align: center;">Patient: {{ this.$store.state.patientId }}, Week: {{ this.$store.state.week }}, Night id: {{ this.$store.state.nightId }}</h2>
         </el-header>
         <el-main>
             <SleepHeatMap />
         </el-main>
       </el-container>
-      <el-aside width="400px" style="margin-top: 18%; margin-right: 3%;"><SleepHeatMapLegend /></el-aside>
+      <el-aside width="400px" style="margin-top: 7%; margin-right: 3%;"><SleepHeatMapLegend /></el-aside>
     </el-container>
 </div>
 

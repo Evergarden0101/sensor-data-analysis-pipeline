@@ -2,7 +2,7 @@
     <div style="text-align: center;">
         <div style="display: inline-block;">
             <router-link :to="'/patient-data/'">
-                <el-button type="primary" plain><el-icon class="el-icon--left"><ArrowLeft /></el-icon> Patient Information</el-button>
+                <el-button type="primary" plain><el-icon class="el-icon--left"><ArrowLeft /></el-icon> Patients Data</el-button>
             </router-link>
         </div>
         <div v-if="!error" style="display: inline-block; padding-left: 12%; padding-right: 12%;">
@@ -60,7 +60,7 @@
             </el-result>
         </el-col>
         <el-col v-if="!error" :span="24" v-loading="loading" element-loading-text="The dataset is loading...it might take a couple of minutes.">
-            <div id="chart-container" style="position: relative; height: 80vh; overflow: hidden;"></div>
+            <div id="chart-container" style="position: relative; height: 100vh; overflow: hidden;"></div>
         </el-col>
     </el-row>
 </template>

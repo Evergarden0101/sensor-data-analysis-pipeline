@@ -1,16 +1,13 @@
 <template>
-    <el-row style="margin-bottom: 2%;">
-        <el-col>
-            <h1 style="text-align: center;">This is the Events Classification page!</h1>
-        </el-col>
-    </el-row>
-    <el-row>
-        <el-col align-center :span="12" :offset="6">
+    <h1 style="text-align: center; margin-bottom: 2%;"><el-icon :size="default"><Open /></el-icon> Events Classification</h1>
+    <el-row style="margin-bottom: 1%;">
+        <el-col align-center :span="16" :offset="4">
             <Stepper step=3 />
         </el-col>
     </el-row>
-    <h2 align="center">Patient: {{ this.$store.state.patientId }}, Week: {{ this.$store.state.week }}, Night id: {{ this.$store.state.nightId }}</h2>
-    <el-row style="margin-top: 3%;">
+
+    <h2 align="center" style="margin-top: 2%;">Patient: {{ this.$store.state.patientId }}, Week: {{ this.$store.state.week }}, Night id: {{ this.$store.state.nightId }}</h2>
+    <el-row style="margin-top: 2%;">
         <el-col :span="7" :offset="5">
             <router-link :to="'/filtering/'">
                 <el-button type="primary" plain><el-icon class="el-icon--left"><ArrowLeft /></el-icon> Filtering</el-button>
@@ -46,7 +43,7 @@
             </div>
         </el-col>
     </el-row>
-    <el-row style="margin-bottom:3em;margin-top:0">
+    <el-row style="margin-bottom:3em;margin-top:-2%">
         <el-col :span="22" :offset="1">
             <!-- <el-card :body-style="{ padding: '5px' }" shadow="always" style="border-radius: 10px"> -->
                 <h4 align="center">Signals and Predicted Events for Whole Night</h4>

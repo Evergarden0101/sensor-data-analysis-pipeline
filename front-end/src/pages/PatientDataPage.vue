@@ -1,20 +1,20 @@
 <template>
-    <el-row style="margin-bottom: 2%;">
+    <el-row style="margin-bottom: 1%;">
         <el-col>
-            <h1 style="text-align: center;">This is the Patient Data page!</h1>
+            <h1 style="text-align: center;"><el-icon :size="default"><User /></el-icon> Patients Data</h1>
         </el-col>
     </el-row>
 
     <el-row>
-        <el-col align-center :span="12" :offset="6">
+        <el-col align-center :span="16" :offset="4">
             <Stepper step=1 />
         </el-col>
     </el-row>
-    <el-row style="margin-top: 2%;">
+    <el-row style="margin-top: 1%;">
         <el-col :span="10" :offset="7">
             <h2>Patients data available:</h2>
             <el-table :data="tableData"
-                      :default-sort="{ prop: 'patient_id', order: 'ascending' }"
+                      :default-sort="{prop:'week', order:'ascending'}"
                       highlight-current-row
                       @row-dblclick="saveSelectedPatientData" style="width: 100%">
                 <el-table-column prop="patient_id" label="Patient ID" sortable width="180" />
