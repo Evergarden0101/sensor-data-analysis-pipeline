@@ -11,7 +11,7 @@
             sub-title="Please fill in all the mandatory fields."
         >
             <template #extra>
-                <el-button type="primary" @click="setError()" plain>Back</el-button>
+                <el-button type="primary" @click="setError()" plain size="large">Back</el-button>
             </template>
         </el-result>
         </span>
@@ -21,10 +21,10 @@
     <div v-if="!error">
 
     <div v-if="formNumber === 1">
-        <el-form :model="generalInfoForm" label-width="120px">
+        <el-form :model="generalInfoForm" size="large" label-width="auto">
             <p><b>General information</b></p>
             <el-form-item label="Type of study" required="true">
-                <el-select v-model="generalInfoForm.studyType" class="m-2" placeholder="Select" size="large">
+                <el-select v-model="generalInfoForm.studyType" class="m-2" placeholder="Select" size="large" label="left" style="width:300px">
                     <el-option
                     v-for="item in studyTypes"
                     :key="item.value"
@@ -35,8 +35,8 @@
                 </el-select>
             </el-form-item>
 
-            <el-form-item label="Activity to detect" required="true">
-                <el-select v-model="generalInfoForm.activityType" class="m-2" placeholder="Select" size="large">
+            <el-form-item label="Activity to detect" required="true" :size="large">
+                <el-select v-model="generalInfoForm.activityType" class="m-2" placeholder="Select" size="large" label="left" style="width:300px">
                     <el-option
                     v-for="item in activities"
                     :key="item.value"
@@ -47,98 +47,99 @@
                 </el-select>
             </el-form-item>
             <el-form-item label="Activity usual duration (s)" required="true">
-                <el-input-number v-model="generalInfoForm.activityDuration" :precision="2" :step="0.5" />
+                <el-input-number v-model="generalInfoForm.activityDuration" :precision="2" :step="0.5" label="left" style="width:300px"/>
             </el-form-item>
         </el-form>
 
-        <el-button type="primary" @click="handleNext1()" style="margin-top:3%">Next<el-icon class="el-icon--right"><ArrowRight /></el-icon></el-button>
+        <el-button type="primary" @click="handleNext1()" style="margin-top:3%; display:block; margin: 0 auto;" size="large">Next<el-icon class="el-icon--right"><ArrowRight /></el-icon></el-button>
     </div>
 
     <div v-if="formNumber === 2">
-        <el-form :model="sensorsForm" label-width="120px" style="margin-top: 3%;">
+        <el-form :model="sensorsForm" style="margin-top: 3%;" size="large" label-width="auto">
             <p><b>Sensor data information</b></p>
             <el-row>
-                <el-col :offset="14" :span="10">
+                <el-col :offset="6" :span="18" style="margin-bottom: 2%;">
                     Number of channels
                 </el-col>
             </el-row>
             <div v-for="(sensor, index) in sensorsForm" :key="index">
                 <el-row>
-                <el-form-item :label="getSensorLabel(index.charAt(6))">
-                    <el-col :span="8">
-                        <el-select
-                            v-model="sensor.type"
-                            placeholder="Type"
-                            >
-                                <el-option
-                                    v-for="item in sensorsList"
-                                    :key="item.value"
-                                    :label="item.label"
-                                    :value="item.value"
-                                    :disabled="item.disabled"
-                                />
-                            </el-select>
-                    </el-col>
+                    <el-form-item :label="getSensorLabel(index.charAt(6))">
+                        <el-col :span="9">
+                            <el-select
+                                v-model="sensor.type"
+                                placeholder="Type"
+                                label="left"
+                                >
+                                    <el-option
+                                        v-for="item in sensorsList"
+                                        :key="item.value"
+                                        :label="item.label"
+                                        :value="item.value"
+                                        :disabled="item.disabled"
+                                    />
+                                </el-select>
+                        </el-col>
 
-                    <el-col :offset="2" :span="8">
-                        <el-input-number placeholder="#Channels" v-model="sensor.channels" :min="1" :max="5" />
-                    </el-col>
-                    <el-col v-if="index.charAt(6) >1" :offset="2" :span="4">
-                        <el-button type="danger" circle @click="removeSensor(index)">
-                            <el-icon>
-                                <Delete />
-                            </el-icon>
-                        </el-button>
-                    </el-col>
+                        <el-col :offset="2" :span="9">
+                            <el-input-number placeholder="#Channels" v-model="sensor.channels" :min="1" :max="5"/>
+                        </el-col>
+                        <el-col v-if="index.charAt(6) >1" :offset="2" :span="2">
+                            <el-button type="danger" circle @click="removeSensor(index)" size="large">
+                                <el-icon>
+                                    <Delete />
+                                </el-icon>
+                            </el-button>
+                        </el-col>
 
-                </el-form-item>
+                    </el-form-item>
                 </el-row>    
             </div>
-            <el-row>
-                <el-col :offset="1">
-                    <el-button @click="addSensor()" >
-                        <el-icon><Plus /></el-icon> Add sensor
-                    </el-button>
-                </el-col>
+                <el-row>
+                    <el-col :offset="1">
+                        <el-button @click="addSensor()" size="large" style="margin-bottom:3%; margin-left: 160px">
+                            <el-icon><Plus /></el-icon> Add sensor
+                        </el-button>
+                    </el-col>
             </el-row>
         </el-form>
 
-        <el-button-group  style="margin-top:3%">
-            <el-button type="primary" @click="formNumber--"><el-icon class="el-icon--left"><ArrowLeft /></el-icon> Previous</el-button>
-            <el-button type="primary" @click="handleNext2()">Next<el-icon class="el-icon--right"><ArrowRight /></el-icon></el-button>
+        <el-button-group style="margin-top:3%; text-align: center; width: inherit; display: inline-block; margin: 0 auto;">
+            <el-button type="primary" @click="formNumber--" size="large" style="float:left"><el-icon class="el-icon--left"><ArrowLeft /></el-icon> Previous</el-button>
+            <el-button type="primary" @click="handleNext2()" size="large" style="float:left">Next<el-icon class="el-icon--right"><ArrowRight /></el-icon></el-button>
         </el-button-group>
     </div>
 
     <div v-if="formNumber === 3">
         <p><b>Sampling rates</b></p>
-            <el-form :model="samplingRateForm">
+            <el-form :model="samplingRateForm" size="large" label-width="auto">
                 <el-form-item label="Original (Hz)" required="true">
-                        <el-input-number v-model="samplingRateForm.originalSampling" :min="120" :max="2000" />
+                        <el-input-number v-model="samplingRateForm.originalSampling" :min="120" :max="2000" label="left" style="width:300px"/>
                 </el-form-item>
 
                 <div v-if="generalInfoForm.studyType=='sleep' && generalInfoForm.activityType=='bruxism'">
                     <el-form-item label="Selected ranges (Hz)" required="true">
-                        <el-input-number v-model="samplingRateForm.SelectedSampling" :min="120" :max="1000" />
+                        <el-input-number v-model="samplingRateForm.SelectedSampling" :min="120" :max="1000" label="left" style="width:300px" />
                     </el-form-item>
 
                     <el-form-item label="Non selected ranges (Hz)" required="true">
-                        <el-input-number v-model="samplingRateForm.NonSelectedSampling" :min="100" :max="256" />
+                        <el-input-number v-model="samplingRateForm.NonSelectedSampling" :min="100" :max="256" label="left" style="width:300px"/>
                     </el-form-item>
                 </div>
             </el-form>
 
-        <el-button-group  style="margin-top:3%">
-            <el-button type="primary" @click="formNumber--"><el-icon class="el-icon--left"><ArrowLeft /></el-icon> Previous</el-button>
-            <el-button type="primary" @click="formNumber++">Next<el-icon class="el-icon--right"><ArrowRight /></el-icon></el-button>
+        <el-button-group  style="margin-top:3%; text-align: center; width: inherit; display: inline-block; margin: 0 auto;">
+            <el-button type="primary" @click="formNumber--" size="large" style="float:left"><el-icon class="el-icon--left"><ArrowLeft /></el-icon> Previous</el-button>
+            <el-button type="primary" @click="formNumber++" size="large" style="float:left">Next<el-icon class="el-icon--right"><ArrowRight /></el-icon></el-button>
         </el-button-group>
     </div>
 
     <div v-if="formNumber === 4">
-        <el-form :model="datasetInfoForm">
+        <el-form :model="datasetInfoForm" size="large" label-width="auto">
             <p><b>Dataset information</b></p>
 
             <el-form-item label="Data file format" required="true">
-                <el-select v-model="datasetInfoForm.fileFormat" class="m-2" placeholder="Select" size="large">
+                <el-select v-model="datasetInfoForm.fileFormat" class="m-2" placeholder="Select" label="left" style="width:400px">
                     <el-option
                     v-for="item in fileFormats"
                     :key="item.value"
@@ -153,7 +154,10 @@
                 <el-switch
                     v-model="datasetInfoForm.filtered"
                     active-text="Yes"
-                    inactive-text="No">
+                    inactive-text="No"
+                    label="left"
+                    style="width:400px">
+                    
                 </el-switch>
             </el-form-item>
 
@@ -161,27 +165,29 @@
                 <el-switch
                     v-model="datasetInfoForm.normalized"
                     active-text="Yes"
-                    inactive-text="No">
+                    inactive-text="No"
+                    label="left"
+                    style="width: 400px;">
                 </el-switch>
             </el-form-item>
 
             <p><i>Data path</i></p>
             <el-form-item label="Full data path">
-                <el-input v-model="datasetInfoForm.dataPath" placeholder="Please input the full data path" style="width:400px" /> 
+                <el-input v-model="datasetInfoForm.dataPath" placeholder="Please input the full data path" style="width:400px" label="left" /> 
             </el-form-item>
             
             <p><i>Channel names on .csv file</i></p>
             <div v-for="(channels,type) in datasetInfoForm.channelsNames" :key="type">
                 <div v-for="(name,channel) in channels" :key="channel">
                     <el-form-item :label="getChannelNameLabel(type, channel.charAt(7))" required="true">
-                    <el-input v-model="datasetInfoForm.channelsNames[type][channel]" placeholder="Please input" /> 
+                    <el-input v-model="datasetInfoForm.channelsNames[type][channel]" placeholder="Please input" label="left" style="width:400px"/> 
                 </el-form-item>
                     
                 </div>
 
             </div>
-            <el-button type="primary" @click="formNumber--"><el-icon class="el-icon--left"><ArrowLeft /></el-icon> Previous</el-button>
-            <el-button @click="saveSettings()">Save</el-button>
+            <el-button type="primary" @click="formNumber--" size="large" style="margin-top:3%; display:block; margin: 0 auto; margin-bottom: 3%;"><el-icon class="el-icon--left"><ArrowLeft /></el-icon> Previous</el-button>
+            <el-button @click="saveSettings()" size="large">Save</el-button>
         </el-form>
 
     </div>
