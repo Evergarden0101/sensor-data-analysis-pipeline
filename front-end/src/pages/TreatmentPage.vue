@@ -248,10 +248,17 @@ export default {
             this.weekMarks = reactive(weekMarks);
             this.minWeekId = parseInt(Object.keys(weekOptions)[0])
             this.maxWeekId = parseInt(Object.keys(weekOptions)[Object.keys(weekOptions).length-1])
-
-            this.week = ref([parseInt(this.minWeekId), parseInt(this.maxWeekId)])
+            //this.week = ref([parseInt(this.minWeekId), parseInt(this.maxWeekId)]) 
+            
+            if(this.startWeek === -1 || this.endWeek === -1){
+               this.week = ref([parseInt(this.minWeekId), parseInt(this.maxWeekId)]) 
+            }
+            
+            
         },
         async handlePatientsSelection(patientId){
+            //this.startWeek = ref(-1);
+            //this.endWeek = ref(-1);
             if(this.patientsCheckBox[patientId] === true){
                 this.selectedPatients.push(parseInt(patientId))
                 this.selectedPatients = this.selectedPatients.sort(function(a,b){return a-b});
@@ -270,6 +277,8 @@ export default {
                     this.selectedPatients = this.selectedPatients.sort(function(a,b){return a-b});
                     await this.getEventTrendData(this.selectedPatients);
                     await this.getWeeks();
+                    this.startWeek = this.week[0];
+                    this.endWeek = this.week[1];
                     await this.drawPatientsLinePlot(this.startWeek, this.endWeek);
                 }
             }
@@ -280,7 +289,7 @@ export default {
                 console.log(this.selectedPatients)
                 for(let i=0; i<this.selectedPatients.length; i++){
                     console.log(this.selectedPatients[i])
-                   this.drawSinglePatientLineChart(this.selectedPatients[i])
+                   await this.drawSinglePatientLineChart(this.selectedPatients[i], this.startWeek, this.endWeek)
                 }
             }
         },
@@ -290,6 +299,16 @@ export default {
             this.endWeek = this.week[1]
 
             await this.drawPatientsLinePlot(this.startWeek, this.endWeek);
+            
+            if(this.selectedPatients.length >= 3){
+                this.selectedPatients = this.selectedPatients.sort(function(a,b){return a-b});
+                console.log("SORTED")
+                console.log(this.selectedPatients)
+                for(let i=0; i<this.selectedPatients.length; i++){
+                    console.log(this.selectedPatients[i])
+                   await this.drawSinglePatientLineChart(this.selectedPatients[i], this.startWeek, this.endWeek)
+                }
+            }
         },
         async getExistingEventTrendPatientIds(){
             const path = `http://127.0.0.1:5000/event-trend-patients-ids`
@@ -585,13 +604,13 @@ export default {
                     series[i].texts = series[i].texts.slice(startWeekIndex, endWeekIndex+1)
                     series[i].weeks = series[i].weeks.slice(startWeekIndex, endWeekIndex+1)
                     series[i].nights = series[i].nights.slice(startWeekIndex, endWeekIndex+1)
-                    series[i].days = series[i].days.slice(startWeekIndex, endWeekIndex+1)
+                    series[i].days = series[i].days.slice(startWeekIndex, endWeekIndex+1);
                     
                     series[i+1].data = series[i+1].data.slice(startWeekIndex, endWeekIndex+1)
                     series[i+1].texts = series[i+1].texts.slice(startWeekIndex, endWeekIndex+1)
                     series[i+1].weeks = series[i+1].weeks.slice(startWeekIndex, endWeekIndex+1)
                     series[i+1].nights = series[i+1].nights.slice(startWeekIndex, endWeekIndex+1)
-                    series[i+1].days = series[i+1].days.slice(startWeekIndex, endWeekIndex+1)
+                    series[i+1].days = series[i+1].days.slice(startWeekIndex, endWeekIndex+1);
                 }
             }
 
@@ -605,19 +624,23 @@ export default {
             return series;
         },
         getMinAndMaxDayNo(series){
-            var minDay = parseInt(series[0].days[0]);
-            var maxDay = parseInt(series[0].days[0]);
+            console.log("getMinAndMaxDayNo")
+            console.log(series)
+            var minDay = parseInt(Math.min(...series[0].days));
+            var maxDay = parseInt(Math.max(...series[0].days));
 
             for(let i=0; i<series.length; i++){
-                for(let j=0; j<series[i].days.length; j++){
-                    if(parseInt(series[i].days[j]) < minDay){
-                        minDay = parseInt(series[i].days[j]);
-                    }
-                    if(parseInt(series[i].days[j]) > maxDay){
-                        maxDay = parseInt(series[i].days[j]);
-                    }
+                var seriesMin = parseInt(Math.min(...series[i].days));
+                var seriesMax = parseInt(Math.max(...series[i].days));
+                if(seriesMin < minDay){
+                    minDay = seriesMin;
+                }
+                if(seriesMax > maxDay){
+                    maxDay = seriesMax;
                 }
             }
+            console.log("MIN AND MAX DAY", [minDay, maxDay])
+
             return [minDay, maxDay];
         },
         async drawPatientsLinePlot(startWeek, endWeek){
@@ -629,7 +652,8 @@ export default {
             var option;
 
             var series = this.getSeries(this.eventTrendData);
-            var xAxisData = [...Array(this.nightsNo).keys()]
+            var minAndMaxDay = this.getMinAndMaxDayNo(series);
+            var xAxisData = Array.from({length: minAndMaxDay[1] - minAndMaxDay[0] + 1}, (_, i) => i + minAndMaxDay[0]);
 
             for(let i=0; i<series.length; i++){
                 if(this.colors.length > series.length/2){
@@ -646,6 +670,7 @@ export default {
 
             if(startWeek !== -1 || endWeek !== -1){
                 console.log("Week filter logic")
+                console.log("GUARDQ UUUUUIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII")
                 series = this.getFilteredSeries(startWeek, endWeek, series);
                 var minAndMaxDay = this.getMinAndMaxDayNo(series);
                 xAxisData = Array.from({length: minAndMaxDay[1] - minAndMaxDay[0] + 1}, (_, i) => i + minAndMaxDay[0])
@@ -668,12 +693,13 @@ export default {
                 console.log(args)
                 let nightId = series[args.seriesIndex].nights[args.dataIndex]
                 let week = series[args.seriesIndex].weeks[args.dataIndex]
+                let day = series[args.seriesIndex].days[args.dataIndex]
 
                 if(nightId !== null && week !== null){
-                    return args.marker + " <b>" + args.seriesName + "</b>: " + args.value + " events <br />" + series[args.seriesIndex].texts[args.dataIndex] + "<br /> Night id: " + nightId + "- Week: " + week
+                    return args.marker + " <b>" + args.seriesName + "</b>: " + args.value + " events <br />" + series[args.seriesIndex].texts[args.dataIndex] + "<br /> Night id: " + nightId + "- Week: " + week + " - Day: " + day
                 }
                 else {
-                    return args.marker + " <b>" + args.seriesName + "</b>: " + args.value + " events <br />" + series[args.seriesIndex].texts[args.dataIndex]
+                    return args.marker + " <b>" + args.seriesName + "</b>: " + args.value + " events <br />" + series[args.seriesIndex].texts[args.dataIndex] + " - Day: " + day
                 }
             }
 
@@ -801,7 +827,8 @@ export default {
                 },
                 grid: {
                     height: '50%',
-                    top: '5%'
+                    top: '5%',
+                    containLabel: true
                 },
                 xAxis: {
                     type: 'category',
@@ -894,7 +921,8 @@ export default {
                 },
                 grid: {
                     height: '50%',
-                    top: '5%'
+                    top: '5%',
+                    containLabel: true
                 },
                 xAxis: {
                     type: 'category',
@@ -946,7 +974,7 @@ export default {
             window.addEventListener("resize", myChart.resize);
 
         },
-        drawSinglePatientLineChart(patientId){
+        async drawSinglePatientLineChart(patientId, startWeek, endWeek){
             var dom = document.getElementById("patient"+patientId+"LineChart");
             var myChart = echarts.init(dom, null, {
                 renderer: "sgv",
@@ -965,10 +993,12 @@ export default {
                     }
                 }
             }
-
+            console.log("SINGLE PATIENTS LINEPLOTS")
             console.log(data);
 
             let series = this.getSeries(data);
+            var minAndMaxDay = this.getMinAndMaxDayNo(series);
+            var xAxisData = Array.from({length: minAndMaxDay[1] - minAndMaxDay[0] + 1}, (_, i) => i + minAndMaxDay[0])
 
             if(series.length > 0){
                 if(series.length ===2){
@@ -983,6 +1013,39 @@ export default {
                 }
             }
 
+            if(startWeek !== -1 || endWeek !== -1){
+                console.log("Week filter logic")
+                series = this.getFilteredSeries(startWeek, endWeek, series);
+                if(series.length === 0){
+                    var msgOption = {
+                        title: {
+                            show: true,
+                            textStyle:{
+                                color:'grey',
+                                fontSize:20,
+                                textAlign: 'left'
+                            },
+                            text: 'No data for Patient ' + patientId + ' on the selected weeks',
+                            left: 'center',
+                            top: 'center'
+                        },
+                        xAxis: {
+                            show: false
+                        },
+                        yAxis: {
+                            show: false
+                        },
+                        series: []
+                    };
+                    myChart.clear() //initChart(divId): get echarts instance, you can get it by using other method
+                    myChart.hideLoading()
+                    myChart.setOption(msgOption, true)
+                    return;
+                }
+                console.log("SINGLE PATIENT FILTERED WEEK SERIES", series)
+                var minAndMaxDay = this.getMinAndMaxDayNo(series);
+                xAxisData = Array.from({length: minAndMaxDay[1] - minAndMaxDay[0] + 1}, (_, i) => i + minAndMaxDay[0])
+            }
 
             let legend = [];
 
@@ -1012,7 +1075,7 @@ export default {
 
             option = {
                 title: {
-                    text: 'Interpolated events trend over days of patient' + patientId ,
+                    text: 'Interpolated events trend over days of Patient ' + patientId ,
                     textAlign: 'left'
                 },
                 tooltip: {
@@ -1027,9 +1090,6 @@ export default {
                     top: 20
                 },
                 grid: {
-                    left: '3%',
-                    right: '4%',
-                    bottom: '3%',
                     containLabel: true
                 },
                 toolbox: {
@@ -1045,7 +1105,7 @@ export default {
                     type: 'category',
                     boundaryGap: false,
                     name: "Day",
-                    data: [...Array(this.nightsNo).keys()],
+                    data: xAxisData,
                 },
                 yAxis: {
                     type: 'value',
