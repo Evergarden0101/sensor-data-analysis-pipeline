@@ -265,6 +265,8 @@ export default {
                 this.patientsExists = ref(true);
                 await this.getEventTrendData(this.selectedPatients);
                 await this.getWeeks();
+                this.startWeek = this.week[0];
+                this.endWeek = this.week[1];
                 await this.drawPatientsLinePlot(this.startWeek, this.endWeek);
             } else {
                 console.log("REMOVE")
