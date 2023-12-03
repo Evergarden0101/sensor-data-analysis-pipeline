@@ -659,6 +659,24 @@ def create_app(test_config=None):
             print('Exception raised in getting model accuracy')
             print(e)
             return f"{e}", 500
+    
+    # TODO: confusion matrix
+    @app.route('/confusion-matrix/<int:patient_id>', methods=["GET"])
+    def get_confusion_matrix(patient_id):
+        try:
+            with sql.connect(DATABASE) as con:
+                print("DB connected")
+                cur = con.cursor()
+                cur.execute(f"SELECT accuracy, precision FROM models WHERE patient_id={patient_id}")
+                patient_accuracy = cur.fetchall()
+                cur.execute(f"SELECT accuracy, precision FROM models WHERE patient_id=-1")
+                study_accuracy = cur.fetchall()
+                cur.close()
+            return 0, 200
+        except Exception as e:
+            print('Exception raised in getting confusion matrix')
+            print(e)
+            return f"{e}", 500
 
 
     @app.route('/weekly-summary/<int:patient_id>/<string:week>/', methods=["GET"])
