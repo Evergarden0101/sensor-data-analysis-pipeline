@@ -145,7 +145,6 @@ def create_app(test_config=None):
     def get_label_brux(patient_id, week, night_id, recorder):
         try:
             print('get_label_brux')
-            print("week: ", week)
             params = (patient_id, week, night_id, recorder)
             query = "SELECT * from confirmed_labels WHERE (patient_id=? AND week=? AND night_id=? AND recorder=?)"
             with sql.connect(DATABASE) as con:
@@ -252,6 +251,11 @@ def create_app(test_config=None):
                     # Delete the file
                     os.remove(img_local_path)
                     print(f"Night image deleted.")
+                img_local_path = get_data_path(DATABASE)+'p'+str(patient_id)+'_wk'+str(week)+f'/summary.png'
+                if os.path.exists(img_local_path):
+                    # Delete the file
+                    os.remove(img_local_path)
+                    print(f"Week image deleted.")
                 return "sleep_stage_detection table updated successfully", 200
 
                     
