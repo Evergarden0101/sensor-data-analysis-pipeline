@@ -139,7 +139,6 @@ def insert_label(DATABASE, labels):
 
 def generate_model(DATABASE, patient_id, week, night_id, recorder):
     print("generate_model")
-    print("week: ", week)
     data = open_brux_csv(DATABASE, patient_id, week, night_id, recorder)
     loc = open_brux_loc_csv(DATABASE, patient_id, week, night_id, recorder)
     original_sampling = get_original_sampling(DATABASE)
@@ -208,7 +207,6 @@ def generate_model(DATABASE, patient_id, week, night_id, recorder):
 """TODO: check prediction length, save 0 predictions """
 def predict_events(DATABASE, model, patient_id, week, night_id, recorder):
     print("predict_events")
-    print("week: ", week)
     original_sampling = get_original_sampling(DATABASE)
     selected_sampling =get_selected_sampling(DATABASE)
     data = open_brux_csv(DATABASE, patient_id, week, night_id, recorder)
@@ -255,7 +253,7 @@ def predict_events(DATABASE, model, patient_id, week, night_id, recorder):
                 y_sum += y_p[i+j];
                 cnt += 1;
             if y_sum/cnt >= 0.5:
-                if(loc_start == 0 or loc_end-loc_start > 60*selected_sampling):
+                if(loc_start == 0 or loc_end-loc_start > 55*selected_sampling):
                     event += 1
                     loc_start = i
                     loc_end = i+cnt-1
@@ -331,10 +329,15 @@ def run_prediction(DATABASE, patient_id, week, night_id, recorder):
             xgbc.load_model(str(model[0][-1]))
             labels = predict_events(DATABASE, xgbc, patient_id, week, night_id, recorder)
         else:
-            # init_model_path =  get_data_path(DATABASE)+'models/initial/p'+str(patient_id)+'model.json'
-            init_model_path = '../models/initial/p'+str(patient_id)+'model.json'
-            init_general_model_path = '../models/initial/general_model.json'
+            # init_model_path =  get_data_path(DATABASE)+'models/initial/p'+str(patient_id)+'_model.json'
+            cur_dir = os.path.dirname(os.path.abspath(__file__))
+            init_model_path = './models/initial/p'+str(patient_id)+'_model.json'
+            init_general_model_path = './models/initial/general_model.json'
+            
+            init_model_path = os.path.abspath(init_model_path)
+            init_general_model_path = os.path.abspath(init_general_model_path)
             print('init_model_path: ',init_model_path)
+            print('init_general_model_path', init_general_model_path)
             
             if os.path.exists(init_model_path):
                 print("Initial Model exists")
@@ -346,13 +349,13 @@ def run_prediction(DATABASE, patient_id, week, night_id, recorder):
                     cur.execute(f"INSERT INTO models (patient_id, model_path) VALUES {patient_id, model_path}")
                     cur.execute(f"SELECT * FROM models WHERE patient_id= -1")
                     model = cur.fetchall()
+                    if not model:
+                        if os.path.exists(init_general_model_path):
+                            print("General model exists")
+                            init_model_path = init_general_model_path
+                        shutil.copy2(init_model_path, get_data_path(DATABASE) + f"general_model.json")
+                        cur.execute(f"INSERT INTO models (patient_id, model_path) VALUES {-1, get_data_path(DATABASE) + f'general_model.json'}")
                     cur.close()
-                if not model:
-                    if os.path.exists(init_general_model_path):
-                        print("General model exists")
-                        init_model_path = init_general_model_path
-                    shutil.copy2(init_model_path, get_data_path(DATABASE) + f"general_model.json")
-                    cur.execute(f"INSERT INTO models (patient_id, model_path) VALUES {-1, get_data_path(DATABASE) + f'general_model.json'}")
                 
                 xgbc = xgb.XGBClassifier()
                 xgbc.load_model(init_model_path)
@@ -374,9 +377,7 @@ def run_confirmation(DATABASE, model_path, patient_id, week, night_id, recorder,
     selected_sampling = get_selected_sampling(DATABASE)
     data = open_brux_csv(DATABASE, patient_id, week, night_id, recorder)
     
-    if study and 'Bites' in data.columns:
-        bites = get_column_array(get_column_data_from_df(data, "Bites"))
-    else:
+    if (not study) or (not 'Bites' in data.columns):
         with sql.connect(DATABASE) as con:
             print("DB connected")
             cur = con.cursor()
@@ -402,6 +403,7 @@ def run_confirmation(DATABASE, model_path, patient_id, week, night_id, recorder,
     
     MR = get_column_array(get_column_data_from_df(df, "MR"))
     ML = get_column_array(get_column_data_from_df(df, "ML"))
+    bites = get_column_array(get_column_data_from_df(df, "Bites"))
     MR = resample_signal(signal=MR, sampling_rate=original_sampling, SAMPLING_RATE=selected_sampling)
     ML = resample_signal(signal=ML, sampling_rate=original_sampling, SAMPLING_RATE=selected_sampling)
     bites = resample_signal(signal=bites, sampling_rate=original_sampling, SAMPLING_RATE=selected_sampling)
