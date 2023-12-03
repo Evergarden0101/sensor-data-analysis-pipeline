@@ -1,5 +1,5 @@
 <template>
-    <el-button @click="postLabel" :loading="load">Rerun Model</el-button>
+    <el-button @click="rerunModel" :loading="load">Retrain Model</el-button>
 </template>
 
 <script>
@@ -70,7 +70,7 @@ export default{
                 })
         },
         // TODO: rurun model, refresh image and plots and heatmap
-        postLabel(){
+        rerunModel(){
             this.load = true;
             const path = `http://127.0.0.1:5000/rerun-model/${this.$store.state.patientId}/${this.$store.state.week}/${this.$store.state.nightId}/${this.$store.state.recorder}`;
             // const payload = [];
@@ -111,7 +111,7 @@ export default{
                 this.$store.commit('updatePatientPrecision', res.data['patient_accuracy']['precision']);
                 this.$message({
                     showClose: true,
-                    message: 'Model rerun successed!',
+                    message: 'Model retrain successed!',
                     type: 'success'
                 });
                 this.losadNightImg();
@@ -122,7 +122,7 @@ export default{
                 console.log(err)
                 this.$message({
                     showClose: true,
-                    message: 'Error occured in Model rerun!',
+                    message: 'Error occured in Model retrain!',
                     type: 'error'
                 });
                 this.load = false;
