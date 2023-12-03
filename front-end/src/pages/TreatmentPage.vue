@@ -13,23 +13,18 @@
         </el-col>
     </el-row>
 
-    <el-row style="margin-top: 3%;">
-        <el-col :span="4" :offset="2">
-            <el-progress style="display:block;margin: 0 auto" type="dashboard" :percentage="studyPrecision" width="80" stroke-width="4" >
-                <template #default="{ percentage }">
-                    <h3 class="percentage-value">{{ percentage }}%</h3>
-                    <h5 class="percentage-label">Precision</h5>
-                </template>
-            </el-progress>
-        </el-col>
-        <el-col :span="4" :offset="2">
+    <el-row style="margin-top: 3%;margin-bottom: 3%;height:">
+        <el-col :span="5" :offset="0">
             <el-row>
-                <el-progress style="display:block; margin: 0 auto" type="dashboard" :percentage="patientPrecision" width="80" stroke-width="4" >
+                <el-progress style="display:block;margin: 0 auto" type="dashboard" :percentage="studyPrecision" width="80" stroke-width="4" :color="colorsPercision" >
                     <template #default="{ percentage }">
                         <h3 class="percentage-value">{{ percentage }}%</h3>
                         <h5 class="percentage-label">Precision</h5>
                     </template>
                 </el-progress>
+            </el-row>
+            <el-row style="text-align:center">
+                <h5 style="display:block; margin: 5px auto">Model Performance for whole Study</h5>
             </el-row>
         </el-col>
     </el-row>
@@ -126,6 +121,13 @@ export default {
                 "#fc8452",
                 "#9a60b4",
                 "#ea7ccc"
+            ],
+            colorsPercision : [
+                { color: '#f56c6c', percentage: 20 },
+                { color: '#e6a23c', percentage: 40 },
+                { color: '#5cb87a', percentage: 60 },
+                { color: '#1989fa', percentage: 80 },
+                { color: '#6f7ad3', percentage: 100 },
             ],
             weeklySummaryData: [],
             averageEventsPerCycle: 0,
