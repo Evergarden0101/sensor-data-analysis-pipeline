@@ -13,10 +13,10 @@
         </el-col>
     </el-row>
 
-    <el-row style="margin-top: 3%;margin-bottom: 3%;height:">
-        <el-col :span="5" :offset="0">
+    <el-row style="margin-top: 3%;margin-bottom: 3%">
+        <el-col :span="5" :offset="1">
             <el-row>
-                <el-progress style="display:block;margin: 0 auto" type="dashboard" :percentage="studyPrecision" width="80" stroke-width="4" :color="colorsPercision" >
+                <el-progress style="display:block;margin: 0 auto" type="dashboard" :percentage="studyPrecision" width="100" stroke-width="4" :color="colorsPercision" >
                     <template #default="{ percentage }">
                         <h3 class="percentage-value">{{ percentage }}%</h3>
                         <h5 class="percentage-label">Precision</h5>
@@ -24,8 +24,25 @@
                 </el-progress>
             </el-row>
             <el-row style="text-align:center">
-                <h5 style="display:block; margin: 5px auto">Model Performance for whole Study</h5>
+                <h4 style="display:block; margin: 5px auto">Model Performance for Cohert Study</h4>
             </el-row>
+        </el-col>
+        <el-col :span="5" :offset="0">
+            <el-row>
+                <el-progress style="display:block; margin: 0 auto" type="dashboard" :percentage="patientPrecision" width="100" stroke-width="4" :color="colorsPercision" >
+                    <template #default="{ percentage }">
+                        <h3 class="percentage-value">{{ percentage }}%</h3>
+                        <h5 class="percentage-label">Precision</h5>
+                    </template>
+                </el-progress>
+            </el-row>
+
+            <el-row style="text-align:center">
+                <h4 style="display:block; margin: 5px auto">Model Performance for Patient {{ this.$store.state.patientId }}</h4>
+            </el-row>
+        </el-col>
+        <el-col :span="12" :offset="1">
+            <ConfusionMatrix/>
         </el-col>
     </el-row>
 
@@ -84,12 +101,13 @@ import Stepper from '@/components/Stepper.vue';
 import * as echarts from 'echarts';
 import { ref, reactive } from 'vue';
 import axios from 'axios';
+import ConfusionMatrix from '@/components/confusionMatrix.vue';
 
 export default {
     name: 'TreatmentPage',
     components: {
         Stepper,
-
+        ConfusionMatrix,
     },
     data(){
         return{
@@ -814,7 +832,7 @@ export default {
 
             var callback = (args) => {
                 if (args.value[2] === 1){
-                    return args.seriesName + "<br />" +args.marker + 'day '+parseInt(parseInt(args.value[0])+1) + ": " + args.value[2] + ' event(s)'
+                    return args.seriesName + "<br />" +args.marker + 'day '+parseInt(parseInt(args.value[0])+1) + ": " + args.value[2] + ' event'
 
                 }
                 else{

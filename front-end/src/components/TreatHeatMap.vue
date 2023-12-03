@@ -51,7 +51,7 @@ export default {
 
         var callback = (args) => {
             if (args.value[2] === 1){
-                return args.seriesName + "<br />" +args.marker + 'day '+parseInt(parseInt(args.value[0])+1) + ": " + args.value[2] + ' event(s)'
+                return args.seriesName + "<br />" +args.marker + 'day '+parseInt(parseInt(args.value[0])+1) + ": " + args.value[2] + ' event'
 
             }
             else{
