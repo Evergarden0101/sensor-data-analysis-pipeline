@@ -85,11 +85,23 @@ export default {
         predLabels() {
             return JSON.parse(this.$store.state.labels);
         },
+        selectedTimeSpan() {
+          return this.$store.state.selectedTimeSpan;
+        },
         // eventNo(){
         //     return this.$store.state.eventNo;
         // }
     },
-    beforeMount() {
+
+    watch: {
+      'someVuexState.highlightRange': function(newRange) {
+        console.log("i change the color")
+        this.drawLineplot('MR', this.start, this.end, newRange);
+      }
+    },
+
+
+  beforeMount() {
         // set the dimensions and margins of the graph
         this.loading = ref(true);
         if(this.plotHeight == 0){
@@ -137,6 +149,8 @@ export default {
 
     },
     methods: {
+
+
         getNewCycle(cur, prev){
             if(cur == prev || (cur+1 ==this.eventNo)){
                 return;
@@ -365,8 +379,9 @@ export default {
                             .attr("opacity", 0.4)
                             .attr("class", "labels");
         },
-        drawLineplot(channel,start, end){
+        drawLineplot(channel,start, end, highlightRange = null){
             console.log('channel ', channel)
+            console.log('this is the highlight range:', highlightRange)
             const remPhases = [
               {
                 'id': 'REM Phase 1',
@@ -406,8 +421,12 @@ export default {
                         "translate(" + this.margin.left + "," + this.margin.top + ")");
             }
 
+            if (highlightRange) {
+              this.highlightSection(svg, x, height, highlightRange);
+            }
 
-            // Add X axis --> it is a date format
+
+          // Add X axis --> it is a date format
             var domainLen = (csv.length)/this.freq;
             console.log(domainLen)
             var x = d3.scaleLinear()
@@ -613,7 +632,27 @@ export default {
                 store.commit('updateLinePlotKey');
             });
 
-        }
+        },
+
+        highlightSection(svg, xScale, plotHeight, range) {
+          // Remove any existing highlights
+          svg.selectAll(".highlight-rect").remove();
+
+          // Calculate coordinates for the highlight range
+          let xStart = xScale(range.start);
+          let xEnd = xScale(range.end);
+
+
+          // Add the highlighted rectangle
+          svg.append("rect")
+              .attr("class", "highlight-rect")
+              .attr("x", xStart)
+              .attr("width", xEnd - xStart)
+              .attr("y", 0)
+              .attr("height", plotHeight)
+              .attr("fill", "rgba(255, 255, 0, 0.5)"); // Change color and opacity as needed
+        },
+
     },
 }
 </script>

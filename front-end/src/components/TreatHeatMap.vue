@@ -47,7 +47,7 @@ export default {
         });
 
         var option;
-
+        const days = Array.from({length: 7}, (_, i) => i + 1);
 
         var callback = (args) => {
             if (args.value[2] === 1){

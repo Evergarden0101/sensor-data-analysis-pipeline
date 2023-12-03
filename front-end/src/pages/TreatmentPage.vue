@@ -32,9 +32,6 @@
                 </el-progress>
             </el-row>
         </el-col>
-        <el-col :span="10" :offset="2">
-            Other metrics...
-        </el-col>
     </el-row>
 
 
@@ -775,12 +772,16 @@ export default {
 
             // Iterate over the fetched data to calculate total events and events per cycle
             this.weeklySummaryData.forEach(item => {
-              totalEvents += item.count;
-              cycleCounts[item.cycle] = (cycleCounts[item.cycle] || 0) + item.count;
+              if (item.cycle !== 0) {  // Skip if cycle is 0
+                totalEvents += item.count;
+                cycleCounts[item.cycle] = (cycleCounts[item.cycle] || 0) + item.count;
+              }
             });
 
             // Calculate average events per cycle
-            this.averageEventsPerCycle = Object.values(cycleCounts).reduce((a, b) => a + b, 0) / Object.keys(cycleCounts).length;
+            let cycleCountLength = Object.keys(cycleCounts).length;
+            this.averageEventsPerCycle = cycleCountLength > 0 ? Object.values(cycleCounts).reduce((a, b) => a + b, 0) / cycleCountLength : 0;
+
             this.totalEvents = totalEvents;
 
             this.drawCurrentPatientHeatMap();  // Call to draw the heatmap
@@ -1132,13 +1133,27 @@ export default {
 <style scoped>
 .kpi-container {
   text-align: center;
-  padding: 20px;
+  padding: 30px;
   background-color: #f5f5f5;
   border-radius: 8px;
   margin: 20px 0;
+  box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
+  transition: 0.3s;
 }
+
+.kpi-container:hover {
+  box-shadow: 0 8px 16px 0 rgba(0,0,0,0.3);
+}
+
 .kpi-container > div {
-  margin: 10px 0;
+  margin: 15px 0;
+  font-size: 1.1em;
+  color: #333;
+}
+
+.kpi-container > div:first-child {
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 15px;
 }
 </style>
 

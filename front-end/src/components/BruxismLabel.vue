@@ -286,6 +286,7 @@ export default {
             console.log(this.Labels);
             console.log(this.labelNum)
             this.$store.commit('saveLabels',JSON.stringify(this.Labels));
+            this.$store.commit('setSelectedTimeSpan', { start: this.form.Start, end: this.form.End });
             this.form = {'label_id':'','Start':0,'End':0,'Dur':0};
             this.dialogFormVisible = false;
             this.$store.commit('updateLinePlotKey');
