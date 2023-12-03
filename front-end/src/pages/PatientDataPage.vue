@@ -14,7 +14,7 @@
         <el-col :span="10" :offset="7">
             <h2>Patients data available:</h2>
             <el-table :data="tableData"
-                      :default-sort="{prop:'week', order:'ascending'}"
+                      :default-sort="{prop:'patient_id', order:'ascending'}"
                       highlight-current-row
                       @row-dblclick="saveSelectedPatientData" style="width: 100%">
                 <el-table-column prop="patient_id" label="Patient ID" sortable width="180" />
