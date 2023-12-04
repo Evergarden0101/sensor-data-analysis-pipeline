@@ -808,9 +808,12 @@ export default {
               cycleCounts[item.cycle] = (cycleCounts[item.cycle] || 0) + item.count;
             });
 
-            // Calculate average events per cycle
-            let cycleCountLength = Object.keys(cycleCounts).length;
-            this.averageEventsPerCycle = cycleCountLength > 0 ? Object.values(cycleCounts).reduce((a, b) => a + b, 0) / cycleCountLength : 0;
+            let maxCycle = Math.max(...Object.keys(cycleCounts).map(Number));
+            let maxDayNo = Math.max(...this.weeklySummaryData.map(item => item.day_no % 7));
+
+            // Calculate the average events per cycle
+            let totalCycles = (maxCycle + 1) * (maxDayNo + 1);
+            this.averageEventsPerCycle = totalEvents / totalCycles;
 
             this.totalEvents = totalEvents;
 
@@ -819,6 +822,7 @@ export default {
             console.error('Error fetching weekly summary data:', error);
           }
         },
+
 
       drawCurrentPatientHeatMap(){
             var dom = document.getElementById("currentPatientHeatMap");
