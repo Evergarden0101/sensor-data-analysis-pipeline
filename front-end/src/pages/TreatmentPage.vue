@@ -49,7 +49,7 @@
 
     <el-row style=" margin-top: 2%;">
         <el-col :span="8" :offset="2">
-            <h2>Patient {{ this.$store.state.patientId }} - Weekly summary for week {{ this.$store.state.week }}</h2>
+            <h2>Patient {{ this.$store.state.patientId }} - Weekly Summary for Week {{ this.$store.state.week }}</h2>
             <div v-if="patientsExists" id="currentPatientHeatMap" style="position: relative; height: 70vh; width: 55vh; margin-top:10%"></div>
             <div v-else>
                 <el-empty :image-size="70" description="Select at least a patient to see heatmap"/>
@@ -64,8 +64,8 @@
         </el-col>
 
         <el-col :span="8" :offset="1" style="margin-bottom:5%">
-            <h2>Comparison between patients</h2>
-            <p><b>Select the desired weeks</b></p>
+            <h2>Comparison between Patients</h2>
+            <p><b>Select the Desired Weeks</b></p>
             <div class="slider-container" style="display: flex; align-items: center;" @mouseover="highlightPlot" @mouseout="removeHighlight">
               <el-slider v-model="week" :min="minWeekId" :max="maxWeekId" range show-stops :marks="weekMarks" :format-tooltip="formatTooltip" @change="changeWeekFilter" />
             </div>
@@ -82,10 +82,10 @@
         </el-col>
     </el-row>
     <el-row v-if="selectedPatients.length >= 3">
-        <h2>Comparison between patients - Single plots</h2>
+        <h2>Comparison between Patients - Single plots</h2>
         <el-col>
             <div style="display: flex; flex-wrap: wrap; padding:40px">
-                <div v-for="patientId in selectedPatients" style="flex-grow: 1; width: 33%; height: 100px;">
+                <div v-for="patientId in selectedPatients" id="miniPlots" style="flex-grow: 1; width: 33%; height: 100px;">
                     <div v-if="patientsExists" :id="'patient'+patientId+'LineChart'" style="position: relative; height: 40vh; width: 60vh; margin-top: 3%;"></div>
                 </div>
             </div>
@@ -162,8 +162,12 @@ export default {
     methods: {
         highlightPlot() {
           const plotElement = document.getElementById("patientsLinePlot");
+          const plotElement2 = document.getElementById("miniPlots");
           if (plotElement) {
             plotElement.classList.add("highlighted");
+          }
+          if (plotElement2) {
+            plotElement2.classList.add("highlighted");
           }
         },
         removeHighlight() {
@@ -857,7 +861,7 @@ export default {
 
             option = {
                 title:{
-                    text: "Amount of events per sleep cycle"
+                    text: "Amount of Events per Sleep Cycle"
                 },
                 tooltip: {
                     position: 'top',

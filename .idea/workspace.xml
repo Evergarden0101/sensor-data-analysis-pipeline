@@ -6,6 +6,7 @@
   <component name="ChangeListManager">
     <list default="true" id="d22aff6b-4cb3-45a1-9a12-c0b2f241b06b" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/front-end/src/components/BruxismLabel.vue" beforeDir="false" afterPath="$PROJECT_DIR$/front-end/src/components/BruxismLabel.vue" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/front-end/src/pages/TreatmentPage.vue" beforeDir="false" afterPath="$PROJECT_DIR$/front-end/src/pages/TreatmentPage.vue" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -48,7 +49,7 @@
       <workItem from="1701071459427" duration="17347000" />
       <workItem from="1701187217388" duration="2458000" />
       <workItem from="1701615949017" duration="7906000" />
-      <workItem from="1701683059652" duration="12833000" />
+      <workItem from="1701683059652" duration="15624000" />
     </task>
     <servers />
   </component>
