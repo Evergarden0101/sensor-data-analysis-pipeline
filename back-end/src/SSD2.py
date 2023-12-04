@@ -15,7 +15,7 @@ from preprocessing import *
 """
 def get_herzig_ranges():
     return {
-        'nrem': {'min': 0.31, 'median': (2.02-0.31)/2 , 'max': 2.02},
+        'nrem': {'min': 0.31, 'median': (2.02+0.31)/2 , 'max': 2.02},
         'rem' : {'min': 1.30, 'median': 2.02 , 'max': 3.22},
         'SSDNRem': {'min': 82.6, 'median': 105.5, 'max': 134.7}
     }

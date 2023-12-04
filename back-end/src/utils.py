@@ -180,7 +180,7 @@ def generate_model(DATABASE, patient_id, week, night_id, recorder):
     x = np.array(x.values.tolist())
     y = np.array(y.values.tolist())
 
-    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.25) # Split data for test and training
+    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.25, shuffle=False) # Split data for test and training
     SC = StandardScaler()
     x_train = pd.DataFrame(SC.fit_transform(x_train))
     x_test = pd.DataFrame(SC.transform(x_test))
@@ -429,13 +429,15 @@ def run_confirmation(DATABASE, model_path, patient_id, week, night_id, recorder,
     x = np.array(x.values.tolist())
     y = np.array(y.values.tolist())
 
-    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.25) # Split data for test and training
+    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.25, shuffle=False) # Split data for test and training
     SC = StandardScaler()
     x_train = pd.DataFrame(SC.fit_transform(x_train))
     x_test = pd.DataFrame(SC.transform(x_test))
 
     print("fit model")
-    model = xgb.XGBClassifier()
+    model = xgb.XGBClassifier(n_estimators=100, objective='binary:logistic',
+    eval_metric='logloss', subsample=0.6, max_depth=3, learning_rate=0.1, colsample_bytree=1.0)
+    print("load model: ", model_path)
     model.fit(x_train, y_train, xgb_model = model_path)
 
     print("save model")
@@ -469,7 +471,9 @@ def calc_model_accuracy(DATABASE, model, patient_id, week, night_id, recorder, p
     selected_sampling = get_selected_sampling(DATABASE)
     with sql.connect(DATABASE) as con:
         cur = con.cursor()
-        cur.execute(f"SELECT validation_file_path FROM models WHERE patient_id={p}")
+        # TODO: update path
+        cur.execute(f"SELECT validation_file_path FROM models WHERE patient_id={patient_id}")
+        # cur.execute(f"SELECT validation_file_path FROM models WHERE patient_id={p}")
         path = cur.fetchone()[0]
         cur.close()
     print(path)
@@ -516,7 +520,8 @@ def calc_model_accuracy(DATABASE, model, patient_id, week, night_id, recorder, p
         #    'recall' : make_scorer(recall_score), 
         #    'f1_score' : make_scorer(f1_score)
            }
-    accuracies = model_selection.cross_validate(estimator = model, X = x, y = y, cv = 10, scoring=scoring)
+    cv = model_selection.KFold(n_splits=10, shuffle=True)
+    accuracies = model_selection.cross_validate(estimator = model, X = x, y = y, cv = cv, scoring=scoring)
     print(accuracies)
     
     # TODO: add to db
@@ -560,6 +565,8 @@ def calc_model_accuracy(DATABASE, model, patient_id, week, night_id, recorder, p
         # print('cmn: ', cmn)
         # cmn = cmn*100
         # print('cmn 100: ', cmn)
+        if p == -1:
+            week = patient_id
         cur.execute(f"INSERT INTO accuracy_log (patient_id, week, night_id, accuracy, precision, TN, FP, FN, TP) VALUES {p, week, night_id, accuracy, precision, cmn[0][0], cmn[0][1], cmn[1][0], cmn[1][1]}")
         cur.close()
     return {'accuracy': accuracy, 'precision': precision}

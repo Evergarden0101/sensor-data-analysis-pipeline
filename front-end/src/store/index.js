@@ -39,6 +39,8 @@ const store = createStore({
       eventNo: 1,
       predFinish: false,
       highlightRange: null,
+      isMonitoringAllowed: 0,
+      settingsExist: 0,
     }
   },
   mutations: {
@@ -108,6 +110,12 @@ const store = createStore({
     },
     setPredFinish(state, payload){
       state.predFinish = payload;
+    },
+    updateIsMonitoringAllowed(state, payload){
+      state.isMonitoringAllowed = payload;
+    },
+    updateSettingsExist(state, payload){
+      state.settingsExist = payload;
     }
   },
   plugins: [vuexLocal.plugin],
