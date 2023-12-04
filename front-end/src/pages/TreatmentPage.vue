@@ -48,19 +48,13 @@
 
 
     <el-row style=" margin-top: 2%;">
-        <el-col :span="8" :offset="2">
+        <el-col :span="6" :offset="1">
             <h2>Patient {{ this.$store.state.patientId }} - Weekly summary for week {{ this.$store.state.week }}</h2>
-            <div v-if="patientsExists" id="currentPatientHeatMap" style="position: relative; height: 70vh; width: 55vh; margin-top:10%"></div>
-            <div v-else>
-                <el-empty :image-size="70" description="Select at least a patient to see heatmap"/>
-            </div>
+            <div id="currentPatientHeatMap" style="position: relative; height: 70vh; width: 55vh; margin-top:10%"></div>
 
-          <el-col style="margin-top: -25%; margin-right: 40%">
-            <div class="kpi-container">
-              <div><strong>Average Events per Cycle:</strong> {{ averageEventsPerCycle.toFixed(2) }}</div>
-              <div><strong>Total Events:</strong> {{ totalEvents }}</div>
-            </div>
-          </el-col>
+        </el-col>
+        <el-col :span="3" style="margin-top: 8%;">
+            <TreatHeatMapLegend />
         </el-col>
 
         <el-col :span="8" :offset="1" style="margin-bottom:5%">
@@ -81,6 +75,14 @@
             </el-card>
         </el-col>
     </el-row>
+    <e-row >
+        <el-col :span="6" :offset="2">
+            <div class="kpi-container" style="margin-top: -30%;">
+              <div><strong>Average Events per Cycle:</strong> {{ averageEventsPerCycle.toFixed(2) }}</div>
+              <div><strong>Total Events:</strong> {{ totalEvents }}</div>
+            </div>
+          </el-col>
+    </e-row>
     <el-row v-if="selectedPatients.length >= 3">
         <h2>Comparison between patients - Single plots</h2>
         <el-col>
@@ -102,12 +104,14 @@ import * as echarts from 'echarts';
 import { ref, reactive } from 'vue';
 import axios from 'axios';
 import ConfusionMatrix from '@/components/confusionMatrix.vue';
+import TreatHeatMapLegend from '@/components/TreatHeatMapLegend.vue';
 
 export default {
     name: 'TreatmentPage',
     components: {
         Stepper,
         ConfusionMatrix,
+        TreatHeatMapLegend
     },
     data(){
         return{
@@ -131,9 +135,9 @@ export default {
             patientsColorEncoding:{},
             colors: [
                 "#5470c6",
+                "#ee6666",
                 "#91cc75",
                 "#fac858",
-                "#ee6666",
                 "#73c0de",
                 "#3ba272",
                 "#fc8452",
@@ -877,7 +881,8 @@ export default {
                     calculable: true,
                     orient: 'horizontal',
                     left: 'center',
-                    bottom: '30%'
+                    bottom: '30%',
+                    text: ["max", "min"],
                 },
                 series: [
                 {
