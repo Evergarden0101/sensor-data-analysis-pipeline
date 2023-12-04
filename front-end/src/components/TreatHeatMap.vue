@@ -42,7 +42,7 @@ export default {
         let maxCycle = this.weeklyData.reduce((max, item) => item.max_cycle > max ? item.max_cycle : max, 0);
 
         let heatmapData = this.weeklyData.map(item => {
-          return [item.day_no, item.cycle, item.count];
+          return [(item.day_no%7), item.cycle, item.count];
         });
 
         var option;

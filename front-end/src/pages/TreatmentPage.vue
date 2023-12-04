@@ -830,9 +830,10 @@ export default {
             // Determine the maximum cycle number from the data
             let maxCycle = this.weeklySummaryData.reduce((max, item) => Math.max(max, item.max_cycle), 0);
 
-            // Prepare the data for the heatmap
             let heatmapData = this.weeklySummaryData.map(item => {
-              return [item.day_no, item.cycle, item.count];
+              let adjustedDay = (item.day_no % 7);
+
+              return [adjustedDay, item.cycle, item.count];
             });
 
             var option;
