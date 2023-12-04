@@ -65,7 +65,7 @@
                                         </el-progress>
                                     </el-row>
                                     <el-row style="text-align:center">
-                                        <h5 style="display:block; margin: 5px auto">Model Performance for whole Study</h5>
+                                        <h5 style="display:block; margin: 5px auto">Model Performance for Cohort Study</h5>
                                     </el-row>
                                 </el-col>
 
@@ -464,6 +464,9 @@ export default {
     beforeMount() {
         this.$store.commit('getNightImg','');
         this.$store.commit('getWeekImg', '');
+        // TODO: load precision
+        // this.$store.commit('updateStudyPrecision', '-');
+        // this.$store.commit('updatePatientPrecision', '-');
         if(this.$store.state.labels){
             console.log("Labels already loaded")
             this.Labels = JSON.parse(this.$store.state.labels);
