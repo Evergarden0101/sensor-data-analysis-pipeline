@@ -105,7 +105,7 @@ def retrieve_patient_recording(DATABASE, patient_id, week, night_id, range_min, 
 def remove_pred_label(DATABASE, label):
     with sql.connect(DATABASE) as con:
         cur = con.cursor()
-        cur.execute(f"DELETE FROM predicted_labels WHERE patient_id={label['patient_id']} AND week={label['week']} AND night_id={label['night_id']} AND label_id={label['label_id']}")
+        cur.execute(f"DELETE FROM predicted_labels WHERE patient_id={label['patient_id']} AND week='{label['week']}' AND night_id='{label['night_id']}' AND label_id={label['label_id']}")
 
 
 """Insert label for a specific patient in the Database"""
@@ -114,27 +114,38 @@ def insert_label(DATABASE, labels):
     cur_cycle = -1
     count = 0
     with sql.connect(DATABASE) as con:
+        print("DB connected")
         cur = con.cursor()
         for label in labels:
                 # if label["location_begin"] > label["location_end"]:
                 #     return "Start time cannot be greater than end time!", 400
+            print('label: ', label)
             if(not label['Confirm']):
                 continue
             cur.execute(f"INSERT INTO confirmed_labels (patient_id, week, night_id, recorder, label_id, location_begin, location_end, start_index, end_index, start_time, end_time) VALUES {label['patient_id'],label['week'],label['night_id'],label['recorder'],label['label_id'],label['location_begin'],label['location_end'],label['start_index'],label['end_index'],label['Start'],label['End']}")
-            cycle = np.floor(label['location_begin'] / 90 / 60 / original_sampling)
+            print("inserted label")
+            cycle = int(np.floor(label['location_begin'] / 90 / 60 / original_sampling))
+            print("cycle:", cycle)
             if  (cur_cycle == -1):
+                print("first cycle")
                 cur_cycle = cycle
                 count = 1
             elif cycle == cur_cycle:
+                print("same cycle")
                 count += 1
             elif (cycle != cur_cycle):
-                cur.execute(f"SELECT type from week_summary WHERE (patient_id={label['patient_id']} AND week={label['week']} AND night_id={label['night_id']} AND cycle={cur_cycle})")
+                print("new cycle")
+                print("cur cycle:", cur_cycle, "new cycle:", cycle)
+                cur.execute(f"SELECT type from week_summary WHERE (patient_id={label['patient_id']} AND week='{label['week']}' AND night_id='{label['night_id']}' AND cycle={cur_cycle})")
                 type_ind = cur.fetchone()[0]
+                print("type_ind:", type_ind)
                 if type_ind != 0:
                     type_ind = count
-                cur.execute(f"UPDATE week_summary SET count = {count}, type = {type_ind} WHERE (patient_id={label['patient_id']} AND week={label['week']} AND night_id={label['night_id']} AND cycle={cur_cycle})")
+                cur.execute(f"UPDATE week_summary SET count = {count}, type = {type_ind} WHERE (patient_id={label['patient_id']} AND week='{label['week']}' AND night_id='{label['night_id']}' AND cycle={cur_cycle})")
+                print("cycle:", cur_cycle, "count:", count, "type:", type_ind)
                 count = 1
                 cur_cycle = cycle
+            print()
         
 
 def generate_model(DATABASE, patient_id, week, night_id, recorder):
@@ -384,7 +395,7 @@ def run_confirmation(DATABASE, model_path, patient_id, week, night_id, recorder,
         with sql.connect(DATABASE) as con:
             print("DB connected")
             cur = con.cursor()
-            cur.execute(f"SELECT * FROM confirmed_labels WHERE patient_id={patient_id} AND week={week} AND night_id={night_id}")
+            cur.execute(f"SELECT * FROM confirmed_labels WHERE patient_id={patient_id} AND week='{week}' AND night_id='{night_id}'")
             labels = cur.fetchall()
             cur.close()
         print(labels)
