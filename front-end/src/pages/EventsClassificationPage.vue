@@ -37,7 +37,14 @@
                         </el-skeleton>
                     </el-button>
                     <el-dialog v-model="weekSummaryVisible" title="Weekly Summary" center width="60%">
-                        <TreatHeatMap v-if="isShow"/>
+                        <el-row>
+                            <el-col :span="19">
+                                <TreatHeatMap v-if="isShow"/>
+                            </el-col>
+                            <el-col :span="5">
+                                <TreatHeatMapLegend />
+                            </el-col>
+                        </el-row>  
                     </el-dialog>
                 </el-affix>
             </div>
@@ -82,6 +89,7 @@ import TreatHeatMap from '../components/TreatHeatMap.vue'
 // import { Orange } from '@element-plus/icons-vue'
 import BruxismLabel from '@/components/BruxismLabel.vue';
 import axios from 'axios';
+import TreatHeatMapLegend from '@/components/TreatHeatMapLegend.vue';
 
 export default {
     name: 'EventsClassificationPage',
@@ -89,7 +97,8 @@ export default {
         Stepper,
         LinePlot,
         TreatHeatMap,
-        BruxismLabel
+        BruxismLabel,
+        TreatHeatMapLegend
     },
     data () {
         return {

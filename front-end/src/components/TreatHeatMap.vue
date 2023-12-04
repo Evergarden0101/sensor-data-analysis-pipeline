@@ -94,7 +94,8 @@ export default {
                 calculable: true,
                 orient: 'horizontal',
                 left: 'center',
-                bottom: '30%'
+                bottom: '30%',
+                text: ["max", "min"],
             },
             series: [
             {
