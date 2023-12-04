@@ -4,8 +4,23 @@
         <div class="card-header">
             <span><b>Legend</b></span>
             <p>Every row represents a sleep cycle of 90 minutes (1.5 hour)</p>
-            <p>Median and interquartile SD of REM phases from Herzig study: 105.5 (82.6, 134.7)  </p>
 
+            <el-button @click="dialogTableVisible = true">
+                Values from Herzig study
+            </el-button>
+
+            <el-dialog v-model="dialogTableVisible" style="text-align:center">
+                <template #header="{ titleId, titleClass }">
+                <div class="my-header">
+                    <h4 :id="titleId" :class="titleClass">Herzig et al. (2018) - Median and interquartile range of HRV parameters in the different sleep stages.</h4>
+                </div>
+                </template>
+                <el-table :data="gridData">
+                <el-table-column fixed property="index" label="" width="150"/>
+                <el-table-column property="REM" label="REM Median (IQR)" width="200" />
+                <el-table-column property="NREM" label="NREM Median (IQR)" />
+                </el-table>
+            </el-dialog>
         </div>
     </template>
     <p>
@@ -31,10 +46,27 @@
         </p>
         <p><div class="box" style="margin-top: 3%; display: inline-block; margin-right: 4%; vertical-align: middle;"/>Selected intervals in edit mode</p>
     </el-card> 
-    </template>
+</template>
+
 <script>
+import { ref } from 'vue';
 export default {
-    name: 'SleepHeatMapLegend'
+    name: 'SleepHeatMapLegend',
+    data(){
+        return{
+            dialogTableVisible: ref(false),
+            gridData: [{
+                index: 'LF/HF ratio',
+                REM: '2.02 (1.30, 3.22)',
+                NREM: '1.765 (0.31, 3.22)'
+            },
+            {
+                index: 'SDNN (ms)',
+                REM: '105.5 (82.6, 134.7)',
+                NREM: '67.6 (40.7, 94.5)'
+            }]
+        }
+    }
 }
 </script>
 

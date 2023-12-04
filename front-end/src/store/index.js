@@ -38,14 +38,11 @@ const store = createStore({
       lineplotData: null,
       eventNo: 1,
       predFinish: false,
-      selectedTimeSpan: { start: null, end: null },
+      isMonitoringAllowed: 0,
+      settingsExist: 0,
     }
   },
   mutations: {
-
-    setSelectedTimeSpan(state, payload) {
-      state.selectedTimeSpan = payload;
-    },
     selectStage(state,payload) {
       state.startStage = payload.startStage;
       state.endStage = payload.endStage;
@@ -108,6 +105,12 @@ const store = createStore({
     },
     setPredFinish(state, payload){
       state.predFinish = payload;
+    },
+    updateIsMonitoringAllowed(state, payload){
+      state.isMonitoringAllowed = payload;
+    },
+    updateSettingsExist(state, payload){
+      state.settingsExist = payload;
     }
   },
   plugins: [vuexLocal.plugin],

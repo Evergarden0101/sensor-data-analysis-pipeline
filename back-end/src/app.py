@@ -326,6 +326,23 @@ def create_app(test_config=None):
             print('Exception raised')
             print(e)
             return f"{e}"
+        
+    @app.route("/settings-exist/")
+    def do_settings_exist():
+        settings_exist = 0
+        try:
+            with sql.connect(DATABASE) as con:
+                cur = con.cursor()
+                settings = cur.execute("SELECT COUNT(*) FROM settings").fetchone()[0]
+                sensors = cur.execute("SELECT COUNT(*) FROM sensors").fetchone()[0]
+
+                if (settings == 1) and (sensors > 0):
+                    settings_exist = 1
+                return {'settings_exist': settings_exist}, 200
+        except Exception as e:
+            print('Exception raised')
+            print(e)
+            return f"{e}"
 
     @app.route("/existing-patients-recordings/", methods=["GET"])
     def get_existing_patients_datasets():
