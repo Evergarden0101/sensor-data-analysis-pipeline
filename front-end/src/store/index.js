@@ -38,11 +38,16 @@ const store = createStore({
       lineplotData: null,
       eventNo: 1,
       predFinish: false,
+      highlightRange: null,
       isMonitoringAllowed: 0,
       settingsExist: 0,
     }
   },
   mutations: {
+
+    setHighlightRange(state, range) {
+      state.highlightRange = range;
+    },
     selectStage(state,payload) {
       state.startStage = payload.startStage;
       state.endStage = payload.endStage;

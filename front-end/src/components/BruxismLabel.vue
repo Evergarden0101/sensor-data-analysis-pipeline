@@ -6,9 +6,9 @@
                     <h3 align="center" style="margin-top:-5px">Events Predictions</h3>
                 </el-col>
                 <el-col :span="6" style="margin-top:-9px">
-                    <el-button type='primary' text='primary' @click="openDialog" style="">
-                        Add Event
-                    </el-button>
+<!--                    <el-button type='primary' text='primary' @click="openDialog" style="">-->
+<!--                        Add Event-->
+<!--                    </el-button>-->
                     <el-dialog v-model="dialogFormVisible" title="Add Event" center width="30%" align-center draggable>
                         <el-form :model="form">
                             <el-form-item label="Start Time:" :label-width="formLabelWidth">
@@ -99,7 +99,7 @@
                     <div style="overflow: auto; max-height: 80vh" v-infinite-scroll="loadLabel" infinite-scroll-disabled="disabled">
                         <el-row v-for="(cycle,index) in this.cycles" :key="index">
                             <el-text tag="ins" style="font-size:25px;font-weight:10px;margin-bottom:10px">Cycle {{ cycle.cycle }}</el-text>
-                        
+
                             <el-card v-for="(item,index) in cycle.labels" :key="index" shadow="hover" style="border-radius:25px;margin:0px 10px 8px 10px">
                                 <el-row>
                                     <el-col :span="3"><el-button text="plain" round
@@ -109,27 +109,27 @@
                                     <el-col :span="20" :offset="1">
                                         <el-form :inline="true" :model="Labels" class="demo-form-inline">
                                             <el-form-item label="Start:" style="margin-left: 1em;">
-                                                <el-input-number v-model="item.Start" :placeholder="item.Start" style="width: 70px;" 
+                                                <el-input-number v-model="item.Start" :placeholder="item.Start" style="width: 70px;"
                                                 :controls="false" :disabled="!item.Confirm" @change="rerun = true"/>
                                                 <el-text size="large" style="margin-left: 0.3em;">s</el-text>
                                             </el-form-item>
                                             <el-form-item label="End:" style="margin-left: 1em;">
-                                                <el-input-number v-model="item.End" :placeholder="item.End" style="width: 70px;" 
+                                                <el-input-number v-model="item.End" :placeholder="item.End" style="width: 70px;"
                                                 :controls="false" :disabled="!item.Confirm" @change="rerun = true"/>
                                                 <el-text size="large" style="margin-left: 0.3em;">s</el-text>
                                             </el-form-item>
                                             <el-form-item label="Duration:" style="margin-left: 1em;">
-                                                <!-- <el-input-number v-model="item.Dur" :placeholder="item.Dur" style="width: 45px;" 
+                                                <!-- <el-input-number v-model="item.Dur" :placeholder="item.Dur" style="width: 45px;"
                                                 :disabled="true" :controls="false" /> -->
                                                 <el-text size="large" class="mx-1" type="warning" tag="ins">{{ item.Dur }}</el-text>
                                                 <el-text size="large" style="margin-left: 0.3em;">s</el-text>
                                             </el-form-item>
                                             <el-form-item style="margin-left: 1em;">
-                                                <el-switch v-model="item.Confirm" :active-icon="CircleCheckFilled" :inactive-icon="CircleCloseFilled" 
-                                                style="--el-switch-on-color: #13ce66; --el-switch-off-color: #ff4949" size="small" 
+                                                <el-switch v-model="item.Confirm" :active-icon="CircleCheckFilled" :inactive-icon="CircleCloseFilled"
+                                                style="--el-switch-on-color: #13ce66; --el-switch-off-color: #ff4949" size="small"
                                                 active-text="Confirm Event" inactive-text="Discard Event" @change="rerun = true"/>
                                             </el-form-item>
-                                            
+
                                             <!-- <LabelInfoCard :label-id="item.label_id"/> -->
                                         </el-form>
                                     </el-col>
@@ -142,20 +142,20 @@
                     </div>
                 </template>
             </el-skeleton>
-            
+
             <!-- <el-row v-for="(item,index) in [Labels[currentPage - 1]]" :key="index" > -->
-            
+
             <!-- <el-row>
                 <el-pagination v-model:current-page="currentPage" :page-size="1"
                 layout="prev, pager, next, jumper" :total="labelNum" style="display: flex;margin: auto;"
                 @size-change="handleSizeChange" @current-change="handleCurrentChange"/>
             </el-row> -->
             <el-row style="margin-top: 10px;">
-                
+
             </el-row>
         </el-card>
     </el-row>
-    
+
     <div></div>
 </template>
 
@@ -239,7 +239,7 @@ export default {
                 })
             };
 
-            const headers = { 
+            const headers = {
                 'Accept': 'application/json',
                 'Content-Type': 'application/json'
             };
@@ -432,7 +432,7 @@ export default {
                 .catch(err=>{
                     console.log(err)
                 })
-            
+
         },
         loadAll() {
             return [

@@ -13,7 +13,34 @@
     <el-row v-show="checkedMR" style="text-align: center;width: 100%;margin-bottom:0">
         <h4 align="center" style="margin-bottom:0">Sensor Signals for Right Masseter</h4>
     </el-row>
-    <el-carousel v-show="checkedMR" style="margin-bottom: 40px;" indicator-position="outside" :autoplay="false" 
+
+    <el-row style="width: 100%;">
+      <el-col :span="24" style="text-align: right;">
+        <el-button type="primary" @click="dialogVisible = true">Add Label</el-button>
+      </el-col>
+    </el-row>
+
+    <!-- Add Label Dialog -->
+    <el-dialog v-model="dialogVisible" title="Add Label" center width="30%">
+      <el-form :model="labelForm">
+        <el-form-item label="Start Time:" :label-width="formLabelWidth">
+          <el-input-number v-model="labelForm.start" style="width: 90px;" :controls="false" />
+          <el-text size="large">s</el-text>
+        </el-form-item>
+        <el-form-item label="End Time:" :label-width="formLabelWidth">
+          <el-input-number v-model="labelForm.end" style="width: 90px;" :controls="false" />
+          <el-text size="large">s</el-text>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+              <span class="dialog-footer">
+                  <el-button @click="dialogVisible = false">Cancel</el-button>
+                  <el-button type="primary" @click="applyLabel">Confirm</el-button>
+              </span>
+      </template>
+    </el-dialog>
+
+    <el-carousel v-show="checkedMR" style="margin-bottom: 40px;" indicator-position="outside" :autoplay="false"
         trigger="click" arrow="always" :height="this.carouselheight" :initial-index="this.eventNo-1"
         @change="getNewCycle" ref="rightCarousel">
         <el-carousel-item v-for="item in this.predLabels" :key="item">
@@ -23,7 +50,7 @@
             </el-row>
         </el-carousel-item>
     </el-carousel>
-    
+
     <!-- </el-col> -->
     <el-row text-align="center" style="width: 100%;">
         <el-checkbox v-model="checkedML" label="Show Left Masseter Signals" border @change="rerenderLeft"/>
@@ -31,7 +58,7 @@
     <el-row v-show="checkedML" style="text-align: center;width: 100%;margin-bottom:0">
         <h4 align="center" style="margin-bottom:0">Sensor Signals for Left Masseter</h4>
     </el-row>
-    <el-carousel v-show="checkedML" style="margin-bottom: 40px;" indicator-position="outside" :autoplay="false" 
+    <el-carousel v-show="checkedML" style="margin-bottom: 40px;" indicator-position="outside" :autoplay="false"
         trigger="click" arrow="always" :height="this.carouselheight"  :initial-index="this.eventNo-1"
         @change="getNewCycle" ref="leftCarousel">
         <!-- initial-index="this.eventNo" -->
@@ -42,7 +69,7 @@
             </el-row>
         </el-carousel-item>
     </el-carousel>
-    
+
 
 </template>
 
@@ -58,6 +85,12 @@ export default {
     name: 'LinePlot',
     data () {
         return {
+            dialogVisible: false,
+            labelForm: {
+              start: null,
+              end: null,
+            },
+            formLabelWidth: '100px',
             data: null,
             checkedMR: this.$store.state.checkedMR,
             checkedML: this.$store.state.checkedML,
@@ -79,25 +112,19 @@ export default {
             cycleNum: 7,
             cycleIdx: 1,
             eventNo: 1,
+            rectangles: [],
         }
     },
     computed: {
         predLabels() {
             return JSON.parse(this.$store.state.labels);
         },
-        selectedTimeSpan() {
-          return this.$store.state.selectedTimeSpan;
-        },
+        // highlightRange() {
+        //   return this.$store.state.highlightRange;
+        // },
         // eventNo(){
         //     return this.$store.state.eventNo;
         // }
-    },
-
-    watch: {
-      'someVuexState.highlightRange': function(newRange) {
-        console.log("i change the color")
-        this.drawLineplot('MR', this.start, this.end, newRange);
-      }
     },
 
 
@@ -150,8 +177,53 @@ export default {
     },
     methods: {
 
+      highlightRange(start, end) {
+        // Assuming this.currentDomain holds the current domain of the x-axis
+        const xDomain = this.currentDomain || [0, 300]; // Fallback to [0, 300] if not set
 
-        getNewCycle(cur, prev){
+        this.rectangles.push({ start, end });
+
+        const channels = ['MR', 'ML'];
+        channels.forEach(channel => {
+          const selector = "#" + channel.toLowerCase() + "lineplot" + this.eventNo;
+          const svg = d3.select(selector).select("g");
+
+          if (!svg.node()) {
+            console.error(`SVG element not found for selector: ${selector}`);
+            return;
+          }
+
+          const x = d3.scaleLinear().domain(xDomain).range([0, this.plotWidth]);
+          const height = this.plotHeight;
+
+          svg.append("rect")
+              .classed("highlight-rect", true)
+              .attr("x", x(start))
+              .attr("width", x(end) - x(start))
+              .attr("y", 0)
+              .attr("height", height)
+              .attr("fill", "lightblue")
+              .attr("opacity", 0.5);
+        });
+
+        console.log("New rect appended to both channels");
+      },
+
+
+      applyLabel() {
+        this.dialogVisible = false; // Close the dialog
+        const start = this.labelForm.start;
+        const end = this.labelForm.end;
+
+        if (start != null && end != null && start < end) {
+          this.highlightRange(start, end);
+        } else {
+          console.error("Invalid range:", start, "to", end);
+          // Handle invalid range appropriately
+        }
+      },
+
+      getNewCycle(cur, prev){
             if(cur == prev || (cur+1 ==this.eventNo)){
                 return;
             }
@@ -201,7 +273,7 @@ export default {
                 .catch(err=>{
                     console.log(err)
                 })
-            
+
         },
         // TODO: load before image
         loadLinePlotData(patient_id, week, night_id){
@@ -222,7 +294,7 @@ export default {
                     // 'Access-Control-Allow-Credentials': "true",
                     // 'Access-Control-Allow-Headers': 'Content-Type'
             };
-            
+
             axios.get(path, {headers})
                 .then((res) => {
                     console.log("Data received");
@@ -379,9 +451,8 @@ export default {
                             .attr("opacity", 0.4)
                             .attr("class", "labels");
         },
-        drawLineplot(channel,start, end, highlightRange = null){
+        drawLineplot(channel,start, end){
             console.log('channel ', channel)
-            console.log('this is the highlight range:', highlightRange)
             const remPhases = [
               {
                 'id': 'REM Phase 1',
@@ -402,6 +473,8 @@ export default {
             var height = this.plotHeight;
             var width = this.plotWidth;
 
+            this.currentDomain = [start, end];
+
             // append the svg object to the body of the page
             if(channel == 'MR'){
                 var svg = d3.select("#mrlineplot"+this.eventNo)
@@ -420,11 +493,11 @@ export default {
                     .attr("transform",
                         "translate(" + this.margin.left + "," + this.margin.top + ")");
             }
-
+            /*
             if (highlightRange) {
               this.highlightSection(svg, x, height, highlightRange);
             }
-
+            */
 
           // Add X axis --> it is a date format
             var domainLen = (csv.length)/this.freq;
@@ -433,6 +506,7 @@ export default {
                 // .domain(d3.extent(data, function(d) { return d.year; }))
                 .domain([start, end])
                 .range([ 0, width ]);
+
             var xAxis = svg.append("g")
                 .attr("transform", "translate(0," + height + ")")
                 // .call(d3.axisBottom(x).ticks(5));
@@ -524,6 +598,7 @@ export default {
                     .x(function(d) { return x((d['cnt']))})
                     .y(function(d) { return y(d[channel]) })
                 );
+
 
             // Overlay colored line segments for the remPhases
             // remPhases.forEach(phase => {
@@ -634,6 +709,7 @@ export default {
 
         },
 
+      /*
         highlightSection(svg, xScale, plotHeight, range) {
           // Remove any existing highlights
           svg.selectAll(".highlight-rect").remove();
@@ -652,6 +728,8 @@ export default {
               .attr("height", plotHeight)
               .attr("fill", "rgba(255, 255, 0, 0.5)"); // Change color and opacity as needed
         },
+
+       */
 
     },
 }
