@@ -198,9 +198,12 @@ def generate_model(DATABASE, patient_id, week, night_id, recorder):
     if (not labels) or (len(labels) < 1):
         with sql.connect(DATABASE) as con:
             cur = con.cursor()
-            cur.execute(f"DELETE FROM models WHERE patient_id={patient_id}")
+            params = (patient_id)
+            query = "DELETE FROM models WHERE patient_id=?"
+            cur.execute(query, params)
+            # cur.execute(f"DELETE FROM models WHERE patient_id={patient_id}")
             if gen_model:
-                cur.execute(f"DELETE FROM models WHERE patient_id={-1}")
+                cur.execute(f"DELETE FROM models WHERE patient_id=-1")
 
     return labels
 
@@ -252,7 +255,7 @@ def predict_events(DATABASE, model, patient_id, week, night_id, recorder):
                     break;
                 y_sum += y_p[i+j];
                 cnt += 1;
-            if y_sum/cnt >= 0.5:
+            if y_sum/cnt >= 0.6:
                 if(loc_start == 0 or loc_end-loc_start > 55*selected_sampling):
                     event += 1
                     loc_start = i
