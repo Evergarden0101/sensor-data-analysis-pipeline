@@ -38,13 +38,13 @@ const store = createStore({
       lineplotData: null,
       eventNo: 1,
       predFinish: false,
-      selectedTimeSpan: { start: null, end: null },
+      highlightRange: null,
     }
   },
   mutations: {
 
-    setSelectedTimeSpan(state, payload) {
-      state.selectedTimeSpan = payload;
+    setHighlightRange(state, range) {
+      state.highlightRange = range;
     },
     selectStage(state,payload) {
       state.startStage = payload.startStage;

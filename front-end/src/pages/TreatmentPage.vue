@@ -66,9 +66,9 @@
         <el-col :span="8" :offset="1" style="margin-bottom:5%">
             <h2>Comparison between patients</h2>
             <p><b>Select the desired weeks</b></p>
-            <div style="display: flex;align-items: center;">
-                <el-slider v-model="week" :min="minWeekId" :max="maxWeekId" range show-stops :marks="weekMarks" :format-tooltip="formatTooltip" @change="changeWeekFilter" />
-            </div>        
+            <div class="slider-container" style="display: flex; align-items: center;" @mouseover="highlightPlot" @mouseout="removeHighlight">
+              <el-slider v-model="week" :min="minWeekId" :max="maxWeekId" range show-stops :marks="weekMarks" :format-tooltip="formatTooltip" @change="changeWeekFilter" />
+            </div>
             <div v-if="patientsExists" id="patientsLinePlot" style="position: relative; height: 50vh; width: 70vh; margin-top: 10%;"></div>
             <div v-else>
                 <el-empty :image-size="200" description="Select at least a patient to see linechart"/>
@@ -160,6 +160,18 @@ export default {
         await this.drawPatientsLinePlot(this.startWeek, this.endWeek);
     },
     methods: {
+        highlightPlot() {
+          const plotElement = document.getElementById("patientsLinePlot");
+          if (plotElement) {
+            plotElement.classList.add("highlighted");
+          }
+        },
+        removeHighlight() {
+          const plotElement = document.getElementById("patientsLinePlot");
+          if (plotElement) {
+            plotElement.classList.remove("highlighted");
+          }
+        },
         findWeekIndex(weeks, value){
             var index=-1;
             for(const key in weeks){
@@ -218,10 +230,10 @@ export default {
                 if(String(weeksOrdered[i]).indexOf("-") !== -1){
                     weekListOrder[id] = [];
                     weekListOrder[id].push(weeksOrdered[i]);
-                    
+
                     const beforeSymbol = String(weeksOrdered[i].split('-')[0]);
                     const afterSymbol = String(weeksOrdered[i].split('-')[1]);
-                    
+
                     if(weeksOrdered.includes(beforeSymbol)){
                         weekListOrder[id].push(beforeSymbol)
                     }
@@ -240,7 +252,7 @@ export default {
                         weekListOrder[id] = [];
                         weekListOrder[id].push(weeksOrdered[i])
                         id++;
-                    }      
+                    }
                 }
             }
 
@@ -254,7 +266,7 @@ export default {
             for(const key in weekListOrder){
                 weekOptions[key] = String(weekListOrder[key][0]);
             }
-            
+
             for(const i in weekOptions){
                 if(i % 2 === 0){
                     weekMarks[i] = weekOptions[i]
@@ -265,13 +277,13 @@ export default {
             this.weekMarks = reactive(weekMarks);
             this.minWeekId = parseInt(Object.keys(weekOptions)[0])
             this.maxWeekId = parseInt(Object.keys(weekOptions)[Object.keys(weekOptions).length-1])
-            //this.week = ref([parseInt(this.minWeekId), parseInt(this.maxWeekId)]) 
-            
+            //this.week = ref([parseInt(this.minWeekId), parseInt(this.maxWeekId)])
+
             if(this.startWeek === -1 || this.endWeek === -1){
-               this.week = ref([parseInt(this.minWeekId), parseInt(this.maxWeekId)]) 
+               this.week = ref([parseInt(this.minWeekId), parseInt(this.maxWeekId)])
             }
-            
-            
+
+
         },
         async handlePatientsSelection(patientId){
             //this.startWeek = ref(-1);
@@ -289,7 +301,7 @@ export default {
                 console.log("REMOVE")
                 let index = this.selectedPatients.indexOf(parseInt(patientId))
                 this.selectedPatients.splice(index, 1);
-                
+
                 if(this.selectedPatients.length === 0){
                     this.patientsExists = ref(false);
                 } else {
@@ -318,7 +330,7 @@ export default {
             this.endWeek = this.week[1]
 
             await this.drawPatientsLinePlot(this.startWeek, this.endWeek);
-            
+
             if(this.selectedPatients.length >= 3){
                 this.selectedPatients = this.selectedPatients.sort(function(a,b){return a-b});
                 console.log("SORTED")
@@ -618,13 +630,13 @@ export default {
                 } else {
                     startWeekIndex = series[i].weeks.indexOf(toInclude[0])
                     endWeekIndex = series[i].weeks.lastIndexOf(toInclude[toInclude.length-1])
-                    
+
                     series[i].data = series[i].data.slice(startWeekIndex, endWeekIndex+1)
                     series[i].texts = series[i].texts.slice(startWeekIndex, endWeekIndex+1)
                     series[i].weeks = series[i].weeks.slice(startWeekIndex, endWeekIndex+1)
                     series[i].nights = series[i].nights.slice(startWeekIndex, endWeekIndex+1)
                     series[i].days = series[i].days.slice(startWeekIndex, endWeekIndex+1);
-                    
+
                     series[i+1].data = series[i+1].data.slice(startWeekIndex, endWeekIndex+1)
                     series[i+1].texts = series[i+1].texts.slice(startWeekIndex, endWeekIndex+1)
                     series[i+1].weeks = series[i+1].weeks.slice(startWeekIndex, endWeekIndex+1)
@@ -792,10 +804,8 @@ export default {
 
             // Iterate over the fetched data to calculate total events and events per cycle
             this.weeklySummaryData.forEach(item => {
-              if (item.cycle !== 0) {  // Skip if cycle is 0
-                totalEvents += item.count;
-                cycleCounts[item.cycle] = (cycleCounts[item.cycle] || 0) + item.count;
-              }
+              totalEvents += item.count;
+              cycleCounts[item.cycle] = (cycleCounts[item.cycle] || 0) + item.count;
             });
 
             // Calculate average events per cycle
@@ -822,7 +832,7 @@ export default {
 
             // Prepare the data for the heatmap
             let heatmapData = this.weeklySummaryData.map(item => {
-              return [item.day_no, item.cycle - 1, item.count];
+              return [item.day_no, item.cycle, item.count];
             });
 
             var option;
@@ -1174,6 +1184,18 @@ export default {
 .kpi-container > div:first-child {
   border-bottom: 1px solid #ddd;
   padding-bottom: 15px;
+}
+
+/*.slider-container:hover {*/
+/*  background-color: #f0f0f0;*/
+/*  border-radius: 5px;*/
+/*  padding: 5px;*/
+
+/*}*/
+
+.highlighted {
+  background-color: #f0f0f0;
+  border-radius: 5px;
 }
 </style>
 

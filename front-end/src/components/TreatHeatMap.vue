@@ -41,9 +41,8 @@ export default {
         // Determine the maximum cycle number from the data
         let maxCycle = this.weeklyData.reduce((max, item) => item.max_cycle > max ? item.max_cycle : max, 0);
 
-        // Prepare the data for the heatmap
         let heatmapData = this.weeklyData.map(item => {
-          return [item.day_no, item.cycle - 1, item.count];  // Adjust index if necessary
+          return [item.day_no, item.cycle, item.count];
         });
 
         var option;
@@ -87,6 +86,7 @@ export default {
               splitArea: {
                 show: true
               },
+              inverse: true
             },
             visualMap: {
                 min: 0,
