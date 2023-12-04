@@ -24,7 +24,7 @@ CREATE TABLE accuracy_log (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   patient_id INTEGER NOT NULL,
   week TEXT NOT NULL,
-  night_id INTEGER NOT NULL,
+  night_id TEXT NOT NULL,
   accuracy DECIMAL(6,3) NOT NULL,
   precision DECIMAL(6,3) NOT NULL,
   TN DECIMAL(6,3) NOT NULL,
