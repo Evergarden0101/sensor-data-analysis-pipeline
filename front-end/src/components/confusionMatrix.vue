@@ -71,7 +71,7 @@
                 </el-col>
             </el-row>
             <el-row style="text-align:center">
-                <h4 style="display:block; margin: 10px auto; text-align:center"> Model Confusion Matrix for Cohert Study</h4>
+                <h4 style="display:block; margin: 10px auto; text-align:center"> Model Confusion Matrix for Cohort Study</h4>
             </el-row>
         </el-col>
 

@@ -24,7 +24,7 @@
                 </el-progress>
             </el-row>
             <el-row style="text-align:center">
-                <h4 style="display:block; margin: 5px auto">Model Performance for Cohert Study</h4>
+                <h4 style="display:block; margin: 5px auto">Model Performance for Cohort Study</h4>
             </el-row>
         </el-col>
         <el-col :span="5" :offset="0">
