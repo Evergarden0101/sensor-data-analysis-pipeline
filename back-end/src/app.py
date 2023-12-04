@@ -243,8 +243,17 @@ def create_app(test_config=None):
                 with sql.connect(DATABASE) as con:
                     print("DB connected")
                     cur = con.cursor()
-                    cur.execute(f"DELETE FROM predicted_labels WHERE patient_id={patient_id} AND week={week} AND night_id={night_id}")
-                    cur.execute(f"DELETE FROM week_summary WHERE patient_id={patient_id} AND week={week} AND night_id={night_id}")
+                    params = (patient_id, week, night_id)
+                    query = "DELETE FROM predicted_labels WHERE patient_id=? AND week=? AND night_id=?"
+                    cur.execute(query, params)
+                    # cur.execute(f"DELETE FROM predicted_labels WHERE patient_id={patient_id} AND week={week} AND night_id={night_id}")
+                    print("predicted_labels deleted")
+                    
+                    query = "DELETE FROM week_summary WHERE patient_id=? AND week=? AND night_id=?"
+                    cur.execute(query, params)
+                    # cur.execute(f"DELETE FROM week_summary WHERE patient_id={patient_id} AND week={week} AND night_id={night_id}")
+                    print("week_summary deleted")
+                    cur.close()
                     
                 img_local_path =  get_data_path(DATABASE)+'p'+str(patient_id)+'_wk'+str(week)+f'/'+str(night_id)+f'.png'
                 if os.path.exists(img_local_path):
