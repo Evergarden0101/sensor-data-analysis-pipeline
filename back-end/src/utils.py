@@ -469,7 +469,7 @@ def calc_model_accuracy(DATABASE, model, patient_id, week, night_id, recorder, p
     selected_sampling = get_selected_sampling(DATABASE)
     with sql.connect(DATABASE) as con:
         cur = con.cursor()
-        cur.execute(f"SELECT validation_file_path FROM models WHERE patient_id={p}")
+        cur.execute(f"SELECT validation_file_path FROM models WHERE patient_id={patient_id}")
         path = cur.fetchone()[0]
         cur.close()
     print(path)
