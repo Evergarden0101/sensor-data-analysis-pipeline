@@ -82,7 +82,8 @@ export default {
             this.$store.commit('getWeekImg', '');
             this.$store.commit('setPredFinish', false);
             this.$store.commit('setEventNo', 1);
-            console.log(this.$store.state);
+            this.$store.commit('setLabelRange',{plotStart:0, plotEnd:0});
+            // console.log(this.$store.state);
             this.$router.push('/filtering');
 
         }
