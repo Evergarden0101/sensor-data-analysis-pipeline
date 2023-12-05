@@ -6,7 +6,7 @@
             </div>
         </template>
         <p>
-            <div class="box" style="margin-top: 3%; display: inline-block; margin-right: 4%; color:white; text-align: center; vertical-align: middle;">10</div> Events on specific week day and sleep cycle
+            <div class="treatbox" style="margin-top: 3%; display: inline-block; margin-right: 4%; color:white; text-align: center; vertical-align: middle;">10</div> Events on specific week day and sleep cycle
         </p>
         <p>
             <div class="visualmap" style="margin-top: 3%; display: inline-block; margin-right: 4%; color:white; text-align: center; vertical-align: middle;" /># Events
@@ -22,7 +22,7 @@
     
     
     <style>
-    .box {
+    .treatbox {
         width:30px;
         height:25px;
         background-color: #A85555;
