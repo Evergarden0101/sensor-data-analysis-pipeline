@@ -621,6 +621,7 @@ export default {
             var startWeekIndex = -1;
             var endWeekIndex = -1;
             var seriesToRemove = [];
+            var seriesToCut = [];
 
             for(let i=0; i<series.length; i=i+2){
                 var toInclude = [];
@@ -637,7 +638,25 @@ export default {
                     seriesToRemove.push(i+1)
                 } else {
                     startWeekIndex = series[i].weeks.indexOf(toInclude[0])
+                    if(toInclude.length === 1 && (series[i].data.slice(0, startWeekIndex).every(element => element === null))){
+                        if(startWeek !== endWeek){
+                            startWeekIndex=0
+                            seriesToCut.push(series[i].patientId)
+                            seriesToCut.push(series[i+1].patientId)
+                        }
+                    }
+                
+                    if((series[i].data.slice(0, startWeekIndex).every(element => element === null)) && (parseInt(this.findWeekIndex(this.completeWeekList, toInclude[0])) > parseInt(this.findWeekIndex(this.completeWeekList, startWeek)))){
+                        if(!this.completeWeekList[startWeek].includes(toInclude[0])){
+                            startWeekIndex = 0;
+                        }
+                    }
+        
+                
                     endWeekIndex = series[i].weeks.lastIndexOf(toInclude[toInclude.length-1])
+
+                    series[i]['filteredWeekIds'] = [startWeekIndex, endWeekIndex]
+                    series[i+1]['filteredWeekIds'] = [startWeekIndex, endWeekIndex]
 
                     series[i].data = series[i].data.slice(startWeekIndex, endWeekIndex+1)
                     series[i].texts = series[i].texts.slice(startWeekIndex, endWeekIndex+1)
@@ -658,6 +677,46 @@ export default {
                     series.splice(i, 1);
                 }
             }
+
+            if(seriesToCut.length > 0){
+                console.log("EXCEPTION")
+                console.log("seriesToCut: ", seriesToCut)
+                var startIds = []
+                var endIds = []
+                for(let i=0; i<series.length; i++){
+                    if(!seriesToCut.includes(series[i].patientId)){
+                        startIds.push(series[i].filteredWeekIds[0])
+                        console.log(series[i].filteredWeekIds)
+                    }
+                    if(seriesToCut.includes(series[i].patientId)){
+                        endIds.push(series[i].filteredWeekIds[1])
+                    }
+                }
+                
+                console.log("startIds: ", startIds)
+                console.log("endIds: ", endIds)
+                var minStartId = Math.min(...startIds)
+                var maxEndId = Math.max(...endIds)
+                
+                seriesToCut = seriesToCut.filter((value, index, array) => array.indexOf(value) === index);
+                console.log(seriesToCut)
+                for(const i in seriesToCut){
+                    console.log(seriesToCut[i])
+                    for(let j=0; j<series.length; j++){
+                        if(series[j].patientId === String(seriesToCut[i])){
+                            console.log("EQUAL")
+                            series[j].data = series[j].data.slice(minStartId, maxEndId+1)
+                            series[j].texts = series[j].texts.slice(minStartId, maxEndId+1)
+                            series[j].weeks = series[j].weeks.slice(minStartId, maxEndId+1)
+                            series[j].nights = series[j].nights.slice(minStartId, maxEndId+1)
+                            series[j].days = series[j].days.slice(minStartId, maxEndId+1);
+                            
+                            series[j].filteredWeekIds = [minStartId, maxEndId]
+                        }
+                    }
+                }
+            }
+
             console.log("NEW SERIES");
             console.log(series)
             return series;
@@ -665,22 +724,27 @@ export default {
         getMinAndMaxDayNo(series){
             console.log("getMinAndMaxDayNo")
             console.log(series)
-            var minDay = parseInt(Math.min(...series[0].days));
-            var maxDay = parseInt(Math.max(...series[0].days));
+            var minDay = parseInt(Math.min(...series[0].days.filter(element => { return element !== null})));
+            var maxDay = parseInt(Math.max(...series[0].days.filter(element => { return element !== null})));
 
-            for(let i=0; i<series.length; i++){
-                var seriesMin = parseInt(Math.min(...series[i].days));
-                var seriesMax = parseInt(Math.max(...series[i].days));
-                if(seriesMin < minDay){
-                    minDay = seriesMin;
+            if(series.length > 0){
+                for(let i=0; i<series.length; i++){
+                    var seriesMin = parseInt(Math.min(...series[i].days.filter(element => { return element !== null})));
+                    var seriesMax = parseInt(Math.max(...series[i].days.filter(element => { return element !== null})));     
+                    if(seriesMin < minDay){
+                        minDay = seriesMin;
+                    }
+                    if(seriesMax > maxDay){
+                        maxDay = seriesMax;
+                    }
                 }
-                if(seriesMax > maxDay){
-                    maxDay = seriesMax;
-                }
+                console.log("MIN AND MAX DAY", [minDay, maxDay])
+                return [minDay, maxDay];
             }
-            console.log("MIN AND MAX DAY", [minDay, maxDay])
-
-            return [minDay, maxDay];
+            else{
+                console.log("MIN AND MAX DAY", [minDay, maxDay])
+                return [0, 0];
+            }
         },
         async drawPatientsLinePlot(startWeek, endWeek){
             var dom = document.getElementById("patientsLinePlot");
