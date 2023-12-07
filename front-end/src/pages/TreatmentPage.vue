@@ -960,7 +960,7 @@ export default {
                 },
                 visualMap: {
                     min: 0,
-                    max: 10,
+                    max: 20,
                     calculable: true,
                     orient: 'horizontal',
                     left: 'center',

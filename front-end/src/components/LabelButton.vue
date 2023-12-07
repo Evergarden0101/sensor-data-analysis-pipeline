@@ -1,4 +1,5 @@
 <template>
+    <!-- TODO: disabled until confirm predictions -->
     <el-button @click="rerunModel" :loading="load">Retrain Model</el-button>
 </template>
 
