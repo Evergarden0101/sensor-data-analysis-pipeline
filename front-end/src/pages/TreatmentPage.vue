@@ -87,7 +87,7 @@
         <h2>Comparison between Patients - Single plots</h2>
         <el-col>
             <div style="display: flex; flex-wrap: wrap; padding:40px">
-                <div v-for="patientId in selectedPatients" id="miniPlots" style="flex-grow: 1; width: 33%; height: 100px;">
+                <div v-for="patientId in selectedPatients" id="miniPlots" style="flex-grow: 1; width: 33%; height: 100px; margin-bottom: 200px;">
                     <div v-if="patientsExists" :id="'patient'+patientId+'LineChart'" style="position: relative; height: 40vh; width: 60vh; margin-top: 3%;"></div>
                 </div>
             </div>
@@ -724,10 +724,9 @@ export default {
         getMinAndMaxDayNo(series){
             console.log("getMinAndMaxDayNo")
             console.log(series)
-            var minDay = parseInt(Math.min(...series[0].days.filter(element => { return element !== null})));
-            var maxDay = parseInt(Math.max(...series[0].days.filter(element => { return element !== null})));
-
             if(series.length > 0){
+                var minDay = parseInt(Math.min(...series[0].days.filter(element => { return element !== null})));
+                var maxDay = parseInt(Math.max(...series[0].days.filter(element => { return element !== null})));
                 for(let i=0; i<series.length; i++){
                     var seriesMin = parseInt(Math.min(...series[i].days.filter(element => { return element !== null})));
                     var seriesMax = parseInt(Math.max(...series[i].days.filter(element => { return element !== null})));     
@@ -822,7 +821,8 @@ export default {
                     right:'-1%',
                     textStyle: {
                         fontSize: '10',
-                    }
+                    },
+                    type: 'scroll',
                 },
                 grid: {
                     width: '90%',
@@ -1154,8 +1154,7 @@ export default {
                     return;
                 }
                 console.log("SINGLE PATIENT FILTERED WEEK SERIES", series)
-                var minAndMaxDay = this.getMinAndMaxDayNo(series);
-                xAxisData = Array.from({length: minAndMaxDay[1] - minAndMaxDay[0] + 1}, (_, i) => i + minAndMaxDay[0])
+                xAxisData = Array.from({length: series[0].filteredWeekIds[1] - series[0].filteredWeekIds[0] + 1}, (_, i) => i + series[0].filteredWeekIds[0])
             }
 
             let legend = [];
