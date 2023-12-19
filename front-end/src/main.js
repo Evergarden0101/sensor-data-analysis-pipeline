@@ -10,8 +10,6 @@ import HomePage from './pages/HomePage.vue';
 import FilteringPage from './pages/FilteringPage.vue';
 import TreatmentPage from './pages/TreatmentPage.vue';
 import EventsClassificationPage from './pages/EventsClassificationPage.vue';
-import PatientInfoPage from './pages/PatientInfoPage.vue';
-import SelectPatientPage from './pages/SelectPatientPage.vue'
 import PatientDataPage from './pages/PatientDataPage.vue';
 import SettingsPage from './pages/SettingsPage.vue';
 import PathNotFoundPage from './pages/PathNotFoundPage.vue';
@@ -37,13 +35,6 @@ const router = VueRouter.createRouter({
          path: '/events-classification',
          component: EventsClassificationPage,
      },{
-         path: '/patient',
-         component: PatientInfoPage,
-     },{
-         path: '/select-patient',
-         component: SelectPatientPage,
-         props: true
-     }, {
         path: '/patient-data',
         component: PatientDataPage
     }, {

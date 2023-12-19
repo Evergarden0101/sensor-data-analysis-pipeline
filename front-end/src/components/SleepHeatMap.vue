@@ -174,7 +174,7 @@ export default {
       this.isEditMode = !this.isEditMode;
       this.firstEnteredEditMode = true;
       if(!this.isEditMode){
-        const path = `http://127.0.0.1:5000/selected-sleep-phases/${this.$store.state.patientId}/${this.$store.state.week}/${this.$store.state.nightId}`
+        const path = `http://127.0.0.1:5000/selected-sleep-phases/${this.$store.state.patientId}/${this.$store.state.week}/${this.$store.state.nightId}/`
         const headers = {
                 'Accept': 'application/json',
                 'Content-Type': 'application/json'
@@ -211,7 +211,7 @@ export default {
 
     },
     async getCurrentlySelected(){
-        const path = `http://127.0.0.1:5000/selected-sleep-phases/${this.$store.state.patientId}/${this.$store.state.week}/${this.$store.state.nightId}`
+        const path = `http://127.0.0.1:5000/selected-sleep-phases/${this.$store.state.patientId}/${this.$store.state.week}/${this.$store.state.nightId}/`
         const headers = {
                 'Accept': 'application/json',
                 'Content-Type': 'application/json'
