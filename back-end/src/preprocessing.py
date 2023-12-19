@@ -4,8 +4,6 @@ import pandas as pd
 import datetime
 import neurokit2 as nk
 import numpy as np
-# from settings import *
-# from utils import *
 
 
 # FUNCTIONS
@@ -19,7 +17,7 @@ def get_data_path(DATABASE):
     return data_path
 
 
-"""Gets patient_id, week and night_id and return a pandas df"""
+"""Gets DATABASE, patient_id, week, recorder and night_id and return a pandas df of the specified patient dataset. If columns are specified, the opening is sped up."""
 def open_brux_csv(DATABASE, patient_id, week, night_id, recorder, columns=[]):
     if columns:
         return pd.read_csv(get_data_path(DATABASE) + f"p{patient_id}_wk{week}/{night_id}{recorder}Fnorm.csv", usecols=columns)
@@ -27,7 +25,7 @@ def open_brux_csv(DATABASE, patient_id, week, night_id, recorder, columns=[]):
         return pd.read_csv(get_data_path(DATABASE) + f"p{patient_id}_wk{week}/{night_id}{recorder}Fnorm.csv")
 
 
-
+"""Gets DATABASE, patient_id, week, recorder and night_id and return a pandas df of the specified loc dataset."""
 def open_brux_loc_csv(DATABASE, patient_id, week, night_id, recorder):
     return pd.read_csv(get_data_path(DATABASE) + f"p{patient_id}_wk{week}/{night_id}{recorder}location_Bites.csv")
 
@@ -43,7 +41,7 @@ def get_column_array(df):
 
 
 """Gets ECG list (default sampling rate: 2000) and resample the ECG signal to desired rate (default: 1000)"""
-def resample_signal(signal, sampling_rate=2000, SAMPLING_RATE=2000):
+def resample_signal(signal, sampling_rate=2000, SAMPLING_RATE=1000):
     return nk.signal_resample(signal, sampling_rate=sampling_rate, desired_sampling_rate=SAMPLING_RATE, method="pandas")
 
 

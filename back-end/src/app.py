@@ -5,7 +5,6 @@ import os, json
 import sqlite3 as sql
 from database import db
 from flask_cors import CORS
-from SSD import *
 from preprocessing import *
 from utils import *
 import sys
@@ -16,7 +15,7 @@ from datetime import datetime
 import json
 import xgboost as xgb
 
-"""Example of possible structure for posting the label data"""
+
 def create_app(test_config=None):
     app = Flask(__name__, instance_relative_config=True)
     cors = CORS(app)
@@ -195,6 +194,7 @@ def create_app(test_config=None):
             print(e)
             return f"{e}"
 
+
     @app.route("/selected-sleep-phases/<int:patient_id>/<string:week>/<string:night_id>", methods=["GET", "POST"])
     def selected_phases(patient_id, week, night_id):
         if request.method == 'GET':
@@ -216,7 +216,6 @@ def create_app(test_config=None):
                         for s in standard_selected:
                             updates.append({'x': s[0], 'y': s[1]})
                     
-
                     post_selected_updates(DATABASE, patient_id, week, night_id, updates)
 
                     return standard_selected, 200
@@ -268,13 +267,10 @@ def create_app(test_config=None):
                 return "sleep_stage_detection table updated successfully", 200
 
                     
-
             except Exception as e:
                 print('Exception raised')
                 print(e)
                 return f"{e}"
-
-                        
 
         
     """
@@ -310,6 +306,7 @@ def create_app(test_config=None):
             print(e)
             return f"{e}"
 
+
     @app.route("/monitoring-allowed/<int:patient_id>/<string:week>/")
     def is_monitoring_allowed(patient_id, week):
         try:
@@ -326,7 +323,8 @@ def create_app(test_config=None):
             print('Exception raised')
             print(e)
             return f"{e}"
-        
+    
+
     @app.route("/settings-exist/")
     def do_settings_exist():
         settings_exist = 0
@@ -344,6 +342,7 @@ def create_app(test_config=None):
             print(e)
             return f"{e}"
 
+
     @app.route("/existing-patients-recordings/", methods=["GET"])
     def get_existing_patients_datasets():
         try:
@@ -356,6 +355,7 @@ def create_app(test_config=None):
             print(e)
             return f"{e}"
     
+
     @app.route("/settings/", methods=["POST", "GET"])
     def post_settings():
         if request.method == 'POST':
@@ -383,7 +383,8 @@ def create_app(test_config=None):
         if request.method == "GET":
             settings = get_settings(DATABASE)
             return settings
-        
+
+
     @app.route("/sensors/", methods=["POST", "GET"])
     def post_sensors():
         if request.method == "POST":
@@ -450,7 +451,6 @@ def create_app(test_config=None):
             return resampled_ranges, 200
 
 
-
     @app.route("/lineplot-data/<int:patient_id>/<string:week>/<string:night_id>/<string:recorder>", methods=["GET"])
     def get_lineplot_data(patient_id, week, night_id, recorder):
         try:
@@ -466,7 +466,6 @@ def create_app(test_config=None):
             resampled_ranges = get_resampled_ranges(DATABASE, sampling_ranges)
 
             return resampled_ranges, 200
-
 
         except Exception as e:
             print('Exception raised')
@@ -535,7 +534,6 @@ def create_app(test_config=None):
             result = get_event_data(DATABASE, desired_chunk, start_id, end_id, location_begin, location_end)
 
             return result, 200
-
 
 
     @app.route('/weekly-sum-img', methods=["GET"])
@@ -686,6 +684,7 @@ def create_app(test_config=None):
             print(e)
             return f"{e}", 500
     
+
     # TODO: confusion matrix
     @app.route('/confusion-matrix/<int:patient_id>', methods=["GET"])
     def get_confusion_matrix(patient_id):
@@ -755,8 +754,6 @@ def create_app(test_config=None):
             print('Exception raised in getting event trend')
             print(e)
             return f"{e}", 500
-
-
 
 
     @app.route('/event-trend', methods=["GET"])

@@ -1,20 +1,26 @@
+import itertools
+import os
+import re
+import shutil
 import sqlite3 as sql
-# from settings import *
-from preprocessing import *
-from SSD2 import *
-import sys, os, re, math, itertools
+import sys
+
+import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
-import xgboost as xgb
-import seaborn as sns
 import pandas as pd
-from sklearn.preprocessing import StandardScaler
+import seaborn as sns
+import xgboost as xgb
+# from settings import *
+from preprocessing import *
 from sklearn import model_selection
+from sklearn.metrics import (accuracy_score, confusion_matrix, f1_score,
+                             make_scorer, precision_score, recall_score)
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
 from sklearn.tree import DecisionTreeClassifier as DTC
-from sklearn.metrics import accuracy_score, confusion_matrix, make_scorer, accuracy_score, precision_score, recall_score, f1_score
-import matplotlib
-import shutil
+from SSD import *
+
 matplotlib.use('agg')
 sql.register_adapter(np.int64, lambda val: int(val))
 sql.register_adapter(np.int32, lambda val: int(val))
@@ -39,6 +45,7 @@ def get_json_format_from_query(columns, query_results, start_id, end_id):
 
         return values
 
+
 """Takes night_id and return day, hours, minutes and seconds values"""
 """Post patient recording in the database"""
 def post_patient_recording(DATABASE, patient_id, week, night_id, patient_file, csvData):
@@ -53,7 +60,6 @@ def post_patient_recording(DATABASE, patient_id, week, night_id, patient_file, c
 
             cur.execute(query, params)
             print(f"{i} out of {csvData.index[-1]}")
-
 
 
 """
@@ -217,6 +223,7 @@ def generate_model(DATABASE, patient_id, week, night_id, recorder):
                 cur.execute(f"DELETE FROM models WHERE patient_id=-1")
 
     return labels
+
 
 """TODO: check prediction length, save 0 predictions """
 def predict_events(DATABASE, model, patient_id, week, night_id, recorder):
@@ -450,21 +457,26 @@ def run_confirmation(DATABASE, model_path, patient_id, week, night_id, recorder,
     
     return calc_model_accuracy(DATABASE, model, patient_id, week, night_id, recorder, p)
 
+
 def false_positive(y_true, y_pred):
     # false positive
     return ((y_pred == 1) & (y_true == 0)).sum()
-    
+
+
 def false_negative(y_true, y_pred):
     # false negative
     return ((y_pred == 0) & (y_true == 1)).sum()
+
 
 def true_positive(y_true, y_pred):
     # true positive
     return ((y_pred == 1) & (y_true == 1)).sum()
 
+
 def true_negative(y_true, y_pred):
     # true negative
     return ((y_pred == 0) & (y_true == 0)).sum()
+
 
 def calc_model_accuracy(DATABASE, model, patient_id, week, night_id, recorder, p):
     original_sampling = get_original_sampling(DATABASE)
@@ -581,6 +593,9 @@ def return_img_stream(img_path):
     return img_stream
 
 
+"""Returns SSD values for the frontend heatmap for specific patient_id, week, night_id and recorder.
+   If no data is available in the DB, it gets the HRV features from the SSD.py script, insert them into the DB, and returns them.
+"""
 def get_ssd_values(DATABASE, patient_id, week, night_id, recorder):
     with sql.connect(DATABASE) as con:
         print('connected to db', file=sys.stderr)
@@ -613,6 +628,10 @@ def get_ssd_values(DATABASE, patient_id, week, night_id, recorder):
 
         return values
 
+
+"""Update the selected tiles on the heatmap, specifying patient_id, week, night_id, and updates.
+   updates is a list of json in the form {'x': int, 'y': int}
+"""
 def post_selected_updates(DATABASE, patient_id, week, night_id, updates):
     with sql.connect(DATABASE) as con:
         print('connected to db', file=sys.stderr)
@@ -630,6 +649,7 @@ def post_selected_updates(DATABASE, patient_id, week, night_id, updates):
             cur.execute(query, params)
 
 
+"""Returns the selected tiles specifying patient_id, week, and night_id"""
 def get_selected_phases(DATABASE, patient_id, week, night_id):
     with sql.connect(DATABASE) as con:
         cur = con.cursor()
@@ -646,6 +666,8 @@ def get_selected_phases(DATABASE, patient_id, week, night_id):
         return result
         #return get_json_format_from_query(columns=columns, query_results=selected.fetchall(), start_id=0, end_id=1)
 
+
+"""Gets the standard selected phases for specific patient on specific week and night_id. The standard selection are the 5-min intervals, whose the standard deviation falls between the range of the Herzig et al. study."""
 def get_standard_selected_phases(DATABASE, patient_id, week, night_id):
     print("standard selected phases")
     SDNNmin = get_herzig_ranges()['SSDNRem']['min']
@@ -663,6 +685,7 @@ def get_standard_selected_phases(DATABASE, patient_id, week, night_id):
 
 
         return result
+
 
 """Get all the patients, weeks and night ids"""
 def get_existing_patients_data(DATABASE):
@@ -715,6 +738,7 @@ def get_study_type(DATABASE):
 
     return study_type
 
+
 """Returns activity type stored in db"""
 def get_activity(DATABASE):
     with sql.connect(DATABASE) as con:
@@ -724,6 +748,7 @@ def get_activity(DATABASE):
 
     return activity
 
+
 """Returns activity duration stored in db"""
 def get_activity_duration(DATABASE):
     with sql.connect(DATABASE) as con:
@@ -732,6 +757,7 @@ def get_activity_duration(DATABASE):
         activity_duration = cur.execute("SELECT activity_duration FROM settings WHERE id=1").fetchone()[0]
     
     return activity_duration
+
 
 """Returns original sampling rate stored in db"""
 def get_original_sampling(DATABASE):
@@ -756,6 +782,7 @@ def get_selected_sampling(DATABASE):
             selected_sampling = 1000
     return selected_sampling
 
+
 """Returns non selected sampling rate stored in db"""
 def get_non_selected_sampling(DATABASE):
     with sql.connect(DATABASE) as con:
@@ -764,6 +791,7 @@ def get_non_selected_sampling(DATABASE):
         non_selected_sampling = cur.execute("SELECT non_selected_sampling FROM settings WHERE id=1").fetchone()[0]
 
     return non_selected_sampling
+
 
 """Returns dataset format stored in db"""
 def get_dataset_format(DATABASE):
@@ -774,6 +802,7 @@ def get_dataset_format(DATABASE):
 
     return dataset_format
 
+
 """Returns boolean that indicates if dataset is filtered stored in db"""
 def get_is_filtered(DATABASE):
     with sql.connect(DATABASE) as con:
@@ -782,6 +811,7 @@ def get_is_filtered(DATABASE):
         filtered = cur.execute("SELECT filtered FROM settings WHERE id=1").fetchone()[0]
 
     return filtered
+
 
 """Returns boolean that indicates if dataset is filtered stored in db"""
 def get_is_normalized(DATABASE):
@@ -815,6 +845,7 @@ def get_sensors(DATABASE):
 
         return get_json_format_from_query(columns, sensors.fetchall(), 1, 2)
 
+
 """Retrieve selected intervals from DB"""
 def get_sleep_cycle_selected_intervals(patient_id, week, night_id, DATABASE, start_id, end_id):
     with sql.connect(DATABASE) as con:
@@ -827,6 +858,7 @@ def get_sleep_cycle_selected_intervals(patient_id, week, night_id, DATABASE, sta
         columns = [description[0] for description in result.description]
 
         return get_json_format_from_query(columns=columns, query_results=result.fetchall(), start_id=0, end_id=1)
+
 
 """Retrieve selected intervals from DB"""
 def get_selected_intervals(patient_id, week, night_id, DATABASE):
@@ -855,7 +887,6 @@ def get_rem_intervals(patient_id, week, night_id, DATABASE):
         result = [list(r) for r in rem]
 
         return result
-
 
 
 def get_sleep_cycle_sampling_ranges(DATABASE, mr, ml, ranges, start_id, end_id):
@@ -928,7 +959,6 @@ def get_sleep_cycle_sampling_ranges(DATABASE, mr, ml, ranges, start_id, end_id):
 
     else:
         return "MR and ML should have the same length."
-
 
 
 """Get the ranges for the resampling of the dataset"""
@@ -1010,6 +1040,8 @@ def get_resampled_ranges(DATABASE, sampling_ranges):
 
     return sampling_ranges
 
+
+"""Get the portion of data in which the event occurs."""
 def get_event_data(DATABASE, desired_chunk, start_id, end_id, location_begin, location_end):
     # Extract the interesting 5 minutes (or more)
     mr = desired_chunk["MR"].loc[start_id:end_id-1]
@@ -1111,11 +1143,13 @@ def get_event_data(DATABASE, desired_chunk, start_id, end_id, location_begin, lo
 
     return result
 
+
 def find_sub_list(sl,l):
     sll=len(sl)
     for ind in (i for i,e in enumerate(l) if e==sl[0]):
         if l[ind:ind+sll]==sl:
             return ind,ind+sll-1
+
 
 def heatmap(data, col_labels, row_labels, ax=None,
             cbar_kw=None, cbarlabel="", **kwargs):
