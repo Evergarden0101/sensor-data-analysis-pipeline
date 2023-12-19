@@ -61,7 +61,7 @@ def create_app(test_config=None):
             return "Successfuly inserted into Database.", 200
         
         except Exception as e:
-            return f"{e}", 400
+            return f"{e}", 500
     
 
     """
@@ -84,7 +84,7 @@ def create_app(test_config=None):
             return response
 
         except Exception as e:
-            return f"{e}", 400
+            return f"{e}", 500
 
 
     """
@@ -96,7 +96,7 @@ def create_app(test_config=None):
             "duration": int
         }
     """
-    @app.route("/label-brux", methods=["POST"])
+    @app.route("/label-brux/", methods=["POST"])
     @app.errorhandler(werkzeug.exceptions.BadRequest)
     def post_label_brux():
         try:
@@ -104,7 +104,7 @@ def create_app(test_config=None):
                 labels = request.json
                 print(labels)
             except werkzeug.exceptions.BadRequest:
-                return "Please sent a Json package!", 400
+                return "Please sent a Json package!", 500
             
             # remove_pred_label(DATABASE, labels)
             insert_label(DATABASE, labels)
@@ -136,7 +136,7 @@ def create_app(test_config=None):
             return "Successfuly inserted into Database", 200
         except Exception as e:
             print('Exception raised in confirming labels', e)
-            return f"{e}", 400
+            return f"{e}", 500
 
 
     @app.route("/label-brux/", methods=["GET"], defaults={'patient_id': None})
@@ -187,15 +187,15 @@ def create_app(test_config=None):
             print('database variable', file=sys.stderr)
 
             values = get_ssd_values(DATABASE, patient_id, week, night_id, recorder)
-            return values
+            return values, 200
         
         except Exception as e:
             print('Exception raised', file=sys.stderr)
             print(e)
-            return f"{e}"
+            return f"{e}", 500
 
 
-    @app.route("/selected-sleep-phases/<int:patient_id>/<string:week>/<string:night_id>", methods=["GET", "POST"])
+    @app.route("/selected-sleep-phases/<int:patient_id>/<string:week>/<string:night_id>/", methods=["GET", "POST"])
     def selected_phases(patient_id, week, night_id):
         if request.method == 'GET':
             try:
@@ -223,7 +223,7 @@ def create_app(test_config=None):
             except Exception as e:
                 print('Exception raised')
                 print(e)
-                return f"{e}"
+                return f"{e}", 500
 
         if request.method == 'POST':
             """
@@ -270,7 +270,7 @@ def create_app(test_config=None):
             except Exception as e:
                 print('Exception raised')
                 print(e)
-                return f"{e}"
+                return f"{e}", 500
 
         
     """
@@ -307,7 +307,7 @@ def create_app(test_config=None):
             return f"{e}"
 
 
-    @app.route("/monitoring-allowed/<int:patient_id>/<string:week>/")
+    @app.route("/monitoring-allowed/<int:patient_id>/<string:week>/", methods=["GET"])
     def is_monitoring_allowed(patient_id, week):
         try:
             with sql.connect(DATABASE) as con:
@@ -322,10 +322,10 @@ def create_app(test_config=None):
         except Exception as e:
             print('Exception raised')
             print(e)
-            return f"{e}"
+            return f"{e}", 500
     
 
-    @app.route("/settings-exist/")
+    @app.route("/settings-exist/", methods=["GET"])
     def do_settings_exist():
         settings_exist = 0
         try:
@@ -340,7 +340,7 @@ def create_app(test_config=None):
         except Exception as e:
             print('Exception raised')
             print(e)
-            return f"{e}"
+            return f"{e}", 500
 
 
     @app.route("/existing-patients-recordings/", methods=["GET"])
@@ -353,7 +353,7 @@ def create_app(test_config=None):
         except Exception as e:
             print('Exception raised')
             print(e)
-            return f"{e}"
+            return f"{e}", 500
     
 
     @app.route("/settings/", methods=["POST", "GET"])
@@ -381,8 +381,14 @@ def create_app(test_config=None):
                 return f"{e}", 500
             
         if request.method == "GET":
-            settings = get_settings(DATABASE)
-            return settings
+            try: 
+                settings = get_settings(DATABASE)
+                return settings, 200
+            
+            except Exception as e:
+                print('Exception raised')
+                print(e)
+                return f"{e}", 500
 
 
     @app.route("/sensors/", methods=["POST", "GET"])
@@ -408,7 +414,7 @@ def create_app(test_config=None):
             
         if request.method == "GET":
             try:
-                return get_sensors(DATABASE)
+                return get_sensors(DATABASE), 200
             
             except Exception as e:
                 print('Exception raised')
@@ -431,7 +437,7 @@ def create_app(test_config=None):
             chunks.append(chunk)
 
         if sleep_cycle > max_chunk:
-            return f"Sleep cycle nr {sleep_cycle} does not exist for patient {patient_id} on week {week} and night id {night_id}", 400
+            return f"Sleep cycle nr {sleep_cycle} does not exist for patient {patient_id} on week {week} and night id {night_id}", 500
         
         else:
             df = chunks[sleep_cycle-1]
