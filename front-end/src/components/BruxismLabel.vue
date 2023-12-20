@@ -219,7 +219,7 @@ export default {
     methods: {
         confirmLabel(){
             console.log(this.Label)
-            const path = 'http://127.0.0.1:5000/label-brux';
+            const path = 'http://127.0.0.1:5000/label-brux/';
             const payload = [];
 
             for(var i=0; i<this.Labels.length; i++){

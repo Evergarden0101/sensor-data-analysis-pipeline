@@ -350,7 +350,7 @@ export default {
             }
         },
         async getExistingEventTrendPatientIds(){
-            const path = `http://127.0.0.1:5000/event-trend-patients-ids`
+            const path = `http://127.0.0.1:5000/event-trend-patients-ids/`
             const headers = {
                 'Accept': 'application/json',
                 'Content-Type': 'application/json'
