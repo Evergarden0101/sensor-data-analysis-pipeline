@@ -21,7 +21,7 @@ Example response:
 
 #### 500 INTERNAL SERVER ERROR
 
-Exeption string.
+Exception string.
 
 
 
@@ -55,7 +55,7 @@ Example response:
 
 #### 500 INTERNAL SERVER ERROR
 
-Exeption string.
+Exception string.
 
 
 ## GET `/sensors/`
@@ -90,7 +90,7 @@ Example response:
 
 #### 500 INTERNAL SERVER ERROR
 
-Exeption string.
+Exception string.
 
 
 
@@ -147,7 +147,7 @@ Example response:
 
 #### 500 INTERNAL SERVER ERROR
 
-Exeption string.
+Exception string.
 
 
 ## POST `/sensors/`
@@ -195,7 +195,7 @@ Example response:
 
 #### 500 INTERNAL SERVER ERROR
 
-Exeption string.
+Exception string.
 
 
 ## Patient Data Page
@@ -242,7 +242,7 @@ Example response:
 
 #### 500 INTERNAL SERVER ERROR
 
-Exeption string.
+Exception string.
 
 ## Filtering Page
 
@@ -310,7 +310,7 @@ Example response:
 ```
 #### 500 INTERNAL SERVER ERROR
 
-Exeption string.
+Exception string.
 
 
 ## GET `/selected-sleep-phases/<int:patient_id>/<string:week>/<string:night_id>/`
@@ -374,7 +374,7 @@ Example response:
 ```
 #### 500 INTERNAL SERVER ERROR
 
-Exeption string.
+Exception string.
 
 
 ## POST `/selected-sleep-phases/<int:patient_id>/<string:week>/<string:night_id>/`
@@ -416,7 +416,7 @@ Example response:
 ```
 #### 500 INTERNAL SERVER ERROR
 
-Exeption string.
+Exception string.
 
 
 ## Event Classification Page
@@ -446,7 +446,7 @@ Example response:
 ```
 #### 500 INTERNAL SERVER ERROR
 
-Exeption string.
+Exception string.
 
 
 ## GET `/label-brux/<int:patient_id>/<string:week>/<string:night_id>/<string:recorder>`
@@ -524,7 +524,7 @@ Example response:
 
 #### 500 INTERNAL SERVER ERROR
 
-Exeption string.
+Exception string.
 
 
 ## POST `/label-brux/`
@@ -596,7 +596,7 @@ Example response:
 
 #### 500 INTERNAL SERVER ERROR
 
-Exeption string.
+Exception string.
 
 
 ## GET `/event-interval/<int:patient_id>/<string:week>/<string:night_id>/<string:recorder>/<int:location_begin>/<int:location_end>/`
@@ -666,7 +666,7 @@ Example response for request http://localhost:5000/event-interval/1/1/0901260/c/
 
 #### 500 INTERNAL SERVER ERROR
 
-Exeption string.
+Exception string.
 
 
 
@@ -693,7 +693,7 @@ Example response for request http://localhost:5000/weekly-sum-img?p=2&w=3-4
 
 #### 500 INTERNAL SERVER ERROR
 
-Exeption string.
+Exception string.
 
 
 ## GET `/night-pred-img`
@@ -721,7 +721,7 @@ Example response for request http://localhost:5000/night-pred-img?p=1&w=1&n=1022
 
 #### 500 INTERNAL SERVER ERROR
 
-Exeption string.
+Exception string.
 
 
 ## GET `/rerun-model/<int:patient_id>/<string:week>/<string:night_id>/<string:recorder>`
@@ -745,7 +745,7 @@ Return type: ??
 
 #### 500 INTERNAL SERVER ERROR
 
-Exeption string.
+Exception string.
 
 
 ### GET `/model-accuracy/<int:patient_id>`
@@ -765,7 +765,7 @@ Return type: ??
 
 #### 500 INTERNAL SERVER ERROR
 
-Exeption string.
+Exception string.
 
 ## Treatment Analysis Page
 
@@ -822,7 +822,7 @@ Example response for request http://localhost:5000/weekly-summary/1/1/:
 
 #### 500 INTERNAL SERVER ERROR
 
-Exeption string.
+Exception string.
 
 
 ## GET `/event-trend-patients-ids/`
@@ -844,7 +844,7 @@ Example response:
 
 #### 500 INTERNAL SERVER ERROR
 
-Exeption string.
+Exception string.
 
 
 ## GET `/event-trend`
@@ -913,7 +913,7 @@ Example response:
 
 #### 500 INTERNAL SERVER ERROR
 
-Exeption string.
+Exception string.
 
 
 
