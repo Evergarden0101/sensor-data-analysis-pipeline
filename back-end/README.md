@@ -21,7 +21,7 @@ Example response:
 
 #### 500 INTERNAL SERVER ERROR
 
-Exeption string.
+Exception string.
 
 
 
@@ -55,7 +55,7 @@ Example response:
 
 #### 500 INTERNAL SERVER ERROR
 
-Exeption string.
+Exception string.
 
 
 ## GET `/sensors/`
@@ -90,7 +90,7 @@ Example response:
 
 #### 500 INTERNAL SERVER ERROR
 
-Exeption string.
+Exception string.
 
 
 
@@ -147,7 +147,7 @@ Example response:
 
 #### 500 INTERNAL SERVER ERROR
 
-Exeption string.
+Exception string.
 
 
 ## POST `/sensors/`
@@ -195,7 +195,7 @@ Example response:
 
 #### 500 INTERNAL SERVER ERROR
 
-Exeption string.
+Exception string.
 
 
 ## Patient Data Page
@@ -242,7 +242,7 @@ Example response:
 
 #### 500 INTERNAL SERVER ERROR
 
-Exeption string.
+Exception string.
 
 ## Filtering Page
 
@@ -310,7 +310,7 @@ Example response:
 ```
 #### 500 INTERNAL SERVER ERROR
 
-Exeption string.
+Exception string.
 
 
 ## GET `/selected-sleep-phases/<int:patient_id>/<string:week>/<string:night_id>/`
@@ -374,7 +374,7 @@ Example response:
 ```
 #### 500 INTERNAL SERVER ERROR
 
-Exeption string.
+Exception string.
 
 
 ## POST `/selected-sleep-phases/<int:patient_id>/<string:week>/<string:night_id>/`
@@ -416,7 +416,7 @@ Example response:
 ```
 #### 500 INTERNAL SERVER ERROR
 
-Exeption string.
+Exception string.
 
 
 ## Event Classification Page
@@ -446,38 +446,474 @@ Example response:
 ```
 #### 500 INTERNAL SERVER ERROR
 
-Exeption string.
+Exception string.
+
 
 ## GET `/label-brux/<int:patient_id>/<string:week>/<string:night_id>/<string:recorder>`
-### TODO
+### TODO Yifan check if everything is correct
+### Description
+Returns brux events defined by the model for a specific patient_id, week, night_id, and recorder.
+
+### Parameters
+
+
+| Parameter | Required | Type                                  | default |
+| --------- | -------- | ------------------------------------- | ------- |
+| `patient_id`    | ✅        | int                                | -       |
+| `week`    | ✅        | string | -       |
+| `night_id`    | ✅        | string | -       |
+| `recorder`    | ✅        | string | -       |
+
+
+### Responses
+
+#### 200 OK
+Return type: list of JSON objects.
+
+Example response:
+
+```json
+[
+    {
+        "end_index": 7021403,
+        "label_id": 1,
+        "location_begin": 14032806,
+        "location_end": 14042806,
+        "night_id": "1022102",
+        "patient_id": 1,
+        "recorder": "c",
+        "start_index": 7016403,
+        "week": "1"
+    },
+    {
+        "end_index": 7551509,
+        "label_id": 2,
+        "location_begin": 15093018,
+        "location_end": 15103018,
+        "night_id": "1022102",
+        "patient_id": 1,
+        "recorder": "c",
+        "start_index": 7546509,
+        "week": "1"
+    },
+    {
+        "end_index": 7771553,
+        "label_id": 3,
+        "location_begin": 15533106,
+        "location_end": 15543106,
+        "night_id": "1022102",
+        "patient_id": 1,
+        "recorder": "c",
+        "start_index": 7766553,
+        "week": "1"
+    },
+    {
+        "end_index": 8795076,
+        "label_id": 4,
+        "location_begin": 20560152,
+        "location_end": 20590152,
+        "night_id": "1022102",
+        "patient_id": 1,
+        "recorder": "c",
+        "start_index": 8780076,
+        "week": "1"
+    }
+]
+```
+
+
+#### 500 INTERNAL SERVER ERROR
+
+Exception string.
+
 
 ## POST `/label-brux/`
-### TODO
+### Description
+Post labels on the DB.
+
+### Payload
+List of Objects.
+
+| Key | Required | Type                                  | default |
+| --------- | -------- | ------------------------------------- | ------- |
+| `patient_id`    | ✅        | string                                | -       |
+| `week`    | ✅        | string | -       |
+| `night_id`    | ✅        | string | -       |
+| `recorder`    | ✅        | string                                | -       |
+| `label_id`    | ✅        | int | -       |
+| `location_begin`    | ✅        | int | -       |
+| `location_end`    | ✅        | int                                | -       |
+| `start_index`    | ✅        | int | -       |
+| `end_index`    | ✅        | int | -       |
+| `Start`    | ✅        | float | -       |
+| `End`    | ✅        | float | -       |
+| `Confirm`    | ✅        | boolean | -       |
 
 
-## GET `/event-interval/<int:patient_id>/<string:week>/<string:night_id>/<string:recorder>/<int:location_begin>/<int:location_end>`
-### TODO
+
+Example Payload:
+```json
+[
+    {
+        "patient_id": "1",
+        "week": "1",
+        "night_id": "1022102",
+        "recorder":"c",
+        "label_id": 1,
+        "location_begin": 14032806,
+        "location_end": 14042806,
+        "start_index": 7016403,
+        "end_index": 7021403,
+        "Start": 7016.403,
+        "End": 7021.403,
+        "Confirm": true
+    },
+    {  
+        "patient_id": "1",
+        "week": "1",
+        "night_id": "1022102",
+        "recorder": "c",
+        "label_id": 2,
+        "location_begin": 15093018,
+        "location_end": 15103018,
+        "start_index": 7546509,
+        "end_index": 7551509,
+        "Start": 7546.509,
+        "End": 7551.509,
+        "Confirm": true
+    }
+]
+```
+### Responses
+
+#### 200 OK
+Return type: string.
+
+Example response:
+```string
+    "Successfuly inserted into Database"
+```
+
+#### 500 INTERNAL SERVER ERROR
+
+Exception string.
+
+
+## GET `/event-interval/<int:patient_id>/<string:week>/<string:night_id>/<string:recorder>/<int:location_begin>/<int:location_end>/`
+
+### Description
+Get the interval in which the event occurs. Default: 5 minutes from the sleep_stage_detection table. Special cases: event duration +- activity duration defined in the settings. location_begin and location_end represents the start and end indexes of the event in the dataset.
+### Parameters
+
+| Parameter | Required | Type                                  | default |
+| --------- | -------- | ------------------------------------- | ------- |
+| `patient_id`    | ✅        | int                                | -       |
+| `week`    | ✅        | string | -       |
+| `night_id`    | ✅        | string | -       |
+| `recorder`    | ✅        | string | -       |
+| `location_begin`    | ✅        | int | -       |
+| `location_end`    | ✅        | int | -       |
+
+### Responses
+
+#### 200 OK
+Return type: JSON Object.
+
+Example response for request http://localhost:5000/event-interval/1/1/0901260/c/620000/695000:
+
+```json
+{
+    "5min_end_id": 1200000,
+    "5min_start_id": 600000,
+    "ML": [
+        -0.31824000000000013,
+        -0.11351363238393572,
+        -0.12759472371292246,
+        -0.18950058485962812,
+        0.06250958359178863,
+        0.1661373819302275,
+        ...,
+        0.7437700095450963,
+        0.590512171282252,
+        0.3187415515472481,
+        0.08670366276193478,
+        -0.0704355786810057,
+        -0.32448
+    ],
+    "MR": [
+        0.7437700095450963,
+        0.590512171282252,
+        0.3187415515472481,
+        0.08670366276193478,
+        -0.0704355786810057,
+        -0.32448,
+        ...,
+        599.9954999933334,
+        599.9964999950017,
+        599.9974999966838,
+        599.9984999984531,
+        599.9995
+    ],
+    "end_id": 299999,
+    "event_end_id": 47499,
+    "event_start_id": 10000,
+    "start_id": 0
+}
+```
+- 5min_start_id and 5min_end_id represents the index in the original dataset
+- start_id and end_id are the indexes of the resampled dataset
+- event_start_id and event_end_id are the indexes of the event in the resampled dataset
+
+#### 500 INTERNAL SERVER ERROR
+
+Exception string.
+
+
 
 ## GET `/weekly-sum-img`
-### TODO
+## Description 
+Get weekly summary image for a specific patient on a specific week.
+
+## Parameters
+| Parameter | Required | Type                                  | default |
+| --------- | -------- | ------------------------------------- | ------- |
+| `p`    | ✅        | int                                | -       |
+| `w`    | ✅        | string | -       |
+
+
+### Responses
+
+#### 200 OK
+Return type: image/png
+
+Example response for request http://localhost:5000/weekly-sum-img?p=2&w=3-4
+
+
+![Image generated through weekly-sum-img endpoint for parient 2 on week 3-4](https://gitlab.ifi.uzh.ch/ivda/sensor-data-analysis-pipeline/-/raw/main/examples/response.png?ref_type=heads)
+
+#### 500 INTERNAL SERVER ERROR
+
+Exception string.
+
 
 ## GET `/night-pred-img`
-### TODO
+## Description 
+Get prediction image for a specific patient on a specificweek and night, and with a specific recorder.
+
+## Parameters
+| Parameter | Required | Type                                  | default |
+| --------- | -------- | ------------------------------------- | ------- |
+| `p`    | ✅        | int                                | -       |
+| `w`    | ✅        | string | -       |
+| `n`    | ✅        | string | -       |
+| `r`    | ✅        | string | -       |
+
+
+### Responses
+
+#### 200 OK
+Return type: image/png
+
+Example response for request http://localhost:5000/night-pred-img?p=1&w=1&n=1022102&r=c
+
+
+![Image generated through weekly-sum-img endpoint for parient 2 on week 3-4](https://gitlab.ifi.uzh.ch/ivda/sensor-data-analysis-pipeline/-/raw/main/examples/response_night_pred_img.png?ref_type=heads)
+
+#### 500 INTERNAL SERVER ERROR
+
+Exception string.
 
 
 ## GET `/rerun-model/<int:patient_id>/<string:week>/<string:night_id>/<string:recorder>`
-### TODO
+
+## Description
+## TODO
+
+## Parameters
+| Parameter | Required | Type                                  | default |
+| --------- | -------- | ------------------------------------- | ------- |
+| `patient_id`    | ✅        | int                                | -       |
+| `week`    | ✅        | string | -       |
+| `night_id`    | ✅        | string | -       |
+| `recorder`    | ✅        | string | -       |
+
+
+### Responses
+## TODO check error: cannot access local variable 'e' where it is not associated with a value for request http://localhost:5000/rerun-model/1/1/0901260/c
+#### 200 OK
+Return type: ??
+
+#### 500 INTERNAL SERVER ERROR
+
+Exception string.
 
 
 ### GET `/model-accuracy/<int:patient_id>`
-### TODO
+## Description
+Get the accuracies of the models for a specific patient.
 
+## Parameters
+| Parameter | Required | Type                                  | default |
+| --------- | -------- | ------------------------------------- | ------- |
+| `patient_id`    | ✅        | int                                | -       |
+
+
+### Responses
+
+#### 200 OK
+Return type: ??
+
+#### 500 INTERNAL SERVER ERROR
+
+Exception string.
 
 ## Treatment Analysis Page
-## GET `/lineplot-data/<int:patient_id>/<string:week>/<string:night_id>/<string:recorder>`
-### TODO
-
 
 ## GET `/weekly-summary/<int:patient_id>/<string:week>/`
+
+### Description
+Get weekly summary (number of events in a specific week) for a specific patient of a specific week.
+
+### Parameters
+### Response
+#### 200 OK
+Return type: list of JSON objects.
+
+Example response for request http://localhost:5000/weekly-summary/1/1/:
+```json
+[
+    {
+        "count": 2,
+        "cycle": 3,
+        "day_no": 2,
+        "id": 194,
+        "max_cycle": 7,
+        "night_id": "1222325",
+        "patient_id": 1,
+        "type": 0,
+        "week": "1"
+    },
+    {
+        "count": 1,
+        "cycle": 6,
+        "day_no": 2,
+        "id": 195,
+        "max_cycle": 7,
+        "night_id": "1222325",
+        "patient_id": 1,
+        "type": 1,
+        "week": "1"
+    },
+    ...,
+    {
+        "count": 4,
+        "cycle": 5,
+        "day_no": 0,
+        "id": 217,
+        "max_cycle": 6,
+        "night_id": "0901260",
+        "patient_id": 1,
+        "type": 4,
+        "week": "1"
+    }
+]
+```
+
+
+#### 500 INTERNAL SERVER ERROR
+
+Exception string.
+
+
+## GET `/event-trend-patients-ids/`
+### Description
+Get patient ids for which events trend can be performed.
+
+
+### Response
+#### 200 OK
+Return type: list.
+
+Example response:
+[
+    "1",
+    "2",
+    "3",
+    "4"
+]
+
+#### 500 INTERNAL SERVER ERROR
+
+Exception string.
+
+
+## GET `/event-trend`
 ### TODO
+### Description 
+Get interpolated trend of the events for the specified patients.
+
+### Parameters
+List containing ids of patients for which we want the events trend.
+| Parameter | Required | Type                                  | default |
+| --------- | -------- | ------------------------------------- | ------- |
+| `patient_id`    | ✅        | list                                | -       |
+
+
+
+### Response
+#### 200 OK
+Return type: list of JSON objects of dictionaries. Every JSON object represents a night, every dictionary represents a patient for the specific night. The dictionary key is the patient id.
+
+
+Example response:
+
+```json
+[
+    {
+        "2": {
+            "count": 30,
+            "day": 14,
+            "night": 315230.0,
+            "type": 0.0,
+            "week": "3-4"
+        }
+    },
+    {
+        "2": {
+            "count": 30,
+            "day": 15,
+            "night": null,
+            "type": -1.0,
+            "week": "3-4"
+        }
+    },
+    {
+        "2": {
+            "count": 30,
+            "day": 16,
+            "night": null,
+            "type": -1.0,
+            "week": "3-4"
+        }
+    },
+    ...,
+    {
+        "2": {
+            "count": 36,
+            "day": 28,
+            "night": 609302.0,
+            "type": 0.0,
+            "week": "5-6"
+        }
+    }
+]   
+
+```
+
+
+#### 500 INTERNAL SERVER ERROR
+
+Exception string.
+
+
 
