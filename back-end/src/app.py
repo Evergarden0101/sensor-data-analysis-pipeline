@@ -488,58 +488,63 @@ def create_app(test_config=None):
     """
     @app.route('/event-interval/<int:patient_id>/<string:week>/<string:night_id>/<string:recorder>/<int:location_begin>/<int:location_end>', methods=["GET"])
     def get_event_interval(patient_id, week, night_id, recorder, location_begin, location_end):
-        print("get event interval")
-        # label = request.json
-        # print(label)
-        original_sampling = get_original_sampling(DATABASE)
-        activity_duration_data_points = get_activity_duration(DATABASE) * original_sampling
+        try: 
+            print("get event interval")
+            # label = request.json
+            # print(label)
+            original_sampling = get_original_sampling(DATABASE)
+            activity_duration_data_points = get_activity_duration(DATABASE) * original_sampling
 
-        #1h data
-        chunk_size = original_sampling*60*60
+            #1h data
+            chunk_size = original_sampling*60*60
 
-        # location_begin = math.floor(location_begin * get_original_sampling(DATABASE))
-        # location_end = math.ceil(location_end * get_original_sampling(DATABASE))
+            # location_begin = math.floor(location_begin * get_original_sampling(DATABASE))
+            # location_end = math.ceil(location_end * get_original_sampling(DATABASE))
 
-        print(f"duration in index: {location_end - location_begin}")
-        print(f"location_begin: {location_begin}, location_end: {location_end}")
+            print(f"duration in index: {location_end - location_begin}")
+            print(f"location_begin: {location_begin}, location_end: {location_end}")
 
-        with sql.connect(DATABASE) as con:
-            cur = con.cursor()
+            with sql.connect(DATABASE) as con:
+                cur = con.cursor()
 
-            params = (patient_id, week, night_id, recorder, location_begin, location_end)
-            query = "SELECT start_id, end_id FROM sleep_stage_detection WHERE patient_id=? AND week=? AND night_id=? AND recorder=? AND ? >= start_id AND ? <= end_id"
-            result = cur.execute(query, params).fetchall()
+                params = (patient_id, week, night_id, recorder, location_begin, location_end)
+                query = "SELECT start_id, end_id FROM sleep_stage_detection WHERE patient_id=? AND week=? AND night_id=? AND recorder=? AND ? >= start_id AND ? <= end_id"
+                result = cur.execute(query, params).fetchall()
 
-            print(f"DB 5 min result: {result}")
+                print(f"DB 5 min result: {result}")
 
-            # If the event is in between two 5 minute intervals we might wanto to return more than 5 minute of data
-            if result==[]:
-                print("Corner case")
-                start_id = math.floor(location_begin - activity_duration_data_points)
-                end_id = math.ceil(location_end + activity_duration_data_points)
+                # If the event is in between two 5 minute intervals we might wanto to return more than 5 minute of data
+                if result==[]:
+                    print("Corner case")
+                    start_id = math.floor(location_begin - activity_duration_data_points)
+                    end_id = math.ceil(location_end + activity_duration_data_points)
 
-            # The event is in a 5 minute interval
-            else:
-                print("Normal case")
-                start_id = result[0][0]
-                end_id = result[0][1]
+                # The event is in a 5 minute interval
+                else:
+                    print("Normal case")
+                    start_id = result[0][0]
+                    end_id = result[0][1]
 
-                print(f"Selected 5 min -  start_id: {start_id}, end_id: {end_id}")
+                    print(f"Selected 5 min -  start_id: {start_id}, end_id: {end_id}")
+                
+                # Open the df with a chunk size of 1h because the interval might be > 5 min
+                df =  pd.read_csv(get_data_path(DATABASE) + f"p{patient_id}_wk{week}/{night_id}{recorder}Fnorm.csv", usecols=['MR', 'ML'], chunksize=chunk_size)
+
+                for chunk in df:
+                    print(f"chunk start_id: {chunk.index.start}, start_id: {start_id}")
+                    if (chunk.index.start <= start_id) and (chunk.index.stop >= end_id):
+                        # Find desired chunk
+                        desired_chunk = chunk
+                        break
+                print(f"desired chunk: {desired_chunk}")
+
+                result = get_event_data(DATABASE, desired_chunk, start_id, end_id, location_begin, location_end)
+
+                return result, 200
             
-            # Open the df with a chunk size of 1h because the interval might be > 5 min
-            df =  pd.read_csv(get_data_path(DATABASE) + f"p{patient_id}_wk{week}/{night_id}{recorder}Fnorm.csv", usecols=['MR', 'ML'], chunksize=chunk_size)
-
-            for chunk in df:
-                print(f"chunk start_id: {chunk.index.start}, start_id: {start_id}")
-                if (chunk.index.start <= start_id) and (chunk.index.stop >= end_id):
-                    # Find desired chunk
-                    desired_chunk = chunk
-                    break
-            print(f"desired chunk: {desired_chunk}")
-
-            result = get_event_data(DATABASE, desired_chunk, start_id, end_id, location_begin, location_end)
-
-            return result, 200
+        except Exception as e:
+            print(e)
+            return f"{e}", 500
 
 
     @app.route('/weekly-sum-img', methods=["GET"])
@@ -559,7 +564,7 @@ def create_app(test_config=None):
             res = make_response(img_f.read())   # 用flask提供的make_response 方法来自定义自己的response对象
             res.headers['Content-Type'] = 'image/png'   # 设置response对象的请求头属性'Content-Type'为图片格式
             img_f.close()
-            return res
+            return res, 200
         except Exception as e:
             print('Exception raised in getting weekly summary image')
             img_local_path =  get_data_path(DATABASE) +"p"+str(patient_id)+"_wk"+str(week)+ f"/summary.png"
@@ -569,7 +574,7 @@ def create_app(test_config=None):
                 res = make_response(img_f.read())   # 用flask提供的make_response 方法来自定义自己的response对象
                 res.headers['Content-Type'] = 'image/png'   # 设置response对象的请求头属性'Content-Type'为图片格式
                 img_f.close()
-                return res
+                return res, 200
             except:
                 print(e)
                 return f"{e}", 500
@@ -613,7 +618,7 @@ def create_app(test_config=None):
                 # Delete the file
                 print(f"File size is {file_size} bytes. Deleting file.")
                 os.remove(img_local_path)
-            return res
+            return res, 200
         except Exception as e:
             print('Exception raised in getting night prediction image')
             print(e)
@@ -747,7 +752,7 @@ def create_app(test_config=None):
             return jsonify({'error': str(e)}), 500
 
 
-    @app.route('/event-trend-patients-ids', methods=["GET"])
+    @app.route('/event-trend-patients-ids/', methods=["GET"])
     def get_event_trend_patient_ids():
         try:
             with sql.connect(DATABASE) as con:
