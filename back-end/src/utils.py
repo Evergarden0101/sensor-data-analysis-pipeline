@@ -1057,7 +1057,14 @@ def get_event_data(DATABASE, desired_chunk, start_id, end_id, location_begin, lo
     # Find start and end indices of event list in original 5 minute of data
     new_event_subindices = find_sub_list(mr_event_data.values.tolist(), mr.values.tolist())
 
-    if start_id == location_begin:
+    if start_id == location_begin and end_id == location_end:
+        print("Event has duration of whole 5 min chunk")
+        
+        mr_resampled = nk.signal_resample(mr, method="interpolation", sampling_rate=original_sampling, desired_sampling_rate=selected_sampling).tolist()
+        ml_resampled = nk.signal_resample(ml, method="interpolation", sampling_rate=original_sampling, desired_sampling_rate=selected_sampling).tolist()
+        new_event_resampled_subindices = location_begin, location_end
+
+    elif start_id == location_begin:
         print("Special case- 5 minute start with event")
         
         mr_event_chunk = mr.values.tolist()[new_event_subindices[0]: new_event_subindices[1] + 1]
