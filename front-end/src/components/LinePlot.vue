@@ -447,8 +447,8 @@ export default {
                             .attr("y", 0)
                             .attr("width", (d=> x(d.End) - x(d.Start)))
                             .attr("height", height)
-                            .attr("fill", "green")
-                            .attr("opacity", 0.4)
+                            .attr("fill", "grey")
+                            .attr("opacity", 0.6)
                             .attr("class", "labels");
         },
         drawLineplot(channel,start, end){
