@@ -102,10 +102,18 @@
 
                             <el-card v-for="(item,index) in cycle.labels" :key="index" shadow="hover" style="border-radius:25px;margin:0px 10px 8px 10px">
                                 <el-row>
-                                    <el-col :span="3"><el-button text="plain" round
-                                        bg @click="locateLabel(item)" style="margin-left: 0;">
-                                            <el-text class="mx-1" type="primary" tag="ins">Label {{ item.label_id }}</el-text>
-                                    </el-button></el-col>
+                                    <el-col :span="3">
+                                        <el-button v-if="selectedEventNo != item.label_id" text="plain" round
+                                            @click="locateLabel(item)" style="margin-left: 0;">
+                                                <el-text class="mx-1" type="primary" tag="ins">Label {{ item.label_id }}</el-text>
+                                        </el-button>
+
+                                        <el-button v-if="selectedEventNo == item.label_id" text="plain" round
+                                            bg @click="locateLabel(item)" style="margin-left: 0;">
+                                                <el-text class="mx-1" type="primary" tag="ins">Label {{ item.label_id }}</el-text>
+                                        </el-button>
+
+                                    </el-col>
                                     <el-col :span="20" :offset="1">
                                         <el-form :inline="true" :model="Labels" class="demo-form-inline">
                                             <el-form-item label="Start:" style="margin-left: 1em;">
@@ -214,6 +222,9 @@ export default {
         },
         disabled () {
             return this.loadingLabel || this.noMoreLabel
+        },
+        selectedEventNo(){
+            return this.$store.state.eventNo
         }
     },
     methods: {
@@ -434,6 +445,30 @@ export default {
                 })
 
         },
+        async getModelPrecision(){
+            const path = `http://127.0.0.1:5000/model-accuracy/${this.$store.state.patientId}`
+            const headers = {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*',
+                    'Access-Control-Allow-Methods': 'GET',
+                    'Access-Control-Max-Age': "3600",
+                    'Access-Control-Allow-Credentials': "true",
+                    'Access-Control-Allow-Headers': 'Content-Type'
+            };
+
+            await axios.get(path, {headers})
+                .then((res) => {
+                    console.log("Precision received");
+                    console.log(res.data);
+                    // this.loading = ref(false);
+                    this.$store.commit('updateStudyPrecision', res.data['study_accuracy'][1]);
+                    this.$store.commit('updatePatientPrecision', res.data['patient_accuracy'][1]);
+                })
+                .catch(err=>{
+                    console.log(err)
+                })
+            },
         loadAll() {
             return [
                 {
@@ -465,6 +500,7 @@ export default {
         this.$store.commit('getNightImg','');
         this.$store.commit('getWeekImg', '');
         // TODO: load precision
+        this.getModelPrecision();
         // this.$store.commit('updateStudyPrecision', '-');
         // this.$store.commit('updatePatientPrecision', '-');
         if(this.$store.state.labels){

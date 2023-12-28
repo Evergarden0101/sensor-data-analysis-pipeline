@@ -669,7 +669,7 @@ def create_app(test_config=None):
             except Exception as es:
                 study_accuracy = {'accuracy': None, 'precision': None}
             if(patient_accuracy['precision'] == None and study_accuracy['precision'] == None):
-                return f"{e}\n{es}", 500
+                return f"{es}", 500
             
             return jsonify(patient_accuracy=patient_accuracy, study_accuracy=study_accuracy), 200
         except Exception as e:
@@ -686,8 +686,18 @@ def create_app(test_config=None):
                 cur = con.cursor()
                 cur.execute(f"SELECT accuracy, precision FROM models WHERE patient_id={patient_id}")
                 patient_accuracy = cur.fetchall()
+                if(len(patient_accuracy)==0):
+                    patient_accuracy = None
+                else:
+                    patient_accuracy = patient_accuracy[0]
+                print('patient_accuracy: ',patient_accuracy)
                 cur.execute(f"SELECT accuracy, precision FROM models WHERE patient_id=-1")
                 study_accuracy = cur.fetchall()
+                if(len(study_accuracy)==0):
+                    study_accuracy = None
+                else:
+                    study_accuracy = study_accuracy[0]
+                print('study_accuracy: ',study_accuracy)
                 cur.close()
             return jsonify(patient_accuracy=patient_accuracy, study_accuracy=study_accuracy), 200
         except Exception as e:

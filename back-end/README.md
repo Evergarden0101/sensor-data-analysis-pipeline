@@ -450,7 +450,6 @@ Exception string.
 
 
 ## GET `/label-brux/<int:patient_id>/<string:week>/<string:night_id>/<string:recorder>`
-### TODO Yifan check if everything is correct
 ### Description
 Returns brux events defined by the model for a specific patient_id, week, night_id, and recorder.
 
@@ -727,7 +726,7 @@ Exception string.
 ## GET `/rerun-model/<int:patient_id>/<string:week>/<string:night_id>/<string:recorder>`
 
 ## Description
-## TODO
+Reruns the model based on the confirmed events and gets the new precisions of study model and patient model.
 
 ## Parameters
 | Parameter | Required | Type                                  | default |
@@ -739,9 +738,17 @@ Exception string.
 
 
 ### Responses
-## TODO check error: cannot access local variable 'e' where it is not associated with a value for request http://localhost:5000/rerun-model/1/1/0901260/c
+
 #### 200 OK
-Return type: ??
+Return type: A JSON object.
+
+Example response for request http://localhost:5000/rerun-model/1/1/1022102/c/:
+```json
+{
+    "patient_accuracy":{'accuracy': 97.03, 'precision': 73.63},
+    "study_accuracy":{'accuracy': 97.03, 'precision': 73.56},
+}
+```
 
 #### 500 INTERNAL SERVER ERROR
 
@@ -750,7 +757,7 @@ Exception string.
 
 ### GET `/model-accuracy/<int:patient_id>`
 ## Description
-Get the accuracies of the models for a specific patient.
+Get the accuracies and precisions of the models for a specific patient and for the whole study.
 
 ## Parameters
 | Parameter | Required | Type                                  | default |
@@ -761,7 +768,21 @@ Get the accuracies of the models for a specific patient.
 ### Responses
 
 #### 200 OK
-Return type: ??
+Return type: A JSON object.
+
+Example response for request http://localhost:5000/model-accuracy/1/:
+```json
+{
+    "patient_accuracy": [
+        97.03,
+        73.63
+    ],
+    "study_accuracy": [
+        97.03,
+        73.56
+    ]
+}
+```
 
 #### 500 INTERNAL SERVER ERROR
 
@@ -848,7 +869,6 @@ Exception string.
 
 
 ## GET `/event-trend`
-### TODO
 ### Description 
 Get interpolated trend of the events for the specified patients.
 
