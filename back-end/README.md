@@ -688,7 +688,7 @@ Return type: image/png
 Example response for request http://localhost:5000/weekly-sum-img?p=2&w=3-4
 
 
-![Image generated through weekly-sum-img endpoint for parient 2 on week 3-4](https://gitlab.ifi.uzh.ch/ivda/sensor-data-analysis-pipeline/-/raw/main/examples/response.png?ref_type=heads)
+![Image generated through weekly-sum-img endpoint for parient 2 on week 3-4](https://gitlab.ifi.uzh.ch/ivda/sensor-data-analysis-pipeline/-/raw/main/examples/response_weekly_sum_img.png?ref_type=heads)
 
 #### 500 INTERNAL SERVER ERROR
 
