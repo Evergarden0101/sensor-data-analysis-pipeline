@@ -29,7 +29,7 @@ const router = VueRouter.createRouter({
          name: 'FilteringPage',
          props: true
      }, {
-         path: '/treatment',
+         path: '/analysis',
          component: TreatmentPage,
      },{
          path: '/events-classification',

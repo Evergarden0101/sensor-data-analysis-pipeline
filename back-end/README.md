@@ -788,7 +788,7 @@ Example response for request http://localhost:5000/model-accuracy/1/:
 
 Exception string.
 
-## Treatment Analysis Page
+## Analysis Page
 
 ## GET `/weekly-summary/<int:patient_id>/<string:week>/`
 

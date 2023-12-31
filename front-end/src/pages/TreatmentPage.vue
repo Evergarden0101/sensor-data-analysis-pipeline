@@ -1,5 +1,5 @@
 <template>
-    <h1 style="text-align: center; margin-bottom: 2%;"><el-icon :size="default"><DataLine /></el-icon> Treatment Analysis</h1>
+    <h1 style="text-align: center; margin-bottom: 2%;"><el-icon :size="default"><DataLine /></el-icon> Analysis</h1>
     <el-row style="margin-bottom: 1%;">
         <el-col align-center :span="16" :offset="4">
             <Stepper step=4 />
