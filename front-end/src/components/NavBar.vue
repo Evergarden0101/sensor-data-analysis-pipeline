@@ -11,8 +11,8 @@
             <button>Events Classification</button>  
         </router-link>
         
-        <router-link to='/treatment/' style="margin-right: 20px;">
-            <button>Treatment Analysis</button> 
+        <router-link to='/analysis/' style="margin-right: 20px;">
+            <button>Analysis</button> 
         </router-link>
     </div>
 </template>

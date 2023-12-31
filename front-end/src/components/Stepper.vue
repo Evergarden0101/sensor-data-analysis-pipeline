@@ -3,7 +3,7 @@
         <el-step :title="'Patients Data'" description="Select the desired patient" :icon="User" />
         <el-step title="Filtering" description="Filter out undesired intervals" :icon="Filter" />
         <el-step title="Events Classification" description="Label events in the data" :icon="Open" />
-        <el-step title="Treatment Analysis" description="Compare data between different days and weeks" :icon="DataLine" />
+        <el-step title="Analysis" description="Compare data between different days and weeks" :icon="DataLine" />
     </el-steps>
 </template>
 

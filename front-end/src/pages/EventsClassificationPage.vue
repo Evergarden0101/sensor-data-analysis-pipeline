@@ -14,9 +14,9 @@
             </router-link>
         </el-col>
         <el-col :span="7" :offset="5">
-            <router-link :to="'/treatment/'">
+            <router-link :to="'/analysis/'">
                 <el-button type="primary" plain :disabled="!monitoringAllowed">
-                    Treatment Analysis<el-icon class="el-icon--right"><ArrowRight /></el-icon>
+                    Analysis<el-icon class="el-icon--right"><ArrowRight /></el-icon>
                 </el-button>
             </router-link>
         </el-col>
