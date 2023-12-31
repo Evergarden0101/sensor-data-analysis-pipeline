@@ -202,7 +202,7 @@ export default {
               .attr("width", x(end) - x(start))
               .attr("y", 0)
               .attr("height", height)
-              .attr("fill", "lightblue")
+              .attr("fill", "green")
               .attr("opacity", 0.5);
         });
 

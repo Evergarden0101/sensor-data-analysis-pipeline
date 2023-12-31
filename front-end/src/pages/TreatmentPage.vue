@@ -130,8 +130,8 @@ export default {
             completeWeekList: ref({}),
             weekMarks: ref({}),
             patientsCheckBox: {},
-            studyPrecision: this.$store.state.studyPrecision,
-            patientPrecision: this.$store.state.patientPrecision,
+            // studyPrecision: this.$store.state.studyPrecision,
+            // patientPrecision: this.$store.state.patientPrecision,
             patientsColorEncoding:{},
             colors: [
                 "#5470c6",
@@ -155,6 +155,18 @@ export default {
             averageEventsPerCycle: 0,
             totalEvents: 0,
         }
+    },
+    computed: {
+        studyPrecision() {
+            if (this.$store.state.studyPrecision == null || this.$store.state.studyPrecision == 0 || this.$store.state.studyPrecision == undefined || this.$store.state.studyPrecision == NaN)
+                return '--'
+            return this.$store.state.studyPrecision
+        },
+        patientPrecision() {
+            if (this.$store.state.patientPrecision == null || this.$store.state.patientPrecision == 0 || this.$store.state.patientPrecision == undefined || this.$store.state.patientPrecision == NaN)
+                return '--'
+            return this.$store.state.patientPrecision
+        },
     },
     async mounted() {
         await this.getExistingEventTrendPatientIds();

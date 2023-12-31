@@ -713,12 +713,22 @@ def create_app(test_config=None):
             with sql.connect(DATABASE) as con:
                 print("DB connected")
                 cur = con.cursor()
-                cur.execute(f"SELECT accuracy, precision FROM models WHERE patient_id={patient_id}")
-                patient_accuracy = cur.fetchall()
-                cur.execute(f"SELECT accuracy, precision FROM models WHERE patient_id=-1")
-                study_accuracy = cur.fetchall()
+                patient_accuracy = cur.execute(f"SELECT id, TN, FP, FN, TP FROM accuracy_log WHERE patient_id={patient_id}")
+                columns = [description[0] for description in patient_accuracy.description]
+                patient_accuracy_json = get_json_format_from_query(columns=columns, query_results=patient_accuracy.fetchall(), start_id=0, end_id=4)
+                if(len(patient_accuracy_json)==0):
+                    patient_accuracy_json = None
+                
+                cur.execute(f"SELECT id, TN, FP, FN, TP FROM accuracy_log WHERE patient_id=-1")
+                study_accuracy = cur.execute(f"SELECT id, TN, FP, FN, TP FROM accuracy_log WHERE patient_id={patient_id}")
+                columns = [description[0] for description in study_accuracy.description]
+                study_accuracy_json = get_json_format_from_query(columns=columns, query_results=study_accuracy.fetchall(), start_id=0, end_id=4)
+                if(len(study_accuracy_json)==0):
+                    study_accuracy_json = None
                 cur.close()
-            return 0, 200
+            # print('patient_accuracy: ',patient_accuracy_json)
+            # print('study_accuracy: ',study_accuracy_json)
+            return jsonify(patient_accuracy=patient_accuracy_json, study_accuracy=study_accuracy_json), 200
         except Exception as e:
             print('Exception raised in getting confusion matrix')
             print(e)
