@@ -179,19 +179,29 @@ export default {
             // SFP: 95.35,
             // STN: 99.43,
             // STP: 4.64,
-            TP:73.63, 
-            FN: 2.09, 
-            FP: 26.36, 
-            TN: 97.90,
-            STP:73.56, 
-            SFN: 2.08, 
-            SFP: 26.43, 
-            STN: 97.91,
+            // TP:73.63, 
+            // FN: 2.09, 
+            // FP: 26.36, 
+            // TN: 97.90,
+            // STP:73.56, 
+            // SFN: 2.08, 
+            // SFP: 26.43, 
+            // STN: 97.91,
+            TP: 0,
+            FN: 0,
+            FP: 0,
+            TN: 0,
+            STP: 0,
+            SFN: 0,
+            SFP: 0,
+            STN: 0,
 
             // accuracies: [{'id': 0, 'TP':68.32, 'FN':23.84, 'FP': 31.68, 'TN': 76.16}, {'id': 1, 'TP':86.93, 'FN': 0.29, 'FP': 13.07, 'TN': 99.71}],
             // saccuaracies: [{'id': 0, 'TP':68.32, 'FN':23.84, 'FP': 31.68, 'TN': 76.16}, {'id': 1, 'TP':4.64, 'FN': 0.56, 'FP': 95.35, 'TN': 99.43}],
-            accuracies: [{'id': 0, 'TP':68.32, 'FN':23.84, 'FP': 31.68, 'TN': 76.16}, {'id': 1, 'TP':73.63, 'FN': 2.09, 'FP': 26.36, 'TN': 97.90}],
-            saccuaracies: [{'id': 0, 'TP':68.32, 'FN':23.84, 'FP': 31.68, 'TN': 76.16}, {'id': 1, 'TP':73.56, 'FN': 2.08, 'FP': 26.43, 'TN': 97.91}],
+            // accuracies: [{'id': 0, 'TP':68.32, 'FN':23.84, 'FP': 31.68, 'TN': 76.16}, {'id': 1, 'TP':73.63, 'FN': 2.09, 'FP': 26.36, 'TN': 97.90}],
+            // saccuaracies: [{'id': 0, 'TP':68.32, 'FN':23.84, 'FP': 31.68, 'TN': 76.16}, {'id': 1, 'TP':73.56, 'FN': 2.08, 'FP': 26.43, 'TN': 97.91}],
+            accuracies: [],
+            saccuaracies: [],
         }
     },
     beforeMount() {
@@ -210,8 +220,45 @@ export default {
         // this.drawConfusionMatrix('general');
     },
     methods: {
-        getPrecision(){
+        async getPrecision(){
+            const path = `http://127.0.0.1:5000/confusion-matrix/${this.$store.state.patientId}`
+            const headers = {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*',
+                    'Access-Control-Allow-Methods': 'GET',
+                    'Access-Control-Max-Age': "3600",
+                    'Access-Control-Allow-Credentials': "true",
+                    'Access-Control-Allow-Headers': 'Content-Type'
+            };
 
+            await axios.get(path, {headers})
+                .then((res) => {
+                    console.log("accuracy log received");
+                    console.log(res.data);
+                    this.accuracies = res.data['patient_accuracy'];
+                    this.saccuaracies = res.data['study_accuracy'];
+                    console.log('patient accuracy',this.accuracies);
+                    console.log('study accuracy',this.saccuaracies);
+                    let cur_acc = res.data['patient_accuracy'][res.data['patient_accuracy'].length-1];
+                    this.TP = cur_acc['TP'];
+                    this.FN = cur_acc['FN'];
+                    this.FP = cur_acc['FP'];
+                    this.TN = cur_acc['TN'];
+                    console.log('cur_acc',cur_acc);
+                    let cur_sacc = res.data['study_accuracy'][res.data['study_accuracy'].length-1];
+                    this.STP = cur_sacc['TP'];
+                    this.SFN = cur_sacc['FN'];
+                    this.SFP = cur_sacc['FP'];
+                    this.STN = cur_sacc['TN'];
+                    console.log('cur_sacc',cur_sacc);
+                    // this.loading = ref(false);
+                    // this.$store.commit('updateStudyPrecision', res.data['study_accuracy'][1]);
+                    // this.$store.commit('updatePatientPrecision', res.data['patient_accuracy'][1]);
+                })
+                .catch(err=>{
+                    console.log(err)
+                })
         },
         drawLegend(){
             const colors = d3[`scheme${YlOrRd}`];
