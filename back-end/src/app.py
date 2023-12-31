@@ -720,7 +720,7 @@ def create_app(test_config=None):
                     patient_accuracy_json = None
                 
                 cur.execute(f"SELECT id, TN, FP, FN, TP FROM accuracy_log WHERE patient_id=-1")
-                study_accuracy = cur.execute(f"SELECT id, TN, FP, FN, TP FROM accuracy_log WHERE patient_id={patient_id}")
+                study_accuracy = cur.execute(f"SELECT id, TN, FP, FN, TP FROM accuracy_log WHERE patient_id=-1")
                 columns = [description[0] for description in study_accuracy.description]
                 study_accuracy_json = get_json_format_from_query(columns=columns, query_results=study_accuracy.fetchall(), start_id=0, end_id=4)
                 if(len(study_accuracy_json)==0):
