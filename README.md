@@ -1,8 +1,7 @@
 # Sensor data analysis pipeline
-Choose a self-explaining name for your project.
 
 ## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+The Human-Centered Sensor Data Analysis Pipeline presents a comprehensive study of the development and application of a sensor data analysis system focused on human-centric needs. This research integrates advanced visualization tools and health informatics techniques to address critical challenges in medical sciences with high-frequency sensor data. The core of this study revolves around the design and implementation of a visualization system that aids in the efficient analysis and interpretation of complex sensor data.
 
 ## Visuals
 ![Demo of the application](https://gitlab.ifi.uzh.ch/ivda/sensor-data-analysis-pipeline/-/raw/main/front-end/DEMO.gif)
